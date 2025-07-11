@@ -20,17 +20,18 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 import { useReactFlow } from "reactflow";
+import { CustomSeparator } from "./custom-seperator";
 
 export function Toolbar() {
-  const { 
-    currentTool, 
-    setCurrentTool, 
-    currentLayout, 
-    setCurrentLayout, 
-    undo, 
-    redo, 
-    history, 
-    historyIndex 
+  const {
+    currentTool,
+    setCurrentTool,
+    currentLayout,
+    setCurrentLayout,
+    undo,
+    redo,
+    history,
+    historyIndex
   } = useAppStore();
   const { theme, setTheme } = useTheme();
   const { zoomIn, zoomOut, fitView } = useReactFlow();
@@ -64,8 +65,14 @@ export function Toolbar() {
           ))}
         </div>
 
-        <Separator orientation="vertical" className="h-6" />
-
+        {/* <Separator orientation="vertical" className="h-6" /> */}
+        <CustomSeparator
+          orientation="vertical"
+          color="bg-gradient-to-b from-indigo-500 to-purple-600"
+          thickness="thin"
+          length="24px"
+          className="rounded-full"
+        />
         {/* Undo/Redo */}
         <div className="flex items-center gap-1">
           <Button
@@ -90,8 +97,14 @@ export function Toolbar() {
           </Button>
         </div>
 
-        <Separator orientation="vertical" className="h-6" />
-
+        {/* <Separator orientation="vertical" className="h-6" /> */}
+        <CustomSeparator
+          orientation="vertical"
+          color="bg-gradient-to-b from-indigo-500 to-purple-600"
+          thickness="thin"
+          length="24px"
+          className="rounded-full"
+        />
         {/* Zoom Controls */}
         <div className="flex items-center gap-1">
           <Button
@@ -123,7 +136,13 @@ export function Toolbar() {
           </Button>
         </div>
 
-        <Separator orientation="vertical" className="h-6" />
+        <CustomSeparator
+          orientation="vertical"
+          color="bg-gradient-to-b from-indigo-500 to-purple-600"
+          thickness="thin"
+          length="24px"
+          className="rounded-full"
+        />
 
         {/* Layout Controls */}
         <div className="flex items-center gap-1">
@@ -147,8 +166,14 @@ export function Toolbar() {
           </Button>
         </div>
 
-        <Separator orientation="vertical" className="h-6" />
-
+        {/* <Separator orientation="vertical" className="h-6" /> */}
+        <CustomSeparator
+          orientation="vertical"
+          color="bg-gradient-to-b from-indigo-500 to-purple-600"
+          thickness="thin"
+          length="24px"
+          className="rounded-full"
+        />
         {/* Theme Toggle */}
         <Button
           variant="ghost"
