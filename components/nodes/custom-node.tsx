@@ -153,9 +153,13 @@ export function CustomNode({ id, data, selected, layout = 'horizontal' }: Custom
   }, [id, nodes, setNodes, saveToHistory]);
 
   const getNodeStyle = () => {
+    // For circle nodes, ensure width and height are equal to maintain perfect circle
+    const isCircle = data.nodeType === 'circle';
+    const circleSize = isCircle ? Math.max(data.width || 90, data.height || 60) : undefined;
+    
     const baseStyle = {
-      width: data.width || 90,   // 4*3
-      height: data.height || 60, // 4*2
+      width: isCircle ? circleSize : (data.width || 90),
+      height: isCircle ? circleSize : (data.height || 60),
       position: 'relative' as const,
       borderRadius: data.nodeType === 'circle' ? '50%' : '8px',
       background: data.backgroundColor || (data.nodeType === 'label' ? 'transparent' : 'white'),
