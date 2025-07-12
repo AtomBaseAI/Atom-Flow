@@ -89,7 +89,7 @@ export function CustomEdge({
   const strokeWidth = data?.strokeWidth || 2;
   const strokeStyle = data?.strokeStyle || 'solid';
   const animated = data?.animated || false;
-  const showArrow = data?.showArrow !== true; // Default to true
+  const showArrow = data?.showArrow !== false; // Default to true
 
   const edgeStyle = {
     stroke: strokeColor,
