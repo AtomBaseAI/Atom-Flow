@@ -173,7 +173,7 @@ export function CustomNode({ id, data, selected, layout = 'horizontal' }: Custom
       transition: 'all 0.2s ease',
       border: data.nodeType === 'label' 
         ? 'none' 
-        : `2px ${data.borderStyle || 'solid'} ${selected ? '#3b82f6' : '#e5e7eb'}`,
+        : `1px ${data.borderStyle || 'solid'} ${selected ? '#70f' : '#e5e7eb'}`,
       userSelect: 'none' as const,
     };
 

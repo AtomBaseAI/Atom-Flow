@@ -138,8 +138,8 @@
 }
 
 .react-flow__node-custom.selected {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: #70f !important;
+  /* box-shadow: 0 0 0 2px rgba(87, 1, 173, 0.2); */
 }
 
 .react-flow__edge {
