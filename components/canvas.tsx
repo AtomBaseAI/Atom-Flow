@@ -19,10 +19,15 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useAppStore } from '@/lib/store';
 import { CustomNode } from './nodes/custom-node';
+import { CustomEdge } from './edges/custom-edge';
 import { Toolbar } from './toolbar';
 
 const nodeTypes = {
   custom: CustomNode,
+};
+
+const edgeTypes = {
+  custom: CustomEdge,
 };
 
 function FlowCanvas() {
@@ -38,7 +43,9 @@ function FlowCanvas() {
     saveToHistory,
     undo,
     selectedNodes,
+    selectedEdges,
     setSelectedNodes,
+    setSelectedEdges,
     clipboard,
     setClipboard,
   } = useAppStore();
@@ -57,13 +64,13 @@ function FlowCanvas() {
         event.preventDefault();
         if (selectedNodes.length > 0) {
           const selectedNodeIds = selectedNodes.map(node => node.id);
-          const selectedEdges = edges.filter(edge => 
+          const selectedEdges = edges.filter(edge =>
             selectedNodeIds.includes(edge.source) && selectedNodeIds.includes(edge.target)
           );
           setClipboard({ nodes: selectedNodes, edges: selectedEdges });
         }
       }
-      
+
       // Paste (Ctrl+V)
       if (event.ctrlKey && event.key === 'v') {
         event.preventDefault();
@@ -82,34 +89,34 @@ function FlowCanvas() {
               selected: false,
             };
           });
-          
+
           const newEdges = clipboard.edges.map(edge => ({
             ...edge,
             id: generateEdgeId(),
             source: nodeIdMap.get(edge.source),
             target: nodeIdMap.get(edge.target),
           }));
-          
+
           setNodes([...nodes, ...newNodes]);
           setEdges([...edges, ...newEdges]);
           saveToHistory();
         }
       }
-      
+
       // Delete (Del)
       if (event.key === 'Delete') {
         event.preventDefault();
         if (selectedNodes.length > 0) {
           const selectedNodeIds = selectedNodes.map(node => node.id);
           setNodes(nodes.filter(node => !selectedNodeIds.includes(node.id)));
-          setEdges(edges.filter(edge => 
+          setEdges(edges.filter(edge =>
             !selectedNodeIds.includes(edge.source) && !selectedNodeIds.includes(edge.target)
           ));
           setSelectedNodes([]);
           saveToHistory();
         }
       }
-      
+
       // Undo (Ctrl+Z)
       if (event.ctrlKey && event.key === 'z') {
         event.preventDefault();
@@ -137,10 +144,17 @@ function FlowCanvas() {
 
   const onConnect = useCallback(
     (params: Connection) => {
-      const newEdge = { 
+      const newEdge = {
         id: generateEdgeId(),
+        type: 'custom',
         ...params,
-        style: { stroke: '#70f', strokeWidth: 2 },
+        data: {
+          strokeColor: '#70f',
+          strokeWidth: 2,
+          strokeStyle: 'solid',
+          animated: false,
+          showArrow: true,
+        },
       };
       setEdges(addEdge(newEdge, edges));
       saveToHistory();
@@ -153,11 +167,11 @@ function FlowCanvas() {
       // Close any open popups and editing state when clicking on empty canvas
       const state = useAppStore.getState();
       state.setEditingNodeId(null);
-      
+
       // Force close all popups by triggering a global popup close event
       const popupCloseEvent = new CustomEvent('closeAllPopups');
       document.dispatchEvent(popupCloseEvent);
-      
+
       if (currentTool === 'select') return;
 
       const bounds = reactFlowWrapper.current?.getBoundingClientRect();
@@ -185,7 +199,7 @@ function FlowCanvas() {
 
       setNodes([...nodes, newNode]);
       saveToHistory();
-      
+
       // Auto-switch back to select mode after creating a shape
       setCurrentTool('select');
     },
@@ -195,8 +209,9 @@ function FlowCanvas() {
   const onSelectionChange = useCallback(
     (params: OnSelectionChangeParams) => {
       setSelectedNodes(params.nodes);
+      setSelectedEdges(params.edges);
     },
-    [setSelectedNodes]
+    [setSelectedNodes, setSelectedEdges]
   );
 
   const onNodeClick = useCallback(
@@ -236,6 +251,7 @@ function FlowCanvas() {
         onNodeDragStop={onNodeDragStop}
         onSelectionChange={onSelectionChange}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         className="bg-gray-50 dark:bg-[#0a0a0a]"
         nodesDraggable={currentTool === 'select'}
@@ -243,10 +259,10 @@ function FlowCanvas() {
         elementsSelectable={currentTool === 'select'}
         panOnDrag={currentTool === 'select'}
         zoomOnScroll={currentTool === 'select'}
-        // connectionMode="loose"
+      // connectionMode="loose"
       >
-        <Controls 
-          position="bottom-right" 
+        <Controls
+          position="bottom-right"
           className="bg-white dark:bg-[#101010] border border-gray-200 dark:border-gray-700"
         />
       </ReactFlow>

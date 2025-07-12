@@ -32,7 +32,9 @@ interface AppState {
   
   // Selected elements
   selectedNodes: Node[];
+  selectedEdges: Edge[];
   setSelectedNodes: (nodes: Node[]) => void;
+  setSelectedEdges: (edges: Edge[]) => void;
   
   // Clipboard
   clipboard: { nodes: Node[]; edges: Edge[] } | null;
@@ -95,7 +97,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   
   // Selected elements
   selectedNodes: [],
+  selectedEdges: [],
   setSelectedNodes: (nodes) => set({ selectedNodes: nodes }),
+  setSelectedEdges: (edges) => set({ selectedEdges: edges }),
   
   // Clipboard
   clipboard: null,

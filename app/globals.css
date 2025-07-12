@@ -312,35 +312,28 @@
   }
 }
 
-.react-flow__edge path {
-  stroke: #70f;
-  stroke-width: 2;
-  stroke-dasharray: 5, 5;
-  animation: flow 1s linear infinite, 2s ease-in-out infinite;
-  filter: drop-shadow(0 0 3px #70f);
+/* Custom edge styling */
+.react-flow__edge-path {
+  transition: all 0.2s ease;
 }
 
-.react-flow__edge:hover path {
-  stroke-width: 3;
-  animation: flow 0.5s linear infinite, glow-pulse 1s ease-in-out infinite;
-  filter: drop-shadow(0 0 6px #70f) drop-shadow(0 0 12px #70f);
+.react-flow__edge-path.selected {
+  stroke-width: 3 !important;
 }
 
-/* Dark mode edge styling */
-.dark .react-flow__edge path {
-  stroke: #a855f7;
-  filter: drop-shadow(0 0 3px #a855f7);
+/* Edge button styling */
+.react-flow__edge button {
+  opacity: 1;
+  transition: opacity 0.2s ease;
 }
 
-.dark .react-flow__edge:hover path {
-  filter: drop-shadow(0 0 6px #a855f7) drop-shadow(0 0 12px #a855f7);
+.react-flow__edge:hover button {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
-@keyframes glow-pulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 3px currentColor) drop-shadow(0 0 6px currentColor);
-  }
-  50% {
-    filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor) drop-shadow(0 0 18px currentColor);
-  }
+.react-flow__edge.selected button {
+  opacity: 1;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
