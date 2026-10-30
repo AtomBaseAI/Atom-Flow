@@ -1,6 +1,6 @@
 "use client"
 
-import { type EdgeProps, getSmoothStepPath, Position, useReactFlow } from "@xyflow/react"
+import { type EdgeProps, getSmoothStepPath, Position, useReactFlow, useStore } from "@xyflow/react"
 
 function pickSides(dx: number, dy: number) {
   const horizontal = Math.abs(dx) >= Math.abs(dy)
@@ -35,6 +35,20 @@ export default function SmartEdge(props: EdgeProps) {
   const rf = useReactFlow()
   const s = source ? rf.getNode(source) : undefined
   const t = target ? rf.getNode(target) : undefined
+
+  // Lane separation: when several edges connect the same pair of nodes (e.g.
+  // A -> B and B -> A), offset each edge sideways so they render as distinct
+  // parallel connections instead of overlapping into one "bi-directional" line.
+  const allEdges = useStore((state) => state.edges)
+  let laneOffset = 0
+  if (source && target && source !== target) {
+    const pairKey = [source, target].sort().join("|")
+    const siblings = allEdges.filter((e) => [e.source, e.target].sort().join("|") === pairKey)
+    if (siblings.length > 1) {
+      const sibIndex = Math.max(0, siblings.findIndex((e) => e.id === id))
+      laneOffset = (sibIndex - (siblings.length - 1) / 2) * 22
+    }
+  }
 
   // Compute centers if nodes exist
   const sw = s?.measured?.width ?? s?.width ?? 0
@@ -92,10 +106,14 @@ export default function SmartEdge(props: EdgeProps) {
     t && txNode != null && tyNode != null ? anchorFor(sides.target, txNode, tyNode, tw, th, gap) : [tx, ty]
 
   // Start is always the SOURCE anchor; End is always the TARGET anchor.
-  const startX = ax
-  const startY = ay
-  const endX = bx
-  const endY = by
+  // Shift both endpoints perpendicular to the main direction to separate lanes.
+  const horizontal = Math.abs((tx ?? 0) - (sx ?? 0)) >= Math.abs((ty ?? 0) - (sy ?? 0))
+  const offX = horizontal ? 0 : laneOffset
+  const offY = horizontal ? laneOffset : 0
+  const startX = ax + offX
+  const startY = ay + offY
+  const endX = bx + offX
+  const endY = by + offY
   const srcSide = sides.source
   const tgtSide = sides.target
 
@@ -117,6 +135,8 @@ export default function SmartEdge(props: EdgeProps) {
   })
 
   // We ignore any incoming markerEnd and use a per-edge marker so multiple edges don't clash.
+  // NOTE: selection feedback is done in CSS (corridor band + glow on the line)
+  // so it never fights with a user-chosen stroke color.
   const strokeColor = style?.stroke ?? "#a3a3a3"
   const strokeWidth = style?.strokeWidth ?? 1
   const arrowId = `smart-edge-arrow-${id}`
@@ -138,6 +158,22 @@ export default function SmartEdge(props: EdgeProps) {
         </marker>
       </defs>
 
+      {/* Wide invisible hit-area: a 1px connector is nearly impossible to
+          click. React Flow's built-in edges draw a similar "interaction"
+          path (interactionWidth); custom edges must provide their own.
+          A transparent stroke still receives pointer events, so clicks within
+          ~10px of the line land on the edge. */}
+      <path
+        className="react-flow__edge-interaction"
+        d={path}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={20}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pointerEvents="stroke"
+      />
+
       <path
         id={id}
         d={path}
@@ -150,6 +186,7 @@ export default function SmartEdge(props: EdgeProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
         pointerEvents="stroke"
+        className="smart-edge-line"
       />
     </g>
   )

@@ -1,8 +1,9 @@
-export const ICON_CATEGORIES = ["all", "language", "framework", "testing","browser", "database","files", "cloud","os", "dev", "aws"] as const
+export const ICON_CATEGORIES = ["all", "system", "language", "framework", "testing","browser", "database","files", "cloud","os", "dev", "aws"] as const
 
 // Keep filenames in sync with /public/vectors structure.
 // You can add more here later without changing any code.
-export const ICONS: Record<Exclude<(typeof ICON_CATEGORIES)[number], "all">, string[]> = {
+// "system" is handled separately: it renders Lucide icons (see lib/lucide-icon-registry.ts).
+export const ICONS: Record<Exclude<(typeof ICON_CATEGORIES)[number], "all" | "system">, string[]> = {
   language: [
     "c",
     "cpp",

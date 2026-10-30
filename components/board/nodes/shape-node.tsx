@@ -45,6 +45,8 @@ export default function ShapeNode(props: NodeProps<ShapeNodeData>) {
     (e?: React.MouseEvent) => {
       e?.stopPropagation()
       e?.preventDefault()
+      // Snapshot the pre-edit state once so the label change is undoable
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:commit"))
       setTempLabel(label ?? "")
       setEditing(true)
     },

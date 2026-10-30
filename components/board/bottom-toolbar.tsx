@@ -12,13 +12,18 @@ import {
   LucideArchive as BezierCurve,
   RotateCw,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 type Props = {
   visible: boolean
   isNodeSelected: boolean
   isEdgeSelected: boolean
+  currentFill?: string
+  currentFillOpacity?: number
   onChangeShape: (type: "rectangle" | "ellipse" | "triangle" | "diamond" | "hexagon" | "text") => void
   onChangeBG: (color: string) => void
+  onFillOpacityStart?: () => void
+  onFillOpacity: (v: number) => void
 
   onBorderStyle: (style: "solid" | "dashed") => void
   onBorderColor: (color: string) => void
@@ -34,15 +39,21 @@ type Props = {
   onEdgeWidth: (w: number) => void
   onEdgeAnimate: (animate: boolean) => void
 
-  onRotate: (deg: number) => void // added
+  onRotate: (deg: number) => void
+  onRotateSilent?: (deg: number) => void
+  onRotateStart?: () => void
 }
 
 export default function BottomToolbar({
   visible,
   isNodeSelected,
   isEdgeSelected,
+  currentFill,
+  currentFillOpacity,
   onChangeShape,
   onChangeBG,
+  onFillOpacityStart,
+  onFillOpacity,
   onBorderStyle,
   onBorderColor,
   onBorderWidth,
@@ -55,6 +66,8 @@ export default function BottomToolbar({
   onEdgeWidth,
   onEdgeAnimate,
   onRotate,
+  onRotateSilent,
+  onRotateStart,
 }: Props) {
   const [open, setOpen] = useState<null | "shapes" | "bg" | "border" | "textSize" | "typo" | "edge" | "rotate">(null) // added rotate
   const [deg, setDeg] = useState(0) // local display state for rotation
@@ -68,11 +81,15 @@ export default function BottomToolbar({
     { name: "Yellow", value: "#f59e0b" },
   ] as const
 
+  // "No color" is represented by a transparent fill.
+  const isNoFill = !currentFill || currentFill === "transparent" || currentFill === "none"
+  const opacityPct = Math.round((typeof currentFillOpacity === "number" ? currentFillOpacity : 1) * 100)
+
   if (!visible) return null
 
   return (
-    <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-20 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-zinc-800 bg-black/70 p-3 shadow-xl backdrop-blur">
+    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-center">
+      <div className="pointer-events-auto flex flex-col items-center gap-2 rounded-xl border border-zinc-800 bg-black/70 p-3 shadow-xl backdrop-blur">
         {/* Primary row */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Node buttons */}
@@ -167,9 +184,22 @@ export default function BottomToolbar({
         )}
 
         {open === "bg" && isNodeSelected && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span className="text-xs text-zinc-300">Background</span>
             <div className="flex items-center gap-2">
+              {/* No color: diagonal-slash swatch, sets the fill back to transparent */}
+              <button
+                aria-label="Set background no color"
+                aria-pressed={isNoFill}
+                onClick={() => onChangeBG("transparent")}
+                className={cn(
+                  "relative h-6 w-6 overflow-hidden rounded border bg-white",
+                  isNoFill ? "border-teal-500 ring-1 ring-teal-500" : "border-zinc-700",
+                )}
+                title="No color"
+              >
+                <span aria-hidden className="absolute left-[-4px] top-[9px] h-[2px] w-8 rotate-45 bg-red-500" />
+              </button>
               {swatches.map((s) => (
                 <button
                   key={s.value}
@@ -180,6 +210,25 @@ export default function BottomToolbar({
                   title={s.name}
                 />
               ))}
+            </div>
+
+            {/* Transparency slider */}
+            <div className="ml-1 flex items-center gap-2">
+              <span className="text-xs text-zinc-300">Opacity</span>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={opacityPct}
+                disabled={isNoFill}
+                onPointerDown={() => onFillOpacityStart?.()}
+                onChange={(e) => onFillOpacity(Number.parseInt(e.target.value, 10) / 100)}
+                className="w-28 accent-teal-500 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Fill opacity"
+                title={isNoFill ? "Pick a background color first" : `${opacityPct}%`}
+              />
+              <span className="w-9 text-right text-[10px] tabular-nums text-zinc-400">{opacityPct}%</span>
             </div>
           </div>
         )}
@@ -369,10 +418,14 @@ export default function BottomToolbar({
               max={360}
               step={1}
               value={deg}
+              onPointerDown={() => onRotateStart?.()}
               onChange={(e) => {
                 const v = Number.parseInt(e.target.value, 10)
                 setDeg(v)
-                onRotate(v)
+                // Slider drags update silently; the history entry was already
+                // recorded once at pointer down.
+                if (onRotateSilent) onRotateSilent(v)
+                else onRotate(v)
               }}
               className="w-40"
               aria-label="Rotate angle"

@@ -10,11 +10,13 @@ import {
   Hand,
   ZoomIn,
   ZoomOut,
+  Scan,
   Undo2,
   Redo2,
   TagIcon,
   Plus,
   Minus,
+  Loader2,
 } from "lucide-react"
 import {
   Dialog,
@@ -25,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ICON_CATEGORIES, ICONS } from "@/lib/icons-manifest"
+import { loadLucideRegistry, type LucideEntry, type LucideRegistry } from "@/lib/lucide-icon-registry"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -33,6 +36,7 @@ type Props = {
   onQuickAdd?: (t: "rect" | "ellipse" | "text" | "line") => void
   onZoomIn?: () => void
   onZoomOut?: () => void
+  onFitView?: () => void
   onOpenExport?: () => void // add export trigger
   onAddIcon?: (opts: { src: string; label: string }) => void
   onAddTag?: () => void // allow adding tag nodes
@@ -71,12 +75,41 @@ function ToolBtn({
   )
 }
 
+function LucideTile({
+  entry,
+  selected,
+  onSelect,
+}: {
+  entry: LucideEntry
+  selected: boolean
+  onSelect: () => void
+}) {
+  const IconComp = entry.comp
+  return (
+    <button
+      onClick={onSelect}
+      className={cn(
+        "flex aspect-square items-center justify-center rounded border p-1.5 transition-colors",
+        selected
+          ? "border-teal-600 bg-teal-950/40 text-white ring-1 ring-teal-600"
+          : "border-zinc-300 bg-zinc-200 text-zinc-700 hover:bg-white",
+      )}
+      title={entry.name + (entry.experimental ? " (experimental)" : "")}
+      aria-pressed={selected}
+      aria-label={`Select ${entry.name} icon`}
+    >
+      <IconComp className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+    </button>
+  )
+}
+
 export default function LeftToolbar({
   active,
   onChangeTool,
   onQuickAdd,
   onZoomIn,
   onZoomOut,
+  onFitView,
   onOpenExport,
   onAddIcon,
   onAddTag,
@@ -86,6 +119,26 @@ export default function LeftToolbar({
   const [search, setSearch] = React.useState("")
   const [selected, setSelected] = React.useState<{ cat: string; name: string } | null>(null)
   const [bottomText, setBottomText] = React.useState("")
+
+  // Lucide "system" group state
+  const [systemSub, setSystemSub] = React.useState<string>("all")
+  const [lucideReg, setLucideReg] = React.useState<LucideRegistry | null>(null)
+  const [regLoading, setRegLoading] = React.useState(false)
+  const regRequestedRef = React.useRef(false)
+
+  const ensureRegistry = React.useCallback(() => {
+    if (regRequestedRef.current) return
+    regRequestedRef.current = true
+    setRegLoading(true)
+    loadLucideRegistry()
+      .then((reg) => setLucideReg(reg))
+      .catch(() => {})
+      .finally(() => setRegLoading(false))
+  }, [])
+
+  React.useEffect(() => {
+    if (iconOpen && category === "system") ensureRegistry()
+  }, [iconOpen, category, ensureRegistry])
 
   const allItems = React.useMemo(() => {
     const entries = Object.entries(ICONS).flatMap(([cat, arr]) => arr.map((name) => ({ cat, name })))
@@ -100,14 +153,42 @@ export default function LeftToolbar({
     return list
   }, [allItems, category, search])
 
-  const selectedSrc = selected ? `/vectors/${selected.cat}/${selected.name}.svg` : ""
+  const isSystem = category === "system"
+
+  const systemGroups = React.useMemo(() => {
+    if (!lucideReg) return []
+    const q = search.trim().toLowerCase()
+    if (!q) {
+      if (systemSub === "all") return lucideReg.groups
+      return lucideReg.groups.filter((g) => g.slug === systemSub)
+    }
+    // Searching inside the system group spans every sub-group
+    return lucideReg.groups
+      .map((g) => ({
+        ...g,
+        entries: g.entries.filter(
+          (e) =>
+            e.name.includes(q) ||
+            e.tags.some((t) => t.toLowerCase().includes(q)) ||
+            e.aliases.some((a) => a.toLowerCase().includes(q)),
+        ),
+      }))
+      .filter((g) => g.entries.length > 0)
+  }, [lucideReg, systemSub, search])
+
+  const selectedLucide = selected?.cat === "system" ? (lucideReg?.byName.get(selected.name) ?? null) : null
+  const selectedSrc = selected
+    ? selected.cat === "system"
+      ? `lucide:${selected.name}`
+      : `/vectors/${selected.cat}/${selected.name}.svg`
+    : ""
 
   return (
     <TooltipProvider>
       {" "}
       {/* Wrap the entire component in TooltipProvider */}
-      <div className="pointer-events-auto absolute left-4 top-1/2 z-20 -translate-y-1/2">
-        <div className="flex w-10 flex-col items-center gap-1">
+      <div className="pointer-events-auto absolute bottom-20 left-4 top-14 z-20 flex flex-col">
+        <div className="icon-picker-scroll my-auto flex max-h-full w-10 flex-col items-center gap-1 overflow-y-auto py-1">
           <ToolBtn onClick={() => setIconOpen(true)} label="Add Icon">
             <Plus className="h-4 w-4" />
           </ToolBtn>
@@ -172,6 +253,9 @@ export default function LeftToolbar({
           <ToolBtn onClick={onZoomOut} label="Zoom out">
             <ZoomOut className="h-4 w-4" />
           </ToolBtn>
+          <ToolBtn onClick={onFitView} label="Fit view">
+            <Scan className="h-4 w-4" />
+          </ToolBtn>
 
           {/* Undo / Redo */}
           <ToolBtn
@@ -198,9 +282,9 @@ export default function LeftToolbar({
             <DialogContent
               className={cn(
                 "border-zinc-800 bg-zinc-900 text-zinc-100",
-                // Centering and sizing fixes
+                // Centering, sizing and viewport-fit fixes
                 "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-                "w-[94vw] max-w-2xl md:max-w-3xl", // wider so grid doesn't collapse
+                "max-h-[90vh] w-[94vw] max-w-2xl overflow-y-auto md:max-w-4xl", // wider so grid doesn't collapse
                 "p-4 rounded-lg shadow-xl",
               )}
             >
@@ -211,7 +295,7 @@ export default function LeftToolbar({
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-3 w-full">
+              <div className="min-w-0 space-y-3 w-full">
                 {/* Search + category badges */}
                 <div className="space-y-2">
                   <label className="block text-xs text-zinc-300" htmlFor="icon-search">
@@ -222,7 +306,7 @@ export default function LeftToolbar({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="Search by name (e.g., aws, angular, ec2)"
+                    placeholder={isSystem ? "Search by name or tag (e.g., house, arrow, cloud)" : "Search by name (e.g., aws, angular, ec2)"}
                   />
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     {ICON_CATEGORIES.map((cat) => (
@@ -244,6 +328,41 @@ export default function LeftToolbar({
                       </button>
                     ))}
                   </div>
+
+                  {/* System sub-groups (lucide categories) */}
+                  {isSystem && lucideReg && (
+                    <div className="max-h-20 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950 p-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          onClick={() => setSystemSub("all")}
+                          className={cn(
+                            "rounded-full border px-2 py-0.5 text-[10px]",
+                            systemSub === "all"
+                              ? "border-teal-600 bg-teal-600 text-white"
+                              : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800",
+                          )}
+                          aria-pressed={systemSub === "all"}
+                        >
+                          all ({lucideReg.total})
+                        </button>
+                        {lucideReg.groups.map((g) => (
+                          <button
+                            key={g.slug}
+                            onClick={() => setSystemSub(g.slug)}
+                            className={cn(
+                              "rounded-full border px-2 py-0.5 text-[10px]",
+                              systemSub === g.slug
+                                ? "border-teal-600 bg-teal-600 text-white"
+                                : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800",
+                            )}
+                            aria-pressed={systemSub === g.slug}
+                          >
+                            {g.title.toLowerCase()} ({g.entries.length})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Selected preview */}
@@ -251,26 +370,77 @@ export default function LeftToolbar({
                   <div className="flex items-center gap-3">
                     <div className="flex h-16 w-16 items-center justify-center rounded bg-zinc-200">
                       {selected ? (
-                        <img
-                          src={selected ? `/vectors/${selected.cat}/${selected.name}.svg` : "/placeholder.svg"}
-                          alt={selected ? `${selected.name} preview` : "Icon preview"}
-                          className="max-h-14 max-w-14 object-contain"
-                          draggable={false}
-                        />
+                        selectedLucide ? (
+                          <selectedLucide.comp className="h-10 w-10 text-zinc-800" aria-hidden />
+                        ) : selected.cat === "system" ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-zinc-500" aria-hidden />
+                        ) : (
+                          <img
+                            src={selectedSrc || "/placeholder.svg"}
+                            alt={`${selected.name} preview`}
+                            className="max-h-14 max-w-14 object-contain"
+                            draggable={false}
+                          />
+                        )
                       ) : (
                         <span className="text-xs text-zinc-400">Preview</span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="truncate text-sm text-white">{selected ? selected.name : "No icon selected"}</div>
-                      <div className="text-xs text-zinc-400">{selected ? selected.cat : "Choose an icon"}</div>
+                      <div className="truncate text-sm text-white">
+                        {selected ? (selectedLucide?.experimental ? `${selected.name} (experimental)` : selected.name) : "No icon selected"}
+                      </div>
+                      <div className="text-xs text-zinc-400">
+                        {selected ? (selected.cat === "system" ? `system / lucide${selectedLucide ? "" : " (loading)"}` : selected.cat) : "Choose an icon"}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Results grid - widen and keep stable height */}
-                <div className="max-h-64 overflow-auto rounded-md border border-zinc-800 bg-zinc-950 p-2">
-                  {items.length === 0 ? (
+                <div className="max-h-[420px] min-h-[240px] overflow-x-hidden overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950 p-2 icon-picker-scroll">
+                  {isSystem ? (
+                    regLoading && !lucideReg ? (
+                      <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-zinc-400">
+                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                        Loading system icons…
+                      </div>
+                    ) : !lucideReg ? (
+                      <div className="py-6 text-center text-xs text-zinc-400">Could not load system icons</div>
+                    ) : systemGroups.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-zinc-400">No icons found</div>
+                    ) : (
+                      <div className="space-y-4">
+                        {systemGroups.map((g) => (
+                          <section
+                            key={g.slug}
+                            data-group={g.slug}
+                            style={{
+                              contentVisibility: "auto",
+                              containIntrinsicSize: `auto 832px auto ${Math.ceil(g.entries.length / 10) * 60 + 34}px`,
+                            } as React.CSSProperties}
+                          >
+                            <header className="flex items-center justify-between px-1 pb-1.5">
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                                {g.title}
+                              </span>
+                              <span className="text-[10px] text-zinc-600">{g.entries.length}</span>
+                            </header>
+                            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+                              {g.entries.map((e) => (
+                                <LucideTile
+                                  key={`${g.slug}-${e.name}`}
+                                  entry={e}
+                                  selected={selected?.cat === "system" && selected?.name === e.name}
+                                  onSelect={() => setSelected({ cat: "system", name: e.name })}
+                                />
+                              ))}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    )
+                  ) : items.length === 0 ? (
                     <div className="py-6 text-center text-xs text-zinc-400">No icons found</div>
                   ) : (
                     <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
@@ -327,13 +497,13 @@ export default function LeftToolbar({
                   disabled={!selected}
                   onClick={() => {
                     if (!selected) return
-                    const src = `/vectors/${selected.cat}/${selected.name}.svg`
-                    onAddIcon?.({ src, label: bottomText })
+                    onAddIcon?.({ src: selectedSrc, label: bottomText })
                     setIconOpen(false)
                     setBottomText("")
                     setSearch("")
                     setSelected(null)
                     setCategory("all")
+                    setSystemSub("all")
                   }}
                   className={cn(
                     "rounded-md border px-3 py-1.5 text-xs",

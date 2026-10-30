@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { type Edge, type Node, useOnSelectionChange, useReactFlow } from "@xyflow/react"
 
 type Snapshot = { nodes: Node[]; edges: Edge[] }
+
+const MAX_HISTORY = 100
 
 function isEditingText(): boolean {
   if (typeof document === "undefined") return false
@@ -13,6 +15,28 @@ function isEditingText(): boolean {
   if (tag === "input" || tag === "textarea") return true
   if (el.isContentEditable) return true
   return false
+}
+
+// Stable fingerprint of a snapshot for dedupe / no-op detection.
+// Only meaningful content is compared (id, position, type, data, style).
+function snapshotKey(s: Snapshot): string {
+  return JSON.stringify({
+    n: s.nodes.map((n) => ({
+      i: n.id,
+      p: n.position,
+      t: n.type,
+      d: n.data,
+      s: n.style,
+    })),
+    e: s.edges.map((e) => ({
+      i: e.id,
+      s: e.source,
+      t: e.target,
+      st: e.style,
+      d: e.data,
+      a: e.animated,
+    })),
+  })
 }
 
 function cloneNodesWithOffset(nodes: Node[], offset = { x: 24, y: 24 }): Node[] {
@@ -50,63 +74,66 @@ export default function BoardShortcuts() {
   })
 
   const takeSnapshot = (): Snapshot => ({
-    nodes: rf.getNodes().map((n) => ({ ...n })),
-    edges: rf.getEdges().map((e) => ({ ...e })),
+    nodes: rf.getNodes().map((n) => {
+      // Strip transient/internal fields so they don't pollute history comparisons
+      const { dragging, resizing, measured, ...rest } = n as any
+      return { ...rest, selected: false } as Node
+    }),
+    edges: rf.getEdges().map((e) => ({ ...e, selected: false })),
   })
 
   const commit = () => {
+    // Never record snapshots while an undo/redo restore is in flight
+    if (restoringRef.current || (typeof window !== "undefined" && (window as any).__boardRestoring)) return
     const cur = takeSnapshot()
     const last = historyPast.current[historyPast.current.length - 1]
-    if (last) {
-      const sameCounts = last.nodes.length === cur.nodes.length && last.edges.length === cur.edges.length
-      if (sameCounts) {
-        const lastNodeIds = last.nodes.map((n) => n.id).join(",")
-        const curNodeIds = cur.nodes.map((n) => n.id).join(",")
-        const lastEdgeIds = last.edges.map((e) => e.id).join(",")
-        const curEdgeIds = cur.edges.map((e) => e.id).join(",")
-        if (lastNodeIds === curNodeIds && lastEdgeIds === curEdgeIds) {
-          return
-        }
-      }
+    if (last && snapshotKey(last) === snapshotKey(cur)) {
+      // State hasn't meaningfully changed since the last commit — skip
+      return
     }
     historyPast.current.push(cur)
+    if (historyPast.current.length > MAX_HISTORY) {
+      historyPast.current.shift()
+    }
     historyFuture.current.length = 0
   }
 
-  const canUndo = useMemo(() => historyPast.current.length > 0, [])
-  const canRedo = useMemo(() => historyFuture.current.length > 0, [])
-
-  const undo = () => {
-    if (historyPast.current.length === 0) return
-    const current = takeSnapshot()
-    const prev = historyPast.current.pop()!
-    historyFuture.current.push(current)
-
+  const applySnapshot = (snap: Snapshot) => {
     restoringRef.current = true
     ;(window as any).__boardRestoring = true
-    rf.setNodes(prev.nodes)
-    rf.setEdges(prev.edges)
-    // Release suppression after the frame so onEdgesChange can finish
+    rf.setNodes(snap.nodes.map((n) => ({ ...n, dragging: false, resizing: false })))
+    rf.setEdges(snap.edges)
+    // Release suppression after the frame so change handlers can settle
     requestAnimationFrame(() => {
       restoringRef.current = false
       ;(window as any).__boardRestoring = false
     })
   }
 
-  const redo = () => {
-    if (historyFuture.current.length === 0) return
+  const undo = () => {
+    if (restoringRef.current) return
     const current = takeSnapshot()
-    const next = historyFuture.current.pop()!
-    historyPast.current.push(current)
+    // Skip no-op entries (commits that didn't change anything) so undo never
+    // feels stuck, then restore the first meaningful previous state.
+    while (historyPast.current.length > 0) {
+      const prev = historyPast.current.pop()!
+      if (snapshotKey(prev) === snapshotKey(current)) continue
+      historyFuture.current.push(current)
+      applySnapshot(prev)
+      return
+    }
+  }
 
-    restoringRef.current = true
-    ;(window as any).__boardRestoring = true
-    rf.setNodes(next.nodes)
-    rf.setEdges(next.edges)
-    requestAnimationFrame(() => {
-      restoringRef.current = false
-      ;(window as any).__boardRestoring = false
-    })
+  const redo = () => {
+    if (restoringRef.current) return
+    const current = takeSnapshot()
+    while (historyFuture.current.length > 0) {
+      const next = historyFuture.current.pop()!
+      if (snapshotKey(next) === snapshotKey(current)) continue
+      historyPast.current.push(current)
+      applySnapshot(next)
+      return
+    }
   }
 
   const onCopy = () => {
@@ -236,8 +263,7 @@ export default function BoardShortcuts() {
       window.removeEventListener("keydown", handler, opts)
       window.removeEventListener("keyup", onKeyUp, opts)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected])
+  }, [selected, undo, redo, onCopy, onPaste, onDelete, clearAll])
 
   useEffect(() => {
     const onUndo: EventListener = () => undo()

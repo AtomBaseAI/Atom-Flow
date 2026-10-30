@@ -130,3 +130,166 @@
     pointer-events: auto;
   }
 }
+
+/* Edges: the visible connector is 1px, so custom edges draw a wide invisible
+   "interaction" corridor. Give affordance: pointer cursor, plus a soft teal
+   band that appears over the corridor on hover / selection. */
+.react-flow__edge {
+  cursor: pointer;
+}
+.react-flow__edge .react-flow__edge-interaction {
+  transition: stroke 120ms ease;
+}
+.react-flow__edge:hover .react-flow__edge-interaction {
+  stroke: rgba(45, 212, 191, 0.12);
+}
+.react-flow__edge.selected .react-flow__edge-interaction {
+  stroke: rgba(45, 212, 191, 0.2);
+}
+/* Glow the line itself when selected — works with any user-chosen stroke color */
+.react-flow__edge.selected .smart-edge-line {
+  filter: drop-shadow(0 0 3px rgba(45, 212, 191, 0.9));
+}
+
+/* Custom scrollbar for the icon picker grid */
+.icon-picker-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}
+.icon-picker-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.icon-picker-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.icon-picker-scroll::-webkit-scrollbar-thumb {
+  background-color: #3f3f46;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.icon-picker-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #52525b;
+}
+
+/* ===== Radial (circular) tap menu ===== */
+/* Root fades in/out; visibility flips late so clicks are blocked while fading */
+.radial-root {
+  transition:
+    opacity 200ms ease,
+    visibility 200ms ease;
+}
+
+/*
+ * Center hub: centering comes from a static transform (mirrored inline in JSX)
+ * and NEVER changes — only the standalone `scale` / `opacity` properties animate,
+ * so the button always stays pinned dead-center.
+ */
+.radial-hub {
+  transform: translate(-50%, -50%);
+  transition:
+    scale 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 180ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+.radial-hub-open {
+  scale: 1;
+  opacity: 1;
+}
+.radial-hub-closed {
+  scale: 0.2;
+  opacity: 0;
+}
+
+/*
+ * Items fly from the tap point out to their orbit position (--rad-x / --rad-y),
+ * staggered via --rad-delay. Uses the standalone `translate` / `scale`
+ * properties so they compose cleanly with any transform on children.
+ */
+.radial-item {
+  transition:
+    translate 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    scale 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 180ms ease;
+  transition-delay: var(--rad-delay, 0ms);
+}
+.radial-item-open {
+  translate: var(--rad-x, 0px) var(--rad-y, 0px);
+  scale: 1;
+  opacity: 1;
+}
+.radial-item-closed {
+  translate: 0 0;
+  scale: 0.2;
+  opacity: 0;
+}
+
+/* Orbit ring expands with the menu */
+.radial-ring {
+  transition:
+    scale 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 200ms ease;
+}
+.radial-ring-open {
+  scale: 1;
+  opacity: 1;
+}
+.radial-ring-closed {
+  scale: 0.45;
+  opacity: 0;
+}
+.radial-ring-spin {
+  animation: radial-ring-spin 26s linear infinite;
+}
+@keyframes radial-ring-spin {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* One-shot ripple — replays every time the menu opens */
+.radial-ripple {
+  opacity: 0;
+}
+.radial-open .radial-ripple {
+  animation: radial-ripple 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes radial-ripple {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Touch devices have no hover — always show the item labels while open */
+@media (hover: none) {
+  .radial-open .radial-item > span {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radial-root,
+  .radial-hub,
+  .radial-item,
+  .radial-ring {
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+  .radial-ring-spin {
+    animation: none;
+  }
+  .radial-open .radial-ripple {
+    animation: none;
+  }
+}
+

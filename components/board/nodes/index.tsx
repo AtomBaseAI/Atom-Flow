@@ -1,54 +1,54 @@
 "use client"
 
-import { memo, useCallback, useEffect, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
 import { Handle, Position, NodeResizer, useReactFlow } from "@xyflow/react"
 import type { NodeProps } from "@xyflow/react"
 import type { ShapeData } from "../design-board"
+import { loadLucideRegistry, type LucideIconComp } from "@/lib/lucide-icon-registry"
+import { withAlpha } from "@/lib/utils"
+
+/** Resolved (opacity-applied) background for a shape. "No color" stays transparent. */
+function resolvedFill(data: ShapeData, fallback = "transparent"): string {
+  return withAlpha(data.fill ?? fallback, data.fillOpacity)
+}
 
 function Handles({ visible }: { visible: boolean }) {
   const cls = visible ? "opacity-100" : "opacity-0 group-hover:opacity-60"
   return (
     <>
+      {/* Unique per-handle ids are REQUIRED: React Flow resolves the snapped
+          handle by `data-id="{flowId}-{nodeId}-{handleId}-{type}"`; without ids
+          all handles of a node share the same data-id and the connection
+          preview always snaps to the first one in DOM order (right). */}
       <Handle
+        id="src-right"
         className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
         type="source"
         position={Position.Right}
       />
       <Handle
+        id="src-left"
         className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
         type="source"
         position={Position.Left}
       />
       <Handle
+        id="src-top"
         className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
         type="source"
         position={Position.Top}
       />
       <Handle
+        id="src-bottom"
         className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
         type="source"
         position={Position.Bottom}
       />
-      <Handle
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
-        type="target"
-        position={Position.Right}
-      />
-      <Handle
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
-        type="target"
-        position={Position.Left}
-      />
-      <Handle
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
-        type="target"
-        position={Position.Top}
-      />
-      <Handle
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
-        type="target"
-        position={Position.Bottom}
-      />
+      {/* NOTE: no target-type handles. The board uses connectionMode="loose",
+          where every source handle can also end a connection — target handles
+          would just overlap the source ones, steal the pointer-down (they sit
+          later in DOM order), and force role-swapped connections whose handle
+          ids cannot resolve as an edge source (React Flow error #008). */}
     </>
   )
 }
@@ -70,7 +70,11 @@ function EditableLabel({
 
   useEffect(() => {
     onEditingChange?.(editing)
-    if (editing) requestAnimationFrame(() => inputRef.current?.focus())
+    if (editing) {
+      // Snapshot the pre-edit state once so the label change is undoable
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:commit"))
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
   }, [editing, onEditingChange])
 
   const commit = useCallback(
@@ -133,9 +137,37 @@ function EditableLabel({
   )
 }
 
+const LUCIDE_PREFIX = "lucide:"
+
+/** Renders a Lucide icon by kebab name; resolves lazily from the shared registry. */
+function LucideGlyph({ name, className, style }: { name: string; className?: string; style?: CSSProperties }) {
+  const [loaded, setLoaded] = useState<{ name: string; Comp: LucideIconComp | null }>({ name: "", Comp: null })
+
+  useEffect(() => {
+    let alive = true
+    loadLucideRegistry()
+      .then((reg) => {
+        if (!alive) return
+        const entry = reg.byName.get(name) ?? reg.byName.get(reg.byAlias.get(name) ?? "")
+        setLoaded({ name, Comp: entry?.comp ?? null })
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [name])
+
+  const Comp = loaded.name === name ? loaded.Comp : null
+
+  if (!Comp) {
+    return <span className="inline-block h-4 w-4 animate-pulse rounded bg-neutral-300" aria-hidden />
+  }
+  return <Comp className={className} style={style} aria-hidden />
+}
+
 export const RectangleNode = memo(function RectangleNode({ id, data, selected }: NodeProps<ShapeData>) {
   const [isEditing, setIsEditing] = useState(false)
-  const fill = data.fill ?? "#1a1a1a"
+  const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
 
   return (
@@ -168,7 +200,7 @@ export const RectangleNode = memo(function RectangleNode({ id, data, selected }:
 
 export const EllipseNode = memo(function EllipseNode({ id, data, selected }: NodeProps<ShapeData>) {
   const [isEditing, setIsEditing] = useState(false)
-  const fill = data.fill ?? "#1a1a1a"
+  const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
 
   return (
@@ -201,7 +233,7 @@ export const EllipseNode = memo(function EllipseNode({ id, data, selected }: Nod
 
 export const TriangleNode = memo(function TriangleNode({ id, data, selected }: NodeProps<ShapeData>) {
   const [isEditing, setIsEditing] = useState(false)
-  const fill = data.fill ?? "#1a1a1a"
+  const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
 
   return (
@@ -238,7 +270,7 @@ export const TriangleNode = memo(function TriangleNode({ id, data, selected }: N
 
 export const DiamondNode = memo(function DiamondNode({ id, data, selected }: NodeProps<ShapeData>) {
   const [isEditing, setIsEditing] = useState(false)
-  const fill = data.fill ?? "#1a1a1a"
+  const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
 
   return (
@@ -275,7 +307,7 @@ export const DiamondNode = memo(function DiamondNode({ id, data, selected }: Nod
 
 export const HexagonNode = memo(function HexagonNode({ id, data, selected }: NodeProps<ShapeData>) {
   const [isEditing, setIsEditing] = useState(false)
-  const fill = data.fill ?? "#1a1a1a"
+  const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
 
   return (
@@ -339,7 +371,7 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
 
 export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps<ShapeData & { iconSrc?: string }>) {
   const [isEditing, setIsEditing] = useState(false)
-  const fill = data.fill ?? "#ffffff"
+  const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
   const iconSrc = data.iconSrc || ""
 
@@ -366,13 +398,21 @@ export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps
       >
         <div className="flex-1 basis-[75%] min-h-0 flex items-center justify-center p-1">
           {iconSrc ? (
-            <img
-              src={iconSrc || "/placeholder.svg"}
-              alt="icon"
-              className="max-h-full max-w-full object-contain"
-              style={{ height: "90%", width: "90%" }}
-              draggable={false}
-            />
+            iconSrc.startsWith(LUCIDE_PREFIX) ? (
+              <LucideGlyph
+                name={iconSrc.slice(LUCIDE_PREFIX.length)}
+                className="h-[90%] w-[90%]"
+                style={{ color: borderColor }}
+              />
+            ) : (
+              <img
+                src={iconSrc || "/placeholder.svg"}
+                alt="icon"
+                className="max-h-full max-w-full object-contain"
+                style={{ height: "90%", width: "90%" }}
+                draggable={false}
+              />
+            )
           ) : (
             <div className="text-xs text-neutral-400">No icon</div>
           )}
@@ -390,7 +430,7 @@ export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps
 
 export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<ShapeData>) {
   const [isEditing, setIsEditing] = useState(false)
-  const fill = data.fill ?? "#e5e7eb"
+  const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
 
   return (
@@ -416,7 +456,7 @@ export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<S
       >
         <EditableLabel
           id={id}
-          data={{ ...data, fontWeight: data.fontWeight ?? 600, fontColor: data.fontColor ?? "#111111" }}
+          data={{ ...data, fontWeight: data.fontWeight ?? 600, fontColor: data.fontColor ?? "#ffffff" }}
           align={data.align ?? "center"}
           onEditingChange={setIsEditing}
         />
