@@ -16,6 +16,7 @@ import {
   type NodeChange,
   type NodeTypes,
   MarkerType,
+  ConnectionMode,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 
@@ -99,6 +100,38 @@ const initialNodes: Node<ShapeData>[] = [
 
 const initialEdges: Edge[] = []
 
+// Unique id for programmatically created nodes — Date.now() alone collides
+// when several elements are created within the same millisecond (e.g. rapid
+// double-adds), which corrupts the node lookup.
+let nodeSeq = 0
+function newNodeId(): string {
+  nodeSeq += 1
+  return `n-${Date.now().toString(36)}-${nodeSeq.toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+}
+
+// ---- Layout persistence (localStorage) ----
+const STORAGE_KEY = "atomflow:board:v1"
+
+type PersistedBoard = {
+  version: 1
+  savedAt: string
+  nodes: Node<ShapeData>[]
+  edges: Edge[]
+  viewport?: { x: number; y: number; zoom: number }
+}
+
+// Removes runtime-only fields React Flow attaches to nodes/edges so the
+// stored payload stays canonical (same shape as an exported JSON file).
+function stripTransientNode(n: Node): Node {
+  const { measured, selected, dragging, resizing, events, ...rest } = n as any
+  return rest as Node
+}
+
+function stripTransientEdge(e: Edge): Edge {
+  const { selected, ...rest } = e as any
+  return rest as Edge
+}
+
 const nodeTypes: NodeTypes = {
   rectangle: RectangleNode,
   ellipse: EllipseNode,
@@ -109,6 +142,23 @@ const nodeTypes: NodeTypes = {
   icon: IconNode,
   tag: TagNode,
   line: LineNode as any,
+}
+
+// Accepts a finite number (or numeric string) and returns it, otherwise undefined.
+function pickSize(value: unknown): number | undefined {
+  const n = typeof value === "string" ? Number(value) : (value as number)
+  return typeof n === "number" && Number.isFinite(n) ? n : undefined
+}
+
+// Resolves a node's CURRENT on-canvas size with a fallback chain:
+// explicit width/height (written by NodeResizer) → measured (actual rendered
+// size) → style (size at creation). Resizing never updates node.style, so a
+// round trip that kept only style would silently reset resized elements to
+// their creation dimensions.
+function resolveNodeSizeRecord(record: Record<string, any>): { width?: number; height?: number } {
+  const width = pickSize(record.width) ?? pickSize(record.measured?.width) ?? pickSize(record.style?.width)
+  const height = pickSize(record.height) ?? pickSize(record.measured?.height) ?? pickSize(record.style?.height)
+  return { width, height }
 }
 
 function sanitizeImportPayload(raw: unknown): {
@@ -127,6 +177,10 @@ function sanitizeImportPayload(raw: unknown): {
   const stamp = Date.now()
   const nodes: Node<ShapeData>[] = (obj.nodes as Record<string, any>[]).map((n, i) => {
     const record = (n ?? {}) as Record<string, any>
+    // Restore the exact exported size: prefer the resized width/height, then
+    // the measured size, then the creation style — and keep style in sync so
+    // React Flow (node.width ?? node.style.width) renders the same box.
+    const { width, height } = resolveNodeSizeRecord(record)
     return {
       id: typeof record.id === "string" && record.id ? record.id : `n-import-${stamp}-${i}`,
       type: validTypes.has(record.type) ? record.type : "rectangle",
@@ -135,7 +189,15 @@ function sanitizeImportPayload(raw: unknown): {
         y: Number.isFinite(Number(record.position?.y)) ? Number(record.position.y) : 0,
       },
       data: { ...(record.data ?? {}) },
-      style: { ...(record.style ?? {}) },
+      style: {
+        ...(record.style ?? {}),
+        ...(width !== undefined ? { width } : {}),
+        ...(height !== undefined ? { height } : {}),
+      },
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {}),
+      // Deliberately no `measured` — it belongs to the exporting session and
+      // React Flow re-measures the node on mount.
       selected: false,
       dragging: false,
       resizing: false,
@@ -164,7 +226,7 @@ function sanitizeImportPayload(raw: unknown): {
 
 function BoardInner() {
   const [tool, setTool] = useState<Tool>("select")
-  const [nodes, setNodes, onNodesChange] = useNodesState<ShapeData>(initialNodes)
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<ShapeData>>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -227,6 +289,101 @@ function BoardInner() {
       window.dispatchEvent(new CustomEvent("board:commit"))
     }
   }, [])
+
+  // ---- Layout persistence: restore once on mount, then autosave (debounced) ----
+  const hydratedRef = useRef(false)
+  const saveTimerRef = useRef<number | null>(null)
+
+  const persistNow = useCallback(() => {
+    if (!hydratedRef.current || typeof window === "undefined") return
+    try {
+      const payload: PersistedBoard = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        // Canonicalized exactly like the JSON export (resolved sizes on both
+        // width/height and style) so storage and export files are the same
+        // shape and restore identically through sanitizeImportPayload().
+        nodes: rf.getNodes().map((n) => {
+          const stripped = stripTransientNode(n)
+          const { width, height } = resolveNodeSizeRecord(stripped as any)
+          return {
+            ...stripped,
+            ...(width !== undefined ? { width } : {}),
+            ...(height !== undefined ? { height } : {}),
+            style: {
+              ...((stripped.style as any) ?? {}),
+              ...(width !== undefined ? { width } : {}),
+              ...(height !== undefined ? { height } : {}),
+            },
+          } as Node<ShapeData>
+        }),
+        edges: rf.getEdges().map(stripTransientEdge),
+        viewport: rf.getViewport(),
+      }
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+    } catch {
+      // Storage unavailable (private mode / quota exceeded) — keep working in memory
+    }
+  }, [rf])
+
+  const schedulePersist = useCallback(() => {
+    if (typeof window === "undefined") return
+    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = window.setTimeout(() => {
+      saveTimerRef.current = null
+      persistNow()
+    }, 350)
+  }, [persistNow])
+
+  // Restore the last session's layout. Runs before the first autosave, so the
+  // pre-hydration render never overwrites what's stored.
+  useEffect(() => {
+    let restored = false
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        const { nodes: savedNodes, edges: savedEdges, viewport } = sanitizeImportPayload(parsed)
+        setNodes(savedNodes)
+        setEdges(savedEdges)
+        if (viewport && Number.isFinite(viewport.x) && Number.isFinite(viewport.y) && Number.isFinite(viewport.zoom)) {
+          rf.setViewport(viewport)
+        }
+        restored = true
+      }
+    } catch {
+      // Corrupted storage — fall through to the starter board
+    }
+    if (!restored) setNodes(initialNodes)
+    hydratedRef.current = true
+  }, [])
+
+  // Autosave whenever board content changes. The debounce means a drag or
+  // resize (which streams changes every frame) lands as a single write.
+  useEffect(() => {
+    if (!hydratedRef.current) return
+    schedulePersist()
+  }, [nodes, edges, schedulePersist])
+
+  // Flush pending saves when the tab is hidden or the page is being unloaded
+  useEffect(() => {
+    const flush = () => {
+      if (saveTimerRef.current !== null) {
+        window.clearTimeout(saveTimerRef.current)
+        saveTimerRef.current = null
+      }
+      persistNow()
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush()
+    }
+    window.addEventListener("beforeunload", flush)
+    document.addEventListener("visibilitychange", onVisibility)
+    return () => {
+      window.removeEventListener("beforeunload", flush)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
+  }, [persistNow])
 
   const handleNodesChange = useCallback(
     (changes: NodeChange<Node<ShapeData>>[]) => {
@@ -339,7 +496,7 @@ function BoardInner() {
   const createNodeAt = useCallback(
     (t: "rect" | "ellipse" | "text" | "tag" | "line", screenPos: { x: number; y: number }) => {
       const pos = rf.screenToFlowPosition(screenPos)
-      const id = `n-${Date.now()}`
+      const id = newNodeId()
       const nodeType = t === "rect" ? "rectangle" : t === "ellipse" ? "ellipse" : t
 
       const data: ShapeData = {
@@ -443,7 +600,7 @@ function BoardInner() {
       const pos = rf.screenToFlowPosition({ x: evt.clientX, y: evt.clientY })
 
       if (tool === "rect" || tool === "ellipse" || tool === "text" || tool === "tag" || tool === "line") {
-        const id = `n-${Date.now()}`
+        const id = newNodeId()
         const base: Node<ShapeData> = {
           id,
           position: pos,
@@ -509,7 +666,7 @@ function BoardInner() {
       }
 
       const pos = rf.screenToFlowPosition({ x: evt.clientX, y: evt.clientY })
-      const id = `n-${Date.now()}`
+      const id = newNodeId()
       const newTextNode: Node<ShapeData> = {
         id,
         type: "text",
@@ -623,9 +780,27 @@ function BoardInner() {
   const exportDiagram = useCallback(async () => {
     try {
       if (exportType === "json") {
+        // Canonical, portable export: resolve each node's effective size into
+        // width/height AND style, and drop transient fields (measured,
+        // selected, dragging…) that belong to the current session only.
+        const canonicalNodes = nodes.map((n) => {
+          const { measured, selected, dragging, resizing, events, ...rest } = n as any
+          const { width, height } = resolveNodeSizeRecord(n as any)
+          return {
+            ...rest,
+            ...(width !== undefined ? { width } : {}),
+            ...(height !== undefined ? { height } : {}),
+            style: {
+              ...(rest.style ?? {}),
+              ...(width !== undefined ? { width } : {}),
+              ...(height !== undefined ? { height } : {}),
+            },
+          }
+        })
+        const canonicalEdges = edges.map(({ selected, ...e }) => e as Edge)
         const payload = {
-          nodes,
-          edges,
+          nodes: canonicalNodes,
+          edges: canonicalEdges,
           viewport: rf.getViewport?.() ?? undefined,
         }
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
@@ -771,7 +946,7 @@ function BoardInner() {
       )}
     >
       <LeftToolbar
-        active={tool}
+        active={tool as "select" | "rect" | "ellipse" | "text" | "hand"}
         onChangeTool={setTool}
         onQuickAdd={quickAdd}
         onZoomIn={() => rf.zoomIn?.() ?? rf.setViewport({ ...rf.getViewport(), zoom: rf.getViewport().zoom * 1.1 })}
@@ -782,7 +957,7 @@ function BoardInner() {
         onOpenExport={() => setExportOpen(true)}
         onAddIcon={(data) => {
           const pos = rf.screenToFlowPosition(getBoardScreenCenter())
-          const id = `n-${Date.now()}`
+          const id = newNodeId()
           const newNode: Node<ShapeData> = {
             id,
             type: "icon" as any,
@@ -808,7 +983,7 @@ function BoardInner() {
         }}
         onAddTag={() => {
           const pos = rf.screenToFlowPosition(getBoardScreenCenter())
-          const id = `n-${Date.now()}`
+          const id = newNodeId()
           const newNode: Node<ShapeData> = {
             id,
             type: "tag" as any,
@@ -937,6 +1112,7 @@ function BoardInner() {
           edgeTypes={useMemo(() => ({ smart: SmartEdge }), [])}
           connectionLineComponent={SmartConnectionLine}
           onPaneClick={handlePaneClick}
+          onMoveEnd={schedulePersist}
           onSelectionChange={onSelectionChange}
           onEdgesDelete={(deleted) => {
             if (deleted.some((e) => e.id === selectedEdgeId)) setSelectedEdgeId(null)
@@ -959,9 +1135,9 @@ function BoardInner() {
             markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6, color: "#a3a3a3" },
           }}
           elevateNodesOnSelect={false}
-          connectionMode="loose"
+          connectionMode={ConnectionMode.Loose}
           isValidConnection={useCallback(
-            (conn: Connection) => !!conn.source && !!conn.target && conn.source !== conn.target,
+            (conn: Connection | Edge | null) => !!conn?.source && !!conn.target && conn.source !== conn.target,
             [],
           )}
           connectionRadius={24}

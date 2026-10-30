@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Handle, NodeResizer, Position, type NodeProps, useReactFlow } from "@xyflow/react"
+import { Handle, NodeResizer, Position, type Node, type NodeProps, useReactFlow } from "@xyflow/react"
 import { cn } from "@/lib/utils"
 
 export type ShapeKind = "rect" | "ellipse" | "triangle" | "diamond" | "hexagon"
@@ -21,7 +21,7 @@ export type ShapeNodeData = {
   borderWidth?: number
 }
 
-export default function ShapeNode(props: NodeProps<ShapeNodeData>) {
+export default function ShapeNode(props: NodeProps<Node<ShapeNodeData>>) {
   const { id, selected, data } = props
   const [editing, setEditing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)

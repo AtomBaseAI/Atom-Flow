@@ -1,144 +1,78 @@
 "use client"
 
-import { type EdgeProps, getSmoothStepPath, Position, useReactFlow, useStore } from "@xyflow/react"
+import { useMemo } from "react"
+import { getSmoothStepPath, Position, useStore, type EdgeProps } from "@xyflow/react"
+import {
+  routeEdge,
+  roundedPath,
+  type Box,
+  type EdgeRef,
+  type Pt,
+  type RouteResult,
+} from "./edge-routing"
 
-function pickSides(dx: number, dy: number) {
-  const horizontal = Math.abs(dx) >= Math.abs(dy)
-  if (horizontal) {
-    return {
-      source: dx > 0 ? Position.Right : Position.Left,
-      target: dx > 0 ? Position.Left : Position.Right,
-    }
-  }
-  return {
-    source: dy > 0 ? Position.Bottom : Position.Top,
-    target: dy > 0 ? Position.Top : Position.Bottom,
-  }
+function fallbackPath(props: EdgeProps): string {
+  const [path] = getSmoothStepPath({
+    sourceX: props.sourceX,
+    sourceY: props.sourceY,
+    sourcePosition: props.sourcePosition ?? Position.Right,
+    targetX: props.targetX,
+    targetY: props.targetY,
+    targetPosition: props.targetPosition ?? Position.Left,
+    borderRadius: 8,
+  })
+  return path
 }
 
+/**
+ * Intelligent orthogonal edge.
+ *
+ * The routing brain lives in `./edge-routing` (pure, unit-tested); this
+ * component only gathers the board state (every node box + every edge) and
+ * renders the resulting polyline. Compared with the previous geometry-only
+ * connector it additionally:
+ *   - attaches to whichever box sides keep the route clear of obstacles
+ *     (e.g. over the top of a node that blocks the direct corridor),
+ *   - keeps parallel / bidirectional edges on distinct lanes with a constant
+ *     gap along the whole run, not just at the endpoints,
+ *   - detours around unrelated nodes via a coarse-grid A* when the direct
+ *     orthogonal route is blocked.
+ */
 export default function SmartEdge(props: EdgeProps) {
-  const {
-    id,
-    source,
-    target,
-    style,
-    markerEnd,
-    // fallbacks provided by React Flow during interactions
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-  } = props
+  const { id, source, target, style } = props
 
-  const rf = useReactFlow()
-  const s = source ? rf.getNode(source) : undefined
-  const t = target ? rf.getNode(target) : undefined
-
-  // Lane separation: when several edges connect the same pair of nodes (e.g.
-  // A -> B and B -> A), offset each edge sideways so they render as distinct
-  // parallel connections instead of overlapping into one "bi-directional" line.
+  // Subscribe to the user-facing `nodes` array: React Flow replaces its
+  // reference on every position/dimension change (drag, resize, add, remove).
+  // NOTE: `nodeLookup` is mutated in place by the store, so its reference
+  // never changes and cannot be used as a reactivity trigger here.
+  const nodes = useStore((state) => state.nodes)
   const allEdges = useStore((state) => state.edges)
-  let laneOffset = 0
-  if (source && target && source !== target) {
-    const pairKey = [source, target].sort().join("|")
-    const siblings = allEdges.filter((e) => [e.source, e.target].sort().join("|") === pairKey)
-    if (siblings.length > 1) {
-      const sibIndex = Math.max(0, siblings.findIndex((e) => e.id === id))
-      laneOffset = (sibIndex - (siblings.length - 1) / 2) * 22
+
+  const route: RouteResult | null = useMemo(() => {
+    if (!source || !target) return null
+    const boxes: Box[] = []
+    for (const node of nodes) {
+      const width = node.measured?.width ?? (node as any).width ?? Number((node.style as any)?.width)
+      const height = node.measured?.height ?? (node as any).height ?? Number((node.style as any)?.height)
+      boxes.push({
+        id: node.id,
+        rect: {
+          x: Number(node.position?.x) || 0,
+          y: Number(node.position?.y) || 0,
+          width: Number.isFinite(width) && width > 0 ? width : 140,
+          height: Number.isFinite(height) && height > 0 ? height : 56,
+        },
+      })
     }
-  }
+    const refs: EdgeRef[] = allEdges.map((e) => ({ id: e.id, source: e.source, target: e.target }))
+    return routeEdge({ edgeId: id, sourceId: source, targetId: target, boxes, edges: refs })
+  }, [nodes, allEdges, id, source, target])
 
-  // Compute centers if nodes exist
-  const sw = s?.measured?.width ?? s?.width ?? 0
-  const sh = s?.measured?.height ?? s?.height ?? 0
-  const tw = t?.measured?.width ?? t?.width ?? 0
-  const th = t?.measured?.height ?? t?.height ?? 0
+  const points: Pt[] | null = route?.points ?? null
+  const path = points && points.length >= 2 ? roundedPath(points) : fallbackPath(props)
 
-  const sxNode = s ? (s.positionAbsolute?.x ?? s.position.x) + sw / 2 : undefined
-  const syNode = s ? (s.positionAbsolute?.y ?? s.position.y) + sh / 2 : undefined
-  const txNode = t ? (t.positionAbsolute?.x ?? t.position.x) + tw / 2 : undefined
-  const tyNode = t ? (t.positionAbsolute?.y ?? t.position.y) + th / 2 : undefined
-
-  // Use node centers when available; otherwise fall back to provided edge props.
-  const sx = sxNode ?? sourceX
-  const sy = syNode ?? sourceY
-  const tx = txNode ?? targetX
-  const ty = tyNode ?? targetY
-
-  // If we still don't have coordinates, safely bail to avoid runtime errors.
-  if (sx == null || sy == null || tx == null || ty == null) {
-    return null
-  }
-
-  // Choose sides: use geometry-based pick when we have both centers,
-  // otherwise respect provided positions with sensible defaults.
-  const sides =
-    sxNode != null && syNode != null && txNode != null && tyNode != null
-      ? pickSides(tx - sx, ty - sy)
-      : {
-          source: sourcePosition ?? Position.Right,
-          target: targetPosition ?? Position.Left,
-        }
-
-  const gap = 10 // distance outside the node box where the path should end (arrowhead will be visible)
-
-  function anchorFor(side: Position, cx: number, cy: number, w: number, h: number, g: number): [number, number] {
-    switch (side) {
-      case Position.Left:
-        return [cx - w / 2 - g, cy]
-      case Position.Right:
-        return [cx + w / 2 + g, cy]
-      case Position.Top:
-        return [cx, cy - h / 2 - g]
-      case Position.Bottom:
-        return [cx, cy + h / 2 + g]
-      default:
-        return [cx, cy]
-    }
-  }
-
-  // Compute anchor points; if node size/center is missing, fall back to provided coords
-  const [ax, ay] =
-    s && sxNode != null && syNode != null ? anchorFor(sides.source, sxNode, syNode, sw, sh, gap) : [sx, sy]
-  const [bx, by] =
-    t && txNode != null && tyNode != null ? anchorFor(sides.target, txNode, tyNode, tw, th, gap) : [tx, ty]
-
-  // Start is always the SOURCE anchor; End is always the TARGET anchor.
-  // Shift both endpoints perpendicular to the main direction to separate lanes.
-  const horizontal = Math.abs((tx ?? 0) - (sx ?? 0)) >= Math.abs((ty ?? 0) - (sy ?? 0))
-  const offX = horizontal ? 0 : laneOffset
-  const offY = horizontal ? laneOffset : 0
-  const startX = ax + offX
-  const startY = ay + offY
-  const endX = bx + offX
-  const endY = by + offY
-  const srcSide = sides.source
-  const tgtSide = sides.target
-
-  // Build the smooth step path using the corrected endpoints (source -> target).
-  const [path] = getSmoothStepPath({
-    sourceX: startX,
-    sourceY: startY,
-    sourcePosition: srcSide,
-    sourceWidth: 0,
-    sourceHeight: 0,
-    targetX: endX,
-    targetY: endY,
-    targetPosition: tgtSide,
-    targetWidth: 0,
-    targetHeight: 0,
-    borderRadius: 8,
-    centerX: (startX + endX) / 2,
-    centerY: (startY + endY) / 2,
-  })
-
-  // We ignore any incoming markerEnd and use a per-edge marker so multiple edges don't clash.
-  // NOTE: selection feedback is done in CSS (corridor band + glow on the line)
-  // so it never fights with a user-chosen stroke color.
+  // Per-edge arrow so multiple edges never share/clash one marker definition.
   const strokeColor = style?.stroke ?? "#a3a3a3"
-  const strokeWidth = style?.strokeWidth ?? 1
   const arrowId = `smart-edge-arrow-${id}`
 
   return (
@@ -147,9 +81,9 @@ export default function SmartEdge(props: EdgeProps) {
         <marker
           id={arrowId}
           viewBox="0 0 12 12"
-          markerWidth="8" // smaller arrowhead
-          markerHeight="8" // smaller arrowhead
-          refX="7" // adjust reference to match smaller size
+          markerWidth="8"
+          markerHeight="8"
+          refX="7"
           refY="6"
           orient="auto"
           markerUnits="userSpaceOnUse"
@@ -159,10 +93,8 @@ export default function SmartEdge(props: EdgeProps) {
       </defs>
 
       {/* Wide invisible hit-area: a 1px connector is nearly impossible to
-          click. React Flow's built-in edges draw a similar "interaction"
-          path (interactionWidth); custom edges must provide their own.
-          A transparent stroke still receives pointer events, so clicks within
-          ~10px of the line land on the edge. */}
+          click. A transparent stroke still receives pointer events, so clicks
+          within ~20px of the line land on the edge. */}
       <path
         className="react-flow__edge-interaction"
         d={path}
@@ -179,7 +111,7 @@ export default function SmartEdge(props: EdgeProps) {
         d={path}
         fill="none"
         stroke={strokeColor}
-        strokeWidth={strokeWidth}
+        strokeWidth={style?.strokeWidth ?? 1}
         style={style}
         markerStart={undefined}
         markerEnd={`url(#${arrowId})`}

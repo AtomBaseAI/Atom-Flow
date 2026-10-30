@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { type Edge, type Node, useOnSelectionChange, useReactFlow } from "@xyflow/react"
+import { useEffect, useRef } from "react"
+import { type Edge, type Node, useReactFlow } from "@xyflow/react"
 
 type Snapshot = { nodes: Node[]; edges: Edge[] }
 
@@ -39,26 +39,61 @@ function snapshotKey(s: Snapshot): string {
   })
 }
 
+// Deep-clone helper for clipboard payloads (data/style are plain JSON-safe
+// objects). Freezes the snapshot so later edits to the source element cannot
+// leak into a paste.
+function deepClone<T>(value: T): T {
+  if (value === undefined) return value
+  if (typeof structuredClone === "function") {
+    try {
+      return structuredClone(value)
+    } catch {
+      // fall through to the JSON clone below
+    }
+  }
+  return JSON.parse(JSON.stringify(value))
+}
+
+// Resolves a node's CURRENT on-canvas size with a fallback chain:
+// explicit width/height (written by NodeResizer) → measured (actual rendered
+// size) → style (size at creation). Resizing never updates node.style, so
+// relying on style alone would paste the pre-resize dimensions.
+function resolveNodeSize(n: Node): { width?: number; height?: number } {
+  const width = n.width ?? n.measured?.width ?? (n.style?.width as number | undefined)
+  const height = n.height ?? n.measured?.height ?? (n.style?.height as number | undefined)
+  return { width, height }
+}
+
 function cloneNodesWithOffset(nodes: Node[], offset = { x: 24, y: 24 }): Node[] {
   const now = Date.now()
   return nodes.map((n, i) => {
     const id = `node_${now}_${i}_${Math.random().toString(36).slice(2, 7)}`
+    const { width, height } = resolveNodeSize(n)
     return {
       ...n,
       id,
       position: { x: (n.position?.x ?? 0) + offset.x, y: (n.position?.y ?? 0) + offset.y },
       selected: false,
-      width: n.width,
-      height: n.height,
+      // Carry the exact current size on the node fields AND the inline style
+      // (React Flow renders `node.width ?? node.style.width`) so the pasted
+      // element keeps the copied element's dimensions.
+      width,
+      height,
+      style: { ...(n.style ?? {}), width, height },
       dragHandle: n.dragHandle,
-      data: { ...n.data },
+      // Fresh deep copy of data: fill, border color/style/width, label, text
+      // color/size/weight, rotation, icon source… all preserved as-is.
+      data: deepClone(n.data),
+      // Strip transient state so React Flow measures the clone fresh
+      measured: undefined,
+      dragging: false,
+      resizing: false,
     }
   })
 }
 
 export default function BoardShortcuts() {
   const rf = useReactFlow()
-  const [selected, setSelected] = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
   const clipboardRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
   const pasteBumpRef = useRef(0)
 
@@ -67,11 +102,17 @@ export default function BoardShortcuts() {
   const pressedRef = useRef<Record<string, boolean>>({})
   const restoringRef = useRef(false) // flag to indicate undo/redo is restoring state
 
-  useOnSelectionChange({
-    onChange: ({ nodes, edges }) => {
-      setSelected({ nodes, edges })
-    },
-  })
+  // Selection is read LIVE from the React Flow store at the moment the key is
+  // pressed. The store is the single source of truth for `node.selected` /
+  // `edge.selected` (single click, shift+click and box selection all write it),
+  // whereas a cached selection snapshot from a hook can be empty or stale —
+  // which is exactly what broke group copy/paste before.
+  const getSelectedFromStore = () => {
+    const nodes = rf.getNodes().filter((n) => n.selected)
+    const selectedIds = new Set(nodes.map((n) => n.id))
+    const edges = rf.getEdges().filter((e) => e.selected)
+    return { nodes, edges, selectedIds }
+  }
 
   const takeSnapshot = (): Snapshot => ({
     nodes: rf.getNodes().map((n) => {
@@ -137,13 +178,16 @@ export default function BoardShortcuts() {
   }
 
   const onCopy = () => {
-    const selectedNodes = selected.nodes
+    const { nodes: selectedNodes, selectedIds } = getSelectedFromStore()
     if (selectedNodes.length === 0) return
-    const selectedIds = new Set(selectedNodes.map((n) => n.id))
-    const selectedEdges = selected.edges.filter((e) => selectedIds.has(e.source) && selectedIds.has(e.target))
+    // Group copy: every selected node PLUS the edges that live entirely
+    // inside the selection (so a pasted group keeps its internal wiring).
+    const freshEdges = rf
+      .getEdges()
+      .filter((e) => selectedIds.has(e.source) && selectedIds.has(e.target))
     clipboardRef.current = {
-      nodes: selectedNodes.map((n) => ({ ...n })),
-      edges: selectedEdges.map((e) => ({ ...e })),
+      nodes: selectedNodes.map((n) => deepClone(n)),
+      edges: freshEdges.map((e) => deepClone(e)),
     }
     pasteBumpRef.current = 0
   }
@@ -181,15 +225,15 @@ export default function BoardShortcuts() {
   }
 
   const onDelete = () => {
-    if (selected.nodes.length === 0 && selected.edges.length === 0) return
+    const { nodes: selectedNodes, edges: selectedEdges, selectedIds } = getSelectedFromStore()
+    const selectedEdgeIds = new Set(selectedEdges.map((e) => e.id))
+    if (selectedNodes.length === 0 && selectedEdgeIds.size === 0) return
     commit()
-    const selectedNodeIds = new Set(selected.nodes.map((n) => n.id))
-    const selectedEdgeIds = new Set(selected.edges.map((e) => e.id))
-    rf.setNodes(rf.getNodes().filter((n) => !selectedNodeIds.has(n.id)))
+    rf.setNodes(rf.getNodes().filter((n) => !selectedIds.has(n.id)))
     rf.setEdges(
       rf
         .getEdges()
-        .filter((e) => !selectedEdgeIds.has(e.id) && !selectedNodeIds.has(e.source) && !selectedNodeIds.has(e.target)),
+        .filter((e) => !selectedEdgeIds.has(e.id) && !selectedIds.has(e.source) && !selectedIds.has(e.target)),
     )
   }
 
@@ -263,7 +307,9 @@ export default function BoardShortcuts() {
       window.removeEventListener("keydown", handler, opts)
       window.removeEventListener("keyup", onKeyUp, opts)
     }
-  }, [selected, undo, redo, onCopy, onPaste, onDelete, clearAll])
+    // Handlers read all state live from the React Flow store, so binding once
+    // is safe (and avoids re-subscribe churn on every selection change).
+  }, [])
 
   useEffect(() => {
     const onUndo: EventListener = () => undo()
@@ -283,4 +329,7 @@ export default function BoardShortcuts() {
       window.removeEventListener("board:commit", onCommit)
     }
   }, [])
+
+  // Keyboard/shortcut controller — renders nothing
+  return null
 }

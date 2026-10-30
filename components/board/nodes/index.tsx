@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
 import { Handle, Position, NodeResizer, useReactFlow } from "@xyflow/react"
-import type { NodeProps } from "@xyflow/react"
+import type { Node, NodeProps } from "@xyflow/react"
 import type { ShapeData } from "../design-board"
 import { loadLucideRegistry, type LucideIconComp } from "@/lib/lucide-icon-registry"
 import { withAlpha } from "@/lib/utils"
@@ -165,7 +165,7 @@ function LucideGlyph({ name, className, style }: { name: string; className?: str
   return <Comp className={className} style={style} aria-hidden />
 }
 
-export const RectangleNode = memo(function RectangleNode({ id, data, selected }: NodeProps<ShapeData>) {
+export const RectangleNode = memo(function RectangleNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
@@ -198,7 +198,7 @@ export const RectangleNode = memo(function RectangleNode({ id, data, selected }:
   )
 })
 
-export const EllipseNode = memo(function EllipseNode({ id, data, selected }: NodeProps<ShapeData>) {
+export const EllipseNode = memo(function EllipseNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
@@ -231,7 +231,7 @@ export const EllipseNode = memo(function EllipseNode({ id, data, selected }: Nod
   )
 })
 
-export const TriangleNode = memo(function TriangleNode({ id, data, selected }: NodeProps<ShapeData>) {
+export const TriangleNode = memo(function TriangleNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
@@ -268,7 +268,7 @@ export const TriangleNode = memo(function TriangleNode({ id, data, selected }: N
   )
 })
 
-export const DiamondNode = memo(function DiamondNode({ id, data, selected }: NodeProps<ShapeData>) {
+export const DiamondNode = memo(function DiamondNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
@@ -305,7 +305,7 @@ export const DiamondNode = memo(function DiamondNode({ id, data, selected }: Nod
   )
 })
 
-export const HexagonNode = memo(function HexagonNode({ id, data, selected }: NodeProps<ShapeData>) {
+export const HexagonNode = memo(function HexagonNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
@@ -342,7 +342,7 @@ export const HexagonNode = memo(function HexagonNode({ id, data, selected }: Nod
   )
 })
 
-export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps<ShapeData>) {
+export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const rf = useReactFlow()
 
@@ -369,7 +369,7 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
   )
 })
 
-export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps<ShapeData & { iconSrc?: string }>) {
+export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps<Node<ShapeData & { iconSrc?: string }>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
@@ -428,7 +428,7 @@ export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps
   )
 })
 
-export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<ShapeData>) {
+export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "#a3a3a3"
@@ -465,7 +465,7 @@ export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<S
   )
 })
 
-export const LineNode = memo(function LineNode({ data, selected }: NodeProps<ShapeData>) {
+export const LineNode = memo(function LineNode({ data, selected }: NodeProps<Node<ShapeData>>) {
   const borderColor = data.borderColor || "#a3a3a3"
   const borderStyle = data.borderStyle || "solid"
   const borderWidth = data.borderWidth ?? 2
