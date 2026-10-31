@@ -22,25 +22,25 @@ function Handles({ visible }: { visible: boolean }) {
           preview always snaps to the first one in DOM order (right). */}
       <Handle
         id="src-right"
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
+        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-[var(--af-handle)] ${cls}`}
         type="source"
         position={Position.Right}
       />
       <Handle
         id="src-left"
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
+        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-[var(--af-handle)] ${cls}`}
         type="source"
         position={Position.Left}
       />
       <Handle
         id="src-top"
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
+        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-[var(--af-handle)] ${cls}`}
         type="source"
         position={Position.Top}
       />
       <Handle
         id="src-bottom"
-        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-zinc-200 ${cls}`}
+        className={`z-20 pointer-events-auto h-2 w-2 rounded bg-[var(--af-handle)] ${cls}`}
         type="source"
         position={Position.Bottom}
       />
@@ -86,7 +86,9 @@ function EditableLabel({
   )
 
   const style = {
-    color: data.fontColor || "#ffffff",
+    // "Default" text falls back to the theme token — flips white ⇄ dark with
+    // the theme. Custom (user-picked) colors are literal values and never flip.
+    color: data.fontColor || "var(--af-node-text)",
     fontWeight: data.fontWeight ?? 400,
     fontSize: (data.fontSize ?? 8) + "px",
     textAlign: align as any,
@@ -123,8 +125,8 @@ function EditableLabel({
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="w-full rounded bg-neutral-900/70 px-1 outline-none"
-          style={style}
+          className="w-full rounded px-1 outline-none"
+          style={{ ...style, background: "var(--af-edit-bg)" }}
           spellCheck={false}
           aria-label="Edit node text"
         />
@@ -168,7 +170,8 @@ function LucideGlyph({ name, className, style }: { name: string; className?: str
 export const RectangleNode = memo(function RectangleNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
-  const borderColor = data.borderColor || "#a3a3a3"
+  // Default border = theme token (flips with theme); custom stays literal
+  const borderColor = data.borderColor || "var(--af-node-border)"
 
   return (
     <div className="group relative h-full w-full p-[3px]">
@@ -201,7 +204,7 @@ export const RectangleNode = memo(function RectangleNode({ id, data, selected }:
 export const EllipseNode = memo(function EllipseNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
-  const borderColor = data.borderColor || "#a3a3a3"
+  const borderColor = data.borderColor || "var(--af-node-border)"
 
   return (
     <div className="group relative h-full w-full p-[3px]">
@@ -234,7 +237,7 @@ export const EllipseNode = memo(function EllipseNode({ id, data, selected }: Nod
 export const TriangleNode = memo(function TriangleNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
-  const borderColor = data.borderColor || "#a3a3a3"
+  const borderColor = data.borderColor || "var(--af-node-border)"
 
   return (
     <div className="group relative h-full w-full p-[3px]">
@@ -256,9 +259,12 @@ export const TriangleNode = memo(function TriangleNode({ id, data, selected }: N
           <polygon
             points="50,0 100,100 0,100"
             fill={fill}
-            stroke={borderColor}
-            strokeWidth={data.borderWidth ?? 1}
-            strokeDasharray={data.borderStyle === "dashed" ? "6 6" : undefined}
+            // SVG presentation attributes cannot resolve var() — apply stroke via style
+            style={{
+              stroke: borderColor,
+              strokeWidth: data.borderWidth ?? 1,
+              strokeDasharray: data.borderStyle === "dashed" ? "6 6" : undefined,
+            }}
           />
         </svg>
         <EditableLabel id={id} data={data} align="center" onEditingChange={setIsEditing} />
@@ -271,7 +277,7 @@ export const TriangleNode = memo(function TriangleNode({ id, data, selected }: N
 export const DiamondNode = memo(function DiamondNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
-  const borderColor = data.borderColor || "#a3a3a3"
+  const borderColor = data.borderColor || "var(--af-node-border)"
 
   return (
     <div className="group relative h-full w-full p-[3px]">
@@ -293,9 +299,11 @@ export const DiamondNode = memo(function DiamondNode({ id, data, selected }: Nod
           <polygon
             points="50,0 100,50 50,100 0,50"
             fill={fill}
-            stroke={borderColor}
-            strokeWidth={data.borderWidth ?? 1}
-            strokeDasharray={data.borderStyle === "dashed" ? "6 6" : undefined}
+            style={{
+              stroke: borderColor,
+              strokeWidth: data.borderWidth ?? 1,
+              strokeDasharray: data.borderStyle === "dashed" ? "6 6" : undefined,
+            }}
           />
         </svg>
         <EditableLabel id={id} data={data} align="center" onEditingChange={setIsEditing} />
@@ -308,7 +316,7 @@ export const DiamondNode = memo(function DiamondNode({ id, data, selected }: Nod
 export const HexagonNode = memo(function HexagonNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
-  const borderColor = data.borderColor || "#a3a3a3"
+  const borderColor = data.borderColor || "var(--af-node-border)"
 
   return (
     <div className="group relative h-full w-full p-[3px]">
@@ -330,9 +338,11 @@ export const HexagonNode = memo(function HexagonNode({ id, data, selected }: Nod
           <polygon
             points="25,0 75,0 100,50 75,100 25,100 0,50"
             fill={fill}
-            stroke={borderColor}
-            strokeWidth={data.borderWidth ?? 1}
-            strokeDasharray={data.borderStyle === "dashed" ? "6 6" : undefined}
+            style={{
+              stroke: borderColor,
+              strokeWidth: data.borderWidth ?? 1,
+              strokeDasharray: data.borderStyle === "dashed" ? "6 6" : undefined,
+            }}
           />
         </svg>
         <EditableLabel id={id} data={data} align="center" onEditingChange={setIsEditing} />
@@ -372,7 +382,7 @@ export const TextNode = memo(function TextNode({ id, data, selected }: NodeProps
 export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps<Node<ShapeData & { iconSrc?: string }>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
-  const borderColor = data.borderColor || "#a3a3a3"
+  const borderColor = data.borderColor || "var(--af-node-border)"
   const iconSrc = data.iconSrc || ""
 
   return (
@@ -431,7 +441,7 @@ export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps
 export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
-  const borderColor = data.borderColor || "#a3a3a3"
+  const borderColor = data.borderColor || "var(--af-node-border)"
 
   return (
     <div className="group relative h-full w-full p-[3px]">
@@ -456,7 +466,7 @@ export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<N
       >
         <EditableLabel
           id={id}
-          data={{ ...data, fontWeight: data.fontWeight ?? 600, fontColor: data.fontColor ?? "#ffffff" }}
+          data={{ ...data, fontWeight: data.fontWeight ?? 600 }}
           align={data.align ?? "center"}
           onEditingChange={setIsEditing}
         />
@@ -466,7 +476,7 @@ export const TagNode = memo(function TagNode({ id, data, selected }: NodeProps<N
 })
 
 export const LineNode = memo(function LineNode({ data, selected }: NodeProps<Node<ShapeData>>) {
-  const borderColor = data.borderColor || "#a3a3a3"
+  const borderColor = data.borderColor || "var(--af-node-border)"
   const borderStyle = data.borderStyle || "solid"
   const borderWidth = data.borderWidth ?? 2
 

@@ -1,0 +1,1551 @@
+     1→"use client"
+     2→
+     3→import type React from "react"
+     4→import * as htmlToImage from "html-to-image"
+     5→import { useCallback, useMemo, useRef, useState, useEffect, useSyncExternalStore } from "react"
+     6→import {
+     7→  ReactFlow,
+     8→  ReactFlowProvider,
+     9→  useNodesState,
+    10→  useEdgesState,
+    11→  addEdge,
+    12→  useReactFlow,
+    13→  type Node,
+    14→  type Edge,
+    15→  type Connection,
+    16→  type NodeChange,
+    17→  type NodeTypes,
+    18→  MarkerType,
+    19→  ConnectionMode,
+    20→} from "@xyflow/react"
+    21→import "@xyflow/react/dist/style.css"
+    22→
+    23→import LeftToolbar from "./left-toolbar"
+    24→import BottomToolbar from "./bottom-toolbar"
+    25→import {
+    26→  HexagonNode,
+    27→  DiamondNode,
+    28→  TriangleNode,
+    29→  EllipseNode,
+    30→  RectangleNode,
+    31→  TextNode,
+    32→  IconNode,
+    33→  TagNode,
+    34→  LineNode,
+    35→} from "./nodes"
+    36→import SmartEdge from "./edges/smart-edge"
+    37→import SmartConnectionLine from "./edges/smart-connection-line"
+    38→import BoardShortcuts from "./board-shortcuts"
+    39→import { Download, Trash2, Hand, Upload, Image as ImageIcon, FileCode, Braces, Maximize2, Minimize2, Plus, MousePointer2, Scan, Lock, LockOpen } from "lucide-react"
+    40→import { cn } from "@/lib/utils"
+    41→import {
+    42→  AlertDialog,
+    43→  AlertDialogAction,
+    44→  AlertDialogCancel,
+    45→  AlertDialogContent,
+    46→  AlertDialogDescription,
+    47→  AlertDialogFooter,
+    48→  AlertDialogHeader,
+    49→  AlertDialogTitle,
+    50→  AlertDialogTrigger,
+    51→} from "@/components/ui/alert-dialog"
+    52→import RadialMenu, { type RadialMenuItem } from "./radial-menu"
+    53→import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
+    54→import { useTheme } from "next-themes"
+    55→import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+    56→import {
+    57→  Dialog,
+    58→  DialogContent,
+    59→  DialogDescription,
+    60→  DialogFooter,
+    61→  DialogHeader,
+    62→  DialogTitle,
+    63→} from "@/components/ui/dialog"
+    64→
+    65→type Tool = "select" | "rect" | "ellipse" | "text" | "hand" | "tag" | "line"
+    66→
+    67→export type ShapeData = {
+    68→  label?: string
+    69→  fill?: string
+    70→  /** Fill opacity multiplier (0–1). Undefined = fully opaque. */
+    71→  fillOpacity?: number
+    72→  fontColor?: string
+    73→  /** True once the user explicitly picked a text color — it then survives
+    74→      theme switches (only DEFAULT text/borders flip with the theme). */
+    75→  fontColorCustom?: boolean
+    76→  align?: "left" | "center" | "right"
+    77→  fontWeight?: number
+    78→  fontSize?: number
+    79→  borderColor?: string
+    80→  /** True once the user explicitly picked a border color — survives theme
+    81→      switches (only DEFAULT borders flip with the theme). */
+    82→  borderColorCustom?: boolean
+    83→  borderStyle?: "solid" | "dashed"
+    84→  borderWidth?: number
+    85→  iconSrc?: string
+    86→  rotation?: number
+    87→}
+    88→
+    89→const initialNodes: Node<ShapeData>[] = [
+    90→  {
+    91→    id: "n-1",
+    92→    type: "rectangle",
+    93→    position: { x: 200, y: 180 },
+    94→    data: {
+    95→      label: "",
+    96→      fill: "transparent",
+    97→      fontSize: 8,
+    98→      fontWeight: 400,
+    99→      align: "center",
+   100→      borderStyle: "solid",
+   101→      borderWidth: 1,
+   102→    },
+   103→    style: { width: 140, height: 56 },
+   104→  },
+   105→]
+   106→
+   107→const initialEdges: Edge[] = []
+   108→
+   109→// Unique id for programmatically created nodes — Date.now() alone collides
+   110→// when several elements are created within the same millisecond (e.g. rapid
+   111→// double-adds), which corrupts the node lookup.
+   112→let nodeSeq = 0
+   113→function newNodeId(): string {
+   114→  nodeSeq += 1
+   115→  return `n-${Date.now().toString(36)}-${nodeSeq.toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+   116→}
+   117→
+   118→// ---- Layout persistence (localStorage) ----
+   119→const STORAGE_KEY = "atomflow:board:v1"
+   120→
+   121→// View-only lock mode (persists across reloads): hides the editing chrome,
+   122→// forces the hand tool and freezes node/edge interactions while panning and
+   123→// zooming stay available.
+   124→const LOCK_STORAGE_KEY = "atomflow:board:locked:v1"
+   125→
+   126→// The lock flag lives in localStorage (an external system), so it is exposed
+   127→// through useSyncExternalStore: no setState-in-effect, and the server snapshot
+   128→// (unlocked) prevents hydration mismatches while still re-rendering locked
+   129→// right after hydration when the stored flag is "1".
+   130→const lockListeners = new Set<() => void>()
+   131→
+   132→function subscribeLock(onChange: () => void) {
+   133→  lockListeners.add(onChange)
+   134→  return () => {
+   135→    lockListeners.delete(onChange)
+   136→  }
+   137→}
+   138→
+   139→function getLockedSnapshot(): boolean {
+   140→  try {
+   141→    return window.localStorage.getItem(LOCK_STORAGE_KEY) === "1"
+   142→  } catch {
+   143→    return false
+   144→  }
+   145→}
+   146→
+   147→function getLockedServerSnapshot(): boolean {
+   148→  return false
+   149→}
+   150→
+   151→function writeLocked(next: boolean) {
+   152→  try {
+   153→    window.localStorage.setItem(LOCK_STORAGE_KEY, next ? "1" : "0")
+   154→  } catch {
+   155→    // storage unavailable — the mode still applies for this session
+   156→  }
+   157→  lockListeners.forEach((listener) => listener())
+   158→}
+   159→
+   160→type PersistedBoard = {
+   161→  version: 1
+   162→  savedAt: string
+   163→  nodes: Node<ShapeData>[]
+   164→  edges: Edge[]
+   165→  viewport?: { x: number; y: number; zoom: number }
+   166→}
+   167→
+   168→// Removes runtime-only fields React Flow attaches to nodes/edges so the
+   169→// stored payload stays canonical (same shape as an exported JSON file).
+   170→function stripTransientNode(n: Node): Node {
+   171→  const { measured, selected, dragging, resizing, events, className, ...rest } = n as any
+   172→  return rest as Node
+   173→}
+   174→
+   175→function stripTransientEdge(e: Edge): Edge {
+   176→  const { selected, ...rest } = e as any
+   177→  return rest as Edge
+   178→}
+   179→
+   180→// ---- Theme-aware default colors -----------------------------------------
+   181→// Old boards stored the *default* border/text colors as literal hex values
+   182→// ("#a3a3a3" border, "#ffffff" text). Those now map to "no explicit color",
+   183→// so they render from the --af-* CSS variables and flip with the theme.
+   184→// Any other stored value is treated as a user-picked color and marked custom
+   185→// so it stays fixed across theme switches.
+   186→const LEGACY_DEFAULT_BORDER = "#a3a3a3"
+   187→const LEGACY_DEFAULT_TEXT = "#ffffff"
+   188→
+   189→function migrateShapeDefaults(raw: Record<string, any> | undefined): Record<string, any> {
+   190→  const data = { ...(raw ?? {}) }
+   191→  const border = typeof data.borderColor === "string" ? data.borderColor.toLowerCase() : undefined
+   192→  if (!data.borderColorCustom && (!border || border === LEGACY_DEFAULT_BORDER)) {
+   193→    delete data.borderColor
+   194→  } else if (data.borderColor) {
+   195→    data.borderColorCustom = true
+   196→  }
+   197→  const font = typeof data.fontColor === "string" ? data.fontColor.toLowerCase() : undefined
+   198→  if (!data.fontColorCustom && (!font || font === LEGACY_DEFAULT_TEXT)) {
+   199→    delete data.fontColor
+   200→  } else if (data.fontColor) {
+   201→    data.fontColorCustom = true
+   202→  }
+   203→  return data
+   204→}
+   205→
+   206→function migrateEdgeDefaults(e: Record<string, any>): Record<string, any> {
+   207→  const next: Record<string, any> = { ...e }
+   208→  const style = { ...(e.style ?? {}) }
+   209→  if (typeof style.stroke === "string" && style.stroke.toLowerCase() === LEGACY_DEFAULT_BORDER) {
+   210→    delete style.stroke
+   211→  }
+   212→  next.style = style
+   213→  const marker = next.markerEnd
+   214→  if (marker && typeof marker === "object" && typeof marker.color === "string" && marker.color.toLowerCase() === LEGACY_DEFAULT_BORDER) {
+   215→    const markerEnd = { ...marker }
+   216→    delete markerEnd.color
+   217→    next.markerEnd = markerEnd
+   218→  }
+   219→  return next
+   220→}
+   221→
+   222→const nodeTypes: NodeTypes = {
+   223→  rectangle: RectangleNode,
+   224→  ellipse: EllipseNode,
+   225→  triangle: TriangleNode,
+   226→  diamond: DiamondNode,
+   227→  hexagon: HexagonNode,
+   228→  text: TextNode,
+   229→  icon: IconNode,
+   230→  tag: TagNode,
+   231→  line: LineNode as any,
+   232→}
+   233→
+   234→// Accepts a finite number (or numeric string) and returns it, otherwise undefined.
+   235→function pickSize(value: unknown): number | undefined {
+   236→  const n = typeof value === "string" ? Number(value) : (value as number)
+   237→  return typeof n === "number" && Number.isFinite(n) ? n : undefined
+   238→}
+   239→
+   240→// Resolves a node's CURRENT on-canvas size with a fallback chain:
+   241→// explicit width/height (written by NodeResizer) → measured (actual rendered
+   242→// size) → style (size at creation). Resizing never updates node.style, so a
+   243→// round trip that kept only style would silently reset resized elements to
+   244→// their creation dimensions.
+   245→function resolveNodeSizeRecord(record: Record<string, any>): { width?: number; height?: number } {
+   246→  const width = pickSize(record.width) ?? pickSize(record.measured?.width) ?? pickSize(record.style?.width)
+   247→  const height = pickSize(record.height) ?? pickSize(record.measured?.height) ?? pickSize(record.style?.height)
+   248→  return { width, height }
+   249→}
+   250→
+   251→function sanitizeImportPayload(raw: unknown): {
+   252→  nodes: Node<ShapeData>[]
+   253→  edges: Edge[]
+   254→  viewport?: { x: number; y: number; zoom: number }
+   255→} {
+   256→  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+   257→    throw new Error('expected a JSON object with a "nodes" array')
+   258→  }
+   259→  const obj = raw as Record<string, unknown>
+   260→  if (!Array.isArray(obj.nodes)) {
+   261→    throw new Error('missing "nodes" array')
+   262→  }
+   263→  const validTypes = new Set(Object.keys(nodeTypes))
+   264→  const stamp = Date.now()
+   265→  const nodes: Node<ShapeData>[] = (obj.nodes as Record<string, any>[]).map((n, i) => {
+   266→    const record = (n ?? {}) as Record<string, any>
+   267→    // Restore the exact exported size: prefer the resized width/height, then
+   268→    // the measured size, then the creation style — and keep style in sync so
+   269→    // React Flow (node.width ?? node.style.width) renders the same box.
+   270→    const { width, height } = resolveNodeSizeRecord(record)
+   271→    return {
+   272→      id: typeof record.id === "string" && record.id ? record.id : `n-import-${stamp}-${i}`,
+   273→      type: validTypes.has(record.type) ? record.type : "rectangle",
+   274→      position: {
+   275→        x: Number.isFinite(Number(record.position?.x)) ? Number(record.position.x) : 0,
+   276→        y: Number.isFinite(Number(record.position?.y)) ? Number(record.position.y) : 0,
+   277→      },
+   278→      data: migrateShapeDefaults(record.data),
+   279→      style: {
+   280→        ...(record.style ?? {}),
+   281→        ...(width !== undefined ? { width } : {}),
+   282→        ...(height !== undefined ? { height } : {}),
+   283→      },
+   284→      ...(width !== undefined ? { width } : {}),
+   285→      ...(height !== undefined ? { height } : {}),
+   286→      // Deliberately no `measured` — it belongs to the exporting session and
+   287→      // React Flow re-measures the node on mount.
+   288→      selected: false,
+   289→      dragging: false,
+   290→      resizing: false,
+   291→    } as unknown as Node<ShapeData>
+   292→  })
+   293→  const nodeIds = new Set(nodes.map((n) => n.id))
+   294→  const edges: Edge[] = (Array.isArray(obj.edges) ? (obj.edges as Record<string, any>[]) : [])
+   295→    .filter(
+   296→      (e) =>
+   297→        e &&
+   298→        typeof e.source === "string" &&
+   299→        typeof e.target === "string" &&
+   300→        nodeIds.has(e.source) &&
+   301→        nodeIds.has(e.target) &&
+   302→        e.source !== e.target,
+   303→    )
+   304→    .map((e, i) => ({
+   305→      ...migrateEdgeDefaults(e),
+   306→      id: typeof e.id === "string" && e.id ? e.id : `e-import-${stamp}-${i}`,
+   307→      type: typeof e.type === "string" && e.type ? e.type : "smart",
+   308→      selected: false,
+   309→    })) as Edge[]
+   310→  const viewport = obj.viewport as { x: number; y: number; zoom: number } | undefined
+   311→  return { nodes, edges, viewport }
+   312→}
+   313→
+   314→function BoardInner() {
+   315→  const [tool, setTool] = useState<Tool>("select")
+   316→  // View-only lock: hides all editing UI, forces the hand tool and freezes elements
+   317→  const locked = useSyncExternalStore(subscribeLock, getLockedSnapshot, getLockedServerSnapshot)
+   318→  // Radial (circular) tap menu — opened via right-click / two-finger tap
+   319→  const [radialOpen, setRadialOpen] = useState(false)
+   320→  const [radialPos, setRadialPos] = useState<{ x: number; y: number } | null>(null)
+   321→  const [nodes, setNodes, onNodesChange] = useNodesState<Node<ShapeData>>([])
+   322→  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+   323→
+   324→  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+   325→  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
+   326→  // View-only mode: id of the node highlighted by the last tap/click (layout stays frozen)
+   327→  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null)
+   328→
+   329→  const rf = useReactFlow()
+   330→  const { resolvedTheme } = useTheme()
+   331→  const connectStartIdRef = useRef<string | null>(null)
+   332→  const boardRef = useRef<HTMLDivElement>(null)
+   333→
+   334→  const [exportOpen, setExportOpen] = useState(false)
+   335→  const [exportTitle, setExportTitle] = useState("diagram")
+   336→  const [exportType, setExportType] = useState<"png" | "svg" | "json">("png")
+   337→
+   338→  const [importOpen, setImportOpen] = useState(false)
+   339→  const [importText, setImportText] = useState("")
+   340→  const [importFileName, setImportFileName] = useState<string | null>(null)
+   341→  const [importError, setImportError] = useState<string | null>(null)
+   342→
+   343→  // Fullscreen support: native Fullscreen API first, CSS fallback when blocked (e.g. sandboxed iframes)
+   344→  const [isFullscreen, setIsFullscreen] = useState(false)
+   345→  const [pseudoFullscreen, setPseudoFullscreen] = useState(false)
+   346→
+   347→  useEffect(() => {
+   348→    const onChange = () => setIsFullscreen(!!document.fullscreenElement)
+   349→    document.addEventListener("fullscreenchange", onChange)
+   350→    return () => document.removeEventListener("fullscreenchange", onChange)
+   351→  }, [])
+   352→
+   353→  useEffect(() => {
+   354→    if (!pseudoFullscreen) return
+   355→    const onKey = (e: KeyboardEvent) => {
+   356→      if (e.key === "Escape") setPseudoFullscreen(false)
+   357→    }
+   358→    window.addEventListener("keydown", onKey)
+   359→    return () => window.removeEventListener("keydown", onKey)
+   360→  }, [pseudoFullscreen])
+   361→
+   362→  const toggleFullscreen = useCallback(async () => {
+   363→    if (typeof document === "undefined") return
+   364→    if (document.fullscreenElement) {
+   365→      setPseudoFullscreen(false)
+   366→      try {
+   367→        await document.exitFullscreen()
+   368→      } catch {}
+   369→      return
+   370→    }
+   371→    try {
+   372→      await document.documentElement.requestFullscreen()
+   373→      setPseudoFullscreen(false)
+   374→    } catch {
+   375→      // Fullscreen API unavailable/blocked — fall back to CSS fullscreen
+   376→      setPseudoFullscreen((p) => !p)
+   377→    }
+   378→  }, [])
+   379→
+   380→  // View-only lock: while locked only the hand tool is active, every editing
+   381→  // surface is hidden and elements cannot be moved/edited until unlocked.
+   382→  const toggleLocked = useCallback(() => {
+   383→    const next = !locked
+   384→    writeLocked(next)
+   385→    if (next) {
+   386→      // Force the hand tool so the user can still pan/zoom the frozen board,
+   387→      // and drop any active selection/highlight along with the radial menu.
+   388→      setTool("hand")
+   389→      setSelectedNodeId(null)
+   390→      setSelectedEdgeId(null)
+   391→      setHighlightedNodeId(null)
+   392→      setRadialOpen(false)
+   393→      setNodes((nds) => nds.map((n) => (n.selected ? { ...n, selected: false } : n)))
+   394→      setEdges((eds) => eds.map((e) => (e.selected ? { ...e, selected: false } : e)))
+   395→    } else {
+   396→      // Back to the normal editing default
+   397→      setTool("select")
+   398→      setHighlightedNodeId(null)
+   399→    }
+   400→  }, [locked, setNodes, setEdges])
+   401→
+   402→  const resizeActiveRef = useRef(false)
+   403→
+   404→  const commitHistory = useCallback(() => {
+   405→    if (typeof window !== "undefined") {
+   406→      window.dispatchEvent(new CustomEvent("board:commit"))
+   407→    }
+   408→  }, [])
+   409→
+   410→  // ---- Layout persistence: restore once on mount, then autosave (debounced) ----
+   411→  const hydratedRef = useRef(false)
+   412→  const saveTimerRef = useRef<number | null>(null)
+   413→
+   414→  const persistNow = useCallback(() => {
+   415→    if (!hydratedRef.current || typeof window === "undefined") return
+   416→    try {
+   417→      const payload: PersistedBoard = {
+   418→        version: 1,
+   419→        savedAt: new Date().toISOString(),
+   420→        // Canonicalized exactly like the JSON export (resolved sizes on both
+   421→        // width/height and style) so storage and export files are the same
+   422→        // shape and restore identically through sanitizeImportPayload().
+   423→        nodes: rf.getNodes().map((n) => {
+   424→          const stripped = stripTransientNode(n)
+   425→          const { width, height } = resolveNodeSizeRecord(stripped as any)
+   426→          return {
+   427→            ...stripped,
+   428→            ...(width !== undefined ? { width } : {}),
+   429→            ...(height !== undefined ? { height } : {}),
+   430→            style: {
+   431→              ...((stripped.style as any) ?? {}),
+   432→              ...(width !== undefined ? { width } : {}),
+   433→              ...(height !== undefined ? { height } : {}),
+   434→            },
+   435→          } as Node<ShapeData>
+   436→        }),
+   437→        edges: rf.getEdges().map(stripTransientEdge),
+   438→        viewport: rf.getViewport(),
+   439→      }
+   440→      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+   441→    } catch {
+   442→      // Storage unavailable (private mode / quota exceeded) — keep working in memory
+   443→    }
+   444→  }, [rf])
+   445→
+   446→  const schedulePersist = useCallback(() => {
+   447→    if (typeof window === "undefined") return
+   448→    if (saveTimerRef.current !== null) window.clearTimeout(saveTimerRef.current)
+   449→    saveTimerRef.current = window.setTimeout(() => {
+   450→      saveTimerRef.current = null
+   451→      persistNow()
+   452→    }, 350)
+   453→  }, [persistNow])
+   454→
+   455→  // Restore the last session's layout. Runs before the first autosave, so the
+   456→  // pre-hydration render never overwrites what's stored.
+   457→  useEffect(() => {
+   458→    let restored = false
+   459→    try {
+   460→      const raw = window.localStorage.getItem(STORAGE_KEY)
+   461→      if (raw) {
+   462→        const parsed = JSON.parse(raw)
+   463→        const { nodes: savedNodes, edges: savedEdges, viewport } = sanitizeImportPayload(parsed)
+   464→        setNodes(savedNodes)
+   465→        setEdges(savedEdges)
+   466→        if (viewport && Number.isFinite(viewport.x) && Number.isFinite(viewport.y) && Number.isFinite(viewport.zoom)) {
+   467→          rf.setViewport(viewport)
+   468→        }
+   469→        restored = true
+   470→      }
+   471→    } catch {
+   472→      // Corrupted storage — fall through to the starter board
+   473→    }
+   474→    if (!restored) setNodes(initialNodes)
+   475→    hydratedRef.current = true
+   476→  }, [])
+   477→
+   478→  // Autosave whenever board content changes. The debounce means a drag or
+   479→  // resize (which streams changes every frame) lands as a single write.
+   480→  useEffect(() => {
+   481→    if (!hydratedRef.current) return
+   482→    schedulePersist()
+   483→  }, [nodes, edges, schedulePersist])
+   484→
+   485→  // Flush pending saves when the tab is hidden or the page is being unloaded
+   486→  useEffect(() => {
+   487→    const flush = () => {
+   488→      if (saveTimerRef.current !== null) {
+   489→        window.clearTimeout(saveTimerRef.current)
+   490→        saveTimerRef.current = null
+   491→      }
+   492→      persistNow()
+   493→    }
+   494→    const onVisibility = () => {
+   495→      if (document.visibilityState === "hidden") flush()
+   496→    }
+   497→    window.addEventListener("beforeunload", flush)
+   498→    document.addEventListener("visibilitychange", onVisibility)
+   499→    return () => {
+   500→      window.removeEventListener("beforeunload", flush)
+   501→      document.removeEventListener("visibilitychange", onVisibility)
+   502→    }
+   503→  }, [persistNow])
+   504→
+   505→  const handleNodesChange = useCallback(
+   506→    (changes: NodeChange<Node<ShapeData>>[]) => {
+   507→      const restoring = typeof window !== "undefined" && (window as any).__boardRestoring
+   508→      if (!restoring && Array.isArray(changes)) {
+   509→        const startResize = changes.some((c) => (c as any).type === "dimensions" && (c as any).resizing === true)
+   510→        const endResize = changes.some((c) => (c as any).type === "dimensions" && (c as any).resizing === false)
+   511→        const hasRemove = changes.some((c) => (c as any).type === "remove")
+   512→        if (hasRemove || (startResize && !resizeActiveRef.current)) {
+   513→          if (startResize) resizeActiveRef.current = true
+   514→          commitHistory()
+   515→        } else if (endResize) {
+   516→          resizeActiveRef.current = false
+   517→        }
+   518→      }
+   519→      onNodesChange(changes)
+   520→    },
+   521→    [onNodesChange, commitHistory],
+   522→  )
+   523→
+   524→  const suppressPaneClickRef = useRef(false)
+   525→  const touchTapRef = useRef<{
+   526→    mid: { x: number; y: number }
+   527→    t0: number
+   528→    probes: { id: number; x: number; y: number }[]
+   529→    moved: boolean
+   530→  } | null>(null)
+   531→
+   532→  const openRadialMenu = useCallback((pt: { x: number; y: number }) => {
+   533→    // The radial menu shows mode-appropriate actions in BOTH editing and
+   534→    // view-only (locked) mode, so it opens in either state.
+   535→    // Swallow the synthetic pane click that can follow a two-finger tap so it
+   536→    // doesn't clear the selection or drop a shape right after opening.
+   537→    suppressPaneClickRef.current = true
+   538→    setRadialPos(pt)
+   539→    setRadialOpen(true)
+   540→  }, [])
+   541→
+   542→  // Release the pane-click suppression shortly after the menu closes
+   543→  useEffect(() => {
+   544→    if (radialOpen) return
+   545→    const t = setTimeout(() => {
+   546→      suppressPaneClickRef.current = false
+   547→    }, 400)
+   548→    return () => clearTimeout(t)
+   549→  }, [radialOpen])
+   550→
+   551→  // Two-finger tap detection (touch screens / tablets): record the gesture when
+   552→  // the second finger lands, cancel if it turns into a pinch or pan.
+   553→  const handleBoardTouchStart = useCallback((e: React.TouchEvent) => {
+   554→    if (e.touches.length === 2) {
+   555→      const a = e.touches[0]
+   556→      const b = e.touches[1]
+   557→      touchTapRef.current = {
+   558→        mid: { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 },
+   559→        t0: Date.now(),
+   560→        probes: [
+   561→          { id: a.identifier, x: a.clientX, y: a.clientY },
+   562→          { id: b.identifier, x: b.clientX, y: b.clientY },
+   563→        ],
+   564→        moved: false,
+   565→      }
+   566→    } else {
+   567→      touchTapRef.current = null
+   568→    }
+   569→  }, [])
+   570→
+   571→  const handleBoardTouchMove = useCallback((e: React.TouchEvent) => {
+   572→    const st = touchTapRef.current
+   573→    if (!st || st.moved) return
+   574→    for (let i = 0; i < e.touches.length; i++) {
+   575→      const t = e.touches[i]
+   576→      const p = st.probes.find((pp) => pp.id === t.identifier)
+   577→      if (!p) continue
+   578→      const dx = t.clientX - p.x
+   579→      const dy = t.clientY - p.y
+   580→      if (dx * dx + dy * dy > 144) {
+   581→        st.moved = true
+   582→        break
+   583→      }
+   584→    }
+   585→  }, [])
+   586→
+   587→  const handleBoardTouchEnd = useCallback(
+   588→    (e: React.TouchEvent) => {
+   589→      const st = touchTapRef.current
+   590→      if (!st) return
+   591→      if (e.touches.length > 0) return
+   592→      touchTapRef.current = null
+   593→      if (st.moved || Date.now() - st.t0 > 400) return
+   594→      openRadialMenu(st.mid)
+   595→    },
+   596→    [openRadialMenu],
+   597→  )
+   598→
+   599→  const getBoardScreenCenter = useCallback(() => {
+   600→    const el = boardRef.current
+   601→    if (el) {
+   602→      const r = el.getBoundingClientRect()
+   603→      return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+   604→    }
+   605→    return {
+   606→      x: typeof window !== "undefined" ? window.innerWidth / 2 : 400,
+   607→      y: typeof window !== "undefined" ? window.innerHeight / 2 : 300,
+   608→    }
+   609→  }, [])
+   610→
+   611→  // Creates a node at the given screen position (used by quick add + radial menu)
+   612→  const createNodeAt = useCallback(
+   613→    (t: "rect" | "ellipse" | "text" | "tag" | "line", screenPos: { x: number; y: number }) => {
+   614→      const pos = rf.screenToFlowPosition(screenPos)
+   615→      const id = newNodeId()
+   616→      const nodeType = t === "rect" ? "rectangle" : t === "ellipse" ? "ellipse" : t
+   617→
+   618→      const data: ShapeData = {
+   619→        label: t === "text" ? "Text" : "",
+   620→        fill: "transparent",
+   621→        fontSize: 8,
+   622→        fontWeight: t === "tag" ? 600 : 400,
+   623→        align: t === "text" ? "left" : "center",
+   624→        borderStyle: "solid",
+   625→        borderWidth: t === "line" ? 2 : 1,
+   626→      }
+   627→
+   628→      const style =
+   629→        t === "text"
+   630→          ? { width: 120, height: 28 }
+   631→          : t === "tag"
+   632→            ? { width: 96, height: 28 }
+   633→            : t === "line"
+   634→              ? { width: 140, height: 4 }
+   635→              : { width: 140, height: 56 }
+   636→
+   637→      const newNode: Node<ShapeData> = { id, type: nodeType as any, position: pos, data, style }
+   638→      if (typeof window !== "undefined") {
+   639→        window.dispatchEvent(new CustomEvent("board:commit"))
+   640→      }
+   641→      setNodes((nds) => nds.concat(newNode))
+   642→      setSelectedNodeId(id)
+   643→      setTool("select")
+   644→    },
+   645→    [rf, setNodes],
+   646→  )
+   647→
+   648→  const quickAdd = useCallback(
+   649→    (t: "rect" | "ellipse" | "text" | "tag" | "line") => createNodeAt(t, getBoardScreenCenter()),
+   650→    [createNodeAt, getBoardScreenCenter],
+   651→  )
+   652→
+   653→  const onConnect = useCallback(
+   654→    (connection: Connection) => {
+   655→      let src = connection.source!
+   656→      let tgt = connection.target!
+   657→      let srcHandle = connection.sourceHandle ?? null
+   658→      let tgtHandle = connection.targetHandle ?? null
+   659→
+   660→      const started = connectStartIdRef.current
+   661→      if (started && started === tgt) {
+   662→        // If React Flow labeled the start handle as "target", flip so the arrow points from start -> end
+   663→        ;[src, tgt] = [tgt, src]
+   664→        // Handle ids must follow the swap, otherwise the edge cannot resolve
+   665→        // its endpoints (React Flow error #008)
+   666→        ;[srcHandle, tgtHandle] = [tgtHandle, srcHandle]
+   667→      }
+   668→
+   669→      const srcNode = src ? rf.getNode(src) : null
+   670→      const srcZ = srcNode?.zIndex ?? 0
+   671→
+   672→      if (typeof window !== "undefined") {
+   673→        window.dispatchEvent(new CustomEvent("board:commit"))
+   674→      }
+   675→
+   676→      setEdges((eds) =>
+   677→        addEdge(
+   678→          {
+   679→            ...connection,
+   680→            source: src,
+   681→            target: tgt,
+   682→            sourceHandle: srcHandle,
+   683→            targetHandle: tgtHandle,
+   684→            type: "smart",
+   685→            style: { strokeWidth: 1 },
+   686→            markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6 },
+   687→            animated: false,
+   688→            data: { style: "solid" as const },
+   689→            zIndex: srcZ,
+   690→          },
+   691→          eds,
+   692→        ),
+   693→      )
+   694→      connectStartIdRef.current = null
+   695→    },
+   696→    [setEdges, rf],
+   697→  )
+   698→
+   699→  const onConnectStart = useCallback((_evt: any, params: { nodeId?: string | null }) => {
+   700→    connectStartIdRef.current = params?.nodeId ?? null
+   701→  }, [])
+   702→
+   703→  const onConnectEnd = useCallback(() => {
+   704→    connectStartIdRef.current = null
+   705→  }, [])
+   706→
+   707→  const handlePaneClick = useCallback(
+   708→    (evt: React.MouseEvent) => {
+   709→      // Ignore the click that synthetic events can fire right after a two-finger tap
+   710→      if (suppressPaneClickRef.current) {
+   711→        suppressPaneClickRef.current = false
+   712→        return
+   713→      }
+   714→      // View-only mode: pane clicks highlight the element under the cursor
+   715→      // (layout stays frozen) instead of selecting it.
+   716→      if (locked) {
+   717→        setSelectedEdgeId(null)
+   718→        const clickPos = rf.screenToFlowPosition({ x: evt.clientX, y: evt.clientY })
+   719→        const allNodes = rf.getNodes()
+   720→        let hitId: string | null = null
+   721→        // Later nodes render on top — scan from the end to find the topmost hit
+   722→        for (let i = allNodes.length - 1; i >= 0; i--) {
+   723→          const n = allNodes[i]
+   724→          const w = (n.measured?.width ?? (n.style?.width as number | undefined)) ?? 0
+   725→          const h = (n.measured?.height ?? (n.style?.height as number | undefined)) ?? 0
+   726→          if (!w || !h) continue
+   727→          if (
+   728→            clickPos.x >= n.position.x &&
+   729→            clickPos.x <= n.position.x + w &&
+   730→            clickPos.y >= n.position.y &&
+   731→            clickPos.y <= n.position.y + h
+   732→          ) {
+   733→            hitId = n.id
+   734→            break
+   735→          }
+   736→        }
+   737→        setHighlightedNodeId(hitId)
+   738→        return
+   739→      }
+   740→      const pos = rf.screenToFlowPosition({ x: evt.clientX, y: evt.clientY })
+   741→
+   742→      if (tool === "rect" || tool === "ellipse" || tool === "text" || tool === "tag" || tool === "line") {
+   743→        const id = newNodeId()
+   744→        const base: Node<ShapeData> = {
+   745→          id,
+   746→          position: pos,
+   747→          data: {
+   748→            label: tool === "text" ? "Text" : "",
+   749→            fill: "transparent",
+   750→            fontSize: 8,
+   751→            fontWeight: tool === "tag" ? 600 : 400,
+   752→            align: tool === "text" ? "left" : "center",
+   753→            borderStyle: "solid",
+   754→            borderWidth: tool === "line" ? 2 : 1,
+   755→          },
+   756→          style:
+   757→            tool === "text"
+   758→              ? { width: 120, height: 28 }
+   759→              : tool === "tag"
+   760→                ? { width: 96, height: 28 }
+   761→                : tool === "line"
+   762→                  ? { width: 140, height: 4 }
+   763→                  : { width: 140, height: 56 },
+   764→          type:
+   765→            tool === "rect"
+   766→              ? "rectangle"
+   767→              : tool === "ellipse"
+   768→                ? "ellipse"
+   769→                : tool === "text"
+   770→                  ? "text"
+   771→                  : tool === "tag"
+   772→                    ? "tag"
+   773→                    : tool === "line"
+   774→                      ? "line"
+   775→                      : "rectangle",
+   776→        }
+   777→        if (typeof window !== "undefined") {
+   778→          window.dispatchEvent(new CustomEvent("board:commit"))
+   779→        }
+   780→        setNodes((nds) => nds.concat(base))
+   781→        setSelectedNodeId(id)
+   782→        setTool("select")
+   783→        return
+   784→      }
+   785→      setSelectedNodeId(null)
+   786→      setSelectedEdgeId(null)
+   787→    },
+   788→    [rf, tool, setNodes, locked],
+   789→  )
+   790→
+   791→  const handlePaneDoubleClick = useCallback(
+   792→    (evt: React.MouseEvent) => {
+   793→      // View-only mode: no double-click text creation
+   794→      if (locked) return
+   795→      // React Flow v12 has no onPaneDoubleClick prop, so we listen on the board
+   796→      // wrapper and only react to double clicks on the empty pane background.
+   797→      const target = evt.target as HTMLElement | null
+   798→      if (!target || typeof target.closest !== "function") return
+   799→      if (
+   800→        target.closest(
+   801→          ".react-flow__node, .react-flow__edge, .react-flow__handle, .react-flow__controls, .react-flow__minimap, .react-flow__attribution, button, input, textarea",
+   802→        ) ||
+   803→        !target.closest(".react-flow__pane")
+   804→      ) {
+   805→        return
+   806→      }
+   807→
+   808→      const pos = rf.screenToFlowPosition({ x: evt.clientX, y: evt.clientY })
+   809→      const id = newNodeId()
+   810→      const newTextNode: Node<ShapeData> = {
+   811→        id,
+   812→        type: "text",
+   813→        position: pos,
+   814→        data: {
+   815→          label: "Text",
+   816→          fill: "transparent",
+   817→          fontSize: 8,
+   818→          fontWeight: 400,
+   819→          align: "left",
+   820→          borderStyle: "solid",
+   821→          borderWidth: 1,
+   822→        },
+   823→        style: { width: 120, height: 28 },
+   824→      }
+   825→
+   826→      // Commit history before mutation to align with edge creation behavior
+   827→      if (typeof window !== "undefined") {
+   828→        window.dispatchEvent(new CustomEvent("board:commit"))
+   829→      }
+   830→
+   831→      setNodes((nds) => nds.concat(newTextNode))
+   832→      setSelectedNodeId(id)
+   833→      setTool("select")
+   834→    },
+   835→    [rf, setNodes, locked],
+   836→  )
+   837→
+   838→  const onSelectionChange = useCallback(
+   839→    ({ nodes: selectedNodes, edges: selectedEdges }: { nodes: Node[]; edges: Edge[] }) => {
+   840→      setSelectedNodeId(selectedNodes?.[0]?.id ?? null)
+   841→      setSelectedEdgeId(selectedEdges?.[0]?.id ?? null)
+   842→    },
+   843→    [],
+   844→  )
+   845→
+   846→  const selectedNode = useMemo(() => nodes.find((n) => n.id === selectedNodeId) ?? null, [nodes, selectedNodeId])
+   847→
+   848→  const updateSelectedNode = useCallback(
+   849→    (patch: Partial<ShapeData>) => {
+   850→      if (!selectedNodeId) return
+   851→      if (typeof window !== "undefined") {
+   852→        window.dispatchEvent(new CustomEvent("board:commit"))
+   853→      }
+   854→      setNodes((nds) => nds.map((n) => (n.id === selectedNodeId ? { ...n, data: { ...n.data, ...patch } } : n)))
+   855→    },
+   856→    [selectedNodeId, setNodes],
+   857→  )
+   858→
+   859→  // Same as updateSelectedNode but without recording a history entry — used by
+   860→  // continuous controls (sliders) which commit once at drag start instead.
+   861→  const updateSelectedNodeSilent = useCallback(
+   862→    (patch: Partial<ShapeData>) => {
+   863→      if (!selectedNodeId) return
+   864→      setNodes((nds) => nds.map((n) => (n.id === selectedNodeId ? { ...n, data: { ...n.data, ...patch } } : n)))
+   865→    },
+   866→    [selectedNodeId, setNodes],
+   867→  )
+   868→
+   869→  const changeSelectedNodeType = useCallback(
+   870→    (newType: keyof typeof nodeTypes) => {
+   871→      if (!selectedNodeId) return
+   872→      if (typeof window !== "undefined") {
+   873→        window.dispatchEvent(new CustomEvent("board:commit"))
+   874→      }
+   875→      setNodes((nds) => nds.map((n) => (n.id === selectedNodeId ? { ...n, type: newType } : n)))
+   876→    },
+   877→    [selectedNodeId, setNodes],
+   878→  )
+   879→
+   880→  const setSelectedEdge = useCallback(
+   881→    (patch: Partial<Edge>) => {
+   882→      if (!selectedEdgeId) return
+   883→      if (typeof window !== "undefined") {
+   884→        window.dispatchEvent(new CustomEvent("board:commit"))
+   885→      }
+   886→      setEdges((eds) => eds.map((e) => (e.id === selectedEdgeId ? { ...e, ...patch } : e)))
+   887→    },
+   888→    [selectedEdgeId, setEdges],
+   889→  )
+   890→
+   891→  const setSelectedEdgeStyle = useCallback(
+   892→    (stylePatch: React.CSSProperties) => {
+   893→      if (!selectedEdgeId) return
+   894→      if (typeof window !== "undefined") {
+   895→        window.dispatchEvent(new CustomEvent("board:commit"))
+   896→      }
+   897→      setEdges((eds) =>
+   898→        eds.map((e) => (e.id === selectedEdgeId ? { ...e, style: { ...(e.style || {}), ...stylePatch } } : e)),
+   899→      )
+   900→    },
+   901→    [selectedEdgeId, setEdges],
+   902→  )
+   903→
+   904→  const handleEdgesChange = useCallback(
+   905→    (changes: any) => {
+   906→      const suppress = typeof window !== "undefined" && (window as any).__boardRestoring
+   907→
+   908→      if (!suppress && Array.isArray(changes) && changes.some((c) => c?.type === "remove")) {
+   909→        if (typeof window !== "undefined") {
+   910→          window.dispatchEvent(new CustomEvent("board:commit"))
+   911→        }
+   912→      }
+   913→      onEdgesChange(changes)
+   914→    },
+   915→    [onEdgesChange],
+   916→  )
+   917→
+   918→  const exportDiagram = useCallback(async () => {
+   919→    try {
+   920→      if (exportType === "json") {
+   921→        // Canonical, portable export: resolve each node's effective size into
+   922→        // width/height AND style, and drop transient fields (measured,
+   923→        // selected, dragging…) that belong to the current session only.
+   924→        const canonicalNodes = nodes.map((n) => {
+   925→          const { measured, selected, dragging, resizing, events, className, ...rest } = n as any
+   926→          const { width, height } = resolveNodeSizeRecord(n as any)
+   927→          return {
+   928→            ...rest,
+   929→            ...(width !== undefined ? { width } : {}),
+   930→            ...(height !== undefined ? { height } : {}),
+   931→            style: {
+   932→              ...(rest.style ?? {}),
+   933→              ...(width !== undefined ? { width } : {}),
+   934→              ...(height !== undefined ? { height } : {}),
+   935→            },
+   936→          }
+   937→        })
+   938→        const canonicalEdges = edges.map(({ selected, ...e }) => e as Edge)
+   939→        const payload = {
+   940→          nodes: canonicalNodes,
+   941→          edges: canonicalEdges,
+   942→          viewport: rf.getViewport?.() ?? undefined,
+   943→        }
+   944→        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" })
+   945→        const url = URL.createObjectURL(blob)
+   946→        const a = document.createElement("a")
+   947→        a.href = url
+   948→        a.download = `${exportTitle || "diagram"}.json`
+   949→        document.body.appendChild(a)
+   950→        a.click()
+   951→        a.remove()
+   952→        URL.revokeObjectURL(url)
+   953→        setExportOpen(false)
+   954→        return
+   955→      }
+   956→
+   957→      const el = boardRef.current
+   958→      if (!el) return
+   959→
+   960→      if (exportType === "png") {
+   961→        const dataUrl = await htmlToImage.toPng(el, {
+   962→          pixelRatio: Math.min(2, window.devicePixelRatio || 1.5),
+   963→          backgroundColor: resolvedTheme === "dark" ? "#000000" : "#ffffff",
+   964→          cacheBust: true,
+   965→        })
+   966→        const a = document.createElement("a")
+   967→        a.href = dataUrl
+   968→        a.download = `${exportTitle || "diagram"}.png`
+   969→        document.body.appendChild(a)
+   970→        a.click()
+   971→        a.remove()
+   972→        setExportOpen(false)
+   973→      } else if (exportType === "svg") {
+   974→        const dataUrl = await htmlToImage.toSvg(el, {
+   975→          backgroundColor: resolvedTheme === "dark" ? "#000000" : "#ffffff",
+   976→          cacheBust: true,
+   977→        })
+   978→        const res = await fetch(dataUrl)
+   979→        const svgText = await res.text()
+   980→        const blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" })
+   981→        const url = URL.createObjectURL(blob)
+   982→        const a = document.createElement("a")
+   983→        a.href = url
+   984→        a.download = `${exportTitle || "diagram"}.svg`
+   985→        document.body.appendChild(a)
+   986→        a.click()
+   987→        a.remove()
+   988→        URL.revokeObjectURL(url)
+   989→        setExportOpen(false)
+   990→      }
+   991→    } catch (err) {
+   992→      console.error("[v0] export failed", err)
+   993→    }
+   994→  }, [exportType, exportTitle, nodes, edges, rf, resolvedTheme])
+   995→
+   996→  const onImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+   997→    const file = e.target.files?.[0]
+   998→    if (!file) return
+   999→    setImportError(null)
+  1000→    setImportFileName(file.name)
+  1001→    const reader = new FileReader()
+  1002→    reader.onload = () => setImportText(String(reader.result ?? ""))
+  1003→    reader.onerror = () => setImportError("Could not read the selected file")
+  1004→    reader.readAsText(file)
+  1005→    e.target.value = ""
+  1006→  }, [])
+  1007→
+  1008→  const submitImport = useCallback(() => {
+  1009→    try {
+  1010→      const raw = JSON.parse(importText)
+  1011→      const { nodes: importedNodes, edges: importedEdges, viewport } = sanitizeImportPayload(raw)
+  1012→      commitHistory()
+  1013→      rf.setNodes(importedNodes)
+  1014→      rf.setEdges(importedEdges)
+  1015→      if (viewport && Number.isFinite(viewport.x) && Number.isFinite(viewport.y) && Number.isFinite(viewport.zoom)) {
+  1016→        rf.setViewport(viewport)
+  1017→      }
+  1018→      setSelectedNodeId(null)
+  1019→      setSelectedEdgeId(null)
+  1020→      setImportOpen(false)
+  1021→      setImportError(null)
+  1022→      setImportText("")
+  1023→      setImportFileName(null)
+  1024→    } catch (err: any) {
+  1025→      setImportError(err?.message ? `Import failed: ${err.message}` : "Import failed: invalid JSON")
+  1026→    }
+  1027→  }, [importText, rf, commitHistory])
+  1028→
+  1029→  const radialItems: RadialMenuItem[] = useMemo(() => {
+  1030→    // Shared by both modes — label/icon reflect the current fullscreen state
+  1031→    const fullscreenItem: RadialMenuItem = {
+  1032→      id: "fullscreen",
+  1033→      label: isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Fullscreen",
+  1034→      icon: isFullscreen || pseudoFullscreen ? Minimize2 : Maximize2,
+  1035→      onSelect: () => {
+  1036→        void toggleFullscreen()
+  1037→      },
+  1038→    }
+  1039→    const fitViewItem: RadialMenuItem = {
+  1040→      id: "fitview",
+  1041→      label: "Fit view",
+  1042→      icon: Scan,
+  1043→      onSelect: () => rf.fitView?.({ padding: 0.2, duration: 300 }),
+  1044→    }
+  1045→
+  1046→    // View-only (locked) mode: compact menu — unlock / fullscreen / fit view
+  1047→    if (locked) {
+  1048→      return [
+  1049→        {
+  1050→          id: "unlock",
+  1051→          label: "Unlock",
+  1052→          icon: LockOpen,
+  1053→          onSelect: toggleLocked,
+  1054→        },
+  1055→        fullscreenItem,
+  1056→        fitViewItem,
+  1057→      ]
+  1058→    }
+  1059→
+  1060→    return [
+  1061→      {
+  1062→        id: "add",
+  1063→        label: "Add shape",
+  1064→        icon: Plus,
+  1065→        onSelect: () => {
+  1066→          if (radialPos) createNodeAt("rect", radialPos)
+  1067→        },
+  1068→      },
+  1069→      {
+  1070→        id: "select",
+  1071→        label: "Select",
+  1072→        icon: MousePointer2,
+  1073→        active: tool === "select",
+  1074→        onSelect: () => setTool("select"),
+  1075→      },
+  1076→      {
+  1077→        id: "hand",
+  1078→        label: "Hand",
+  1079→        icon: Hand,
+  1080→        active: tool === "hand",
+  1081→        onSelect: () => setTool("hand"),
+  1082→      },
+  1083→      fitViewItem,
+  1084→      {
+  1085→        id: "lock",
+  1086→        label: "Lock board",
+  1087→        icon: Lock,
+  1088→        onSelect: toggleLocked,
+  1089→      },
+  1090→      fullscreenItem,
+  1091→    ]
+  1092→  }, [locked, radialPos, tool, rf, createNodeAt, toggleLocked, toggleFullscreen, isFullscreen, pseudoFullscreen])
+  1093→
+  1094→  // In view-only mode the tapped element gets a teal highlight ring. The ring
+  1095→  // is a transient className on the node wrapper — stripped before persistence
+  1096→  // and export so it never leaks into saved boards.
+  1097→  const displayNodes = useMemo(
+  1098→    () =>
+  1099→      nodes.map((n) =>
+  1100→        n.id === highlightedNodeId
+  1101→          ? ({ ...n, className: "board-locked-highlight" } as Node<ShapeData>)
+  1102→          : n.className
+  1103→            ? ({ ...n, className: undefined } as Node<ShapeData>)
+  1104→            : n,
+  1105→      ),
+  1106→    [nodes, highlightedNodeId],
+  1107→  )
+  1108→
+  1109→  return (
+  1110→    <div
+  1111→      className={cn(
+  1112→        "relative h-full min-h-0 w-full overflow-hidden",
+  1113→        pseudoFullscreen && "fixed inset-0 z-[60] h-dvh w-screen",
+  1114→      )}
+  1115→      style={{ background: "var(--af-board-bg)" }}
+  1116→    >
+  1117→      {/* Left tool rail — entirely hidden in view-only mode */}
+  1118→      {!locked && (
+  1119→      <LeftToolbar
+  1120→        active={tool as "select" | "rect" | "ellipse" | "text" | "hand"}
+  1121→        onChangeTool={setTool}
+  1122→        onQuickAdd={quickAdd}
+  1123→        onZoomIn={() => rf.zoomIn?.() ?? rf.setViewport({ ...rf.getViewport(), zoom: rf.getViewport().zoom * 1.1 })}
+  1124→        onZoomOut={() => rf.zoomOut?.() ?? rf.setViewport({ ...rf.getViewport(), zoom: rf.getViewport().zoom / 1.1 })}
+  1125→        onFitView={() => {
+  1126→          rf.fitView?.({ padding: 0.2, duration: 300 })
+  1127→        }}
+  1128→        onOpenExport={() => setExportOpen(true)}
+  1129→        onAddIcon={(data) => {
+  1130→          const pos = rf.screenToFlowPosition(getBoardScreenCenter())
+  1131→          const id = newNodeId()
+  1132→          const newNode: Node<ShapeData> = {
+  1133→            id,
+  1134→            type: "icon" as any,
+  1135→            position: pos,
+  1136→            data: {
+  1137→              label: data.label || "",
+  1138→              iconSrc: data.src,
+  1139→              fill: "transparent",
+  1140→              fontSize: 8,
+  1141→              fontWeight: 700,
+  1142→              align: "center",
+  1143→              borderStyle: "solid",
+  1144→              borderWidth: 1,
+  1145→            },
+  1146→            style: { width: 96, height: 96 },
+  1147→          }
+  1148→          commitHistory()
+  1149→          setNodes((nds) => nds.concat(newNode))
+  1150→          setSelectedNodeId(id)
+  1151→          setTool("select")
+  1152→        }}
+  1153→        onAddTag={() => {
+  1154→          const pos = rf.screenToFlowPosition(getBoardScreenCenter())
+  1155→          const id = newNodeId()
+  1156→          const newNode: Node<ShapeData> = {
+  1157→            id,
+  1158→            type: "tag" as any,
+  1159→            position: pos,
+  1160→            data: {
+  1161→              label: "tag",
+  1162→              fill: "transparent",
+  1163→              fontSize: 8,
+  1164→              fontWeight: 600,
+  1165→              align: "center",
+  1166→              borderStyle: "solid",
+  1167→              borderWidth: 1,
+  1168→            },
+  1169→            style: { width: 96, height: 28 },
+  1170→          }
+  1171→          commitHistory()
+  1172→          setNodes((nds) => nds.concat(newNode))
+  1173→          setSelectedNodeId(id)
+  1174→          setTool("select")
+  1175→        }}
+  1176→      />
+  1177→      )}
+  1178→
+  1179→      {/* Top-left: fullscreen toggle */}
+  1180→      <div className="pointer-events-auto absolute left-4 top-4 z-20 flex items-center gap-2">
+  1181→        <TooltipProvider>
+  1182→          <Tooltip>
+  1183→            <TooltipTrigger asChild>
+  1184→              <button
+  1185→                aria-label={isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+  1186→                onClick={toggleFullscreen}
+  1187→                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+  1188→              >
+  1189→                {isFullscreen || pseudoFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+  1190→              </button>
+  1191→            </TooltipTrigger>
+  1192→            <TooltipContent side="bottom" align="start" sideOffset={6}>
+  1193→              {isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Fullscreen"}
+  1194→            </TooltipContent>
+  1195→          </Tooltip>
+  1196→        </TooltipProvider>
+  1197→        <AnimatedThemeToggler />
+  1198→      </div>
+  1199→
+  1200→      {/* Bottom-left: view-only lock toggle — one of the only controls that
+  1201→          stays visible (together with fullscreen) while the board is locked */}
+  1202→      <div className="pointer-events-auto absolute bottom-4 left-4 z-30 flex items-center gap-2">
+  1203→        <TooltipProvider>
+  1204→          <Tooltip>
+  1205→            <TooltipTrigger asChild>
+  1206→              <button
+  1207→                aria-label={locked ? "Unlock board" : "Lock board"}
+  1208→                aria-pressed={locked}
+  1209→                onClick={toggleLocked}
+  1210→                className={cn(
+  1211→                  "inline-flex h-8 w-8 items-center justify-center rounded-md border bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-teal-500",
+  1212→                  locked ? "border-teal-500 text-white" : "border-zinc-800 text-zinc-200 hover:bg-zinc-800",
+  1213→                )}
+  1214→              >
+  1215→                {locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
+  1216→              </button>
+  1217→            </TooltipTrigger>
+  1218→            <TooltipContent side="top" align="start" sideOffset={6}>
+  1219→              {locked ? "Unlock board" : "Lock board (view only)"}
+  1220→            </TooltipContent>
+  1221→          </Tooltip>
+  1222→        </TooltipProvider>
+  1223→        {locked && (
+  1224→          <span className="rounded-md border border-teal-500/60 bg-teal-950/40 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-teal-300">
+  1225→            Locked
+  1226→          </span>
+  1227→        )}
+  1228→      </div>
+  1229→
+  1230→      {/* Top-right actions — editing-only, hidden while locked */}
+  1231→      {!locked && (
+  1232→      <div className="pointer-events-auto absolute right-4 top-4 z-20 flex items-center gap-2">
+  1233→        <AlertDialog>
+  1234→          <AlertDialogTrigger asChild>
+  1235→            <button
+  1236→              aria-label="Clear"
+  1237→              className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-800"
+  1238→              title="Clear"
+  1239→            >
+  1240→              <Trash2 className="h-4 w-4" />
+  1241→              <span className="hidden sm:inline">Clear</span>
+  1242→            </button>
+  1243→          </AlertDialogTrigger>
+  1244→          <AlertDialogContent>
+  1245→            <AlertDialogHeader>
+  1246→              <AlertDialogTitle>Clear board?</AlertDialogTitle>
+  1247→              <AlertDialogDescription>
+  1248→                This will remove all nodes and connections from the board. You can still undo this action.
+  1249→              </AlertDialogDescription>
+  1250→            </AlertDialogHeader>
+  1251→            <AlertDialogFooter>
+  1252→              <AlertDialogCancel>Cancel</AlertDialogCancel>
+  1253→              <AlertDialogAction
+  1254→                onClick={() => {
+  1255→                  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:clear"))
+  1256→                }}
+  1257→              >
+  1258→                Clear
+  1259→              </AlertDialogAction>
+  1260→            </AlertDialogFooter>
+  1261→          </AlertDialogContent>
+  1262→        </AlertDialog>
+  1263→
+  1264→        <button
+  1265→          aria-label="Import"
+  1266→          onClick={() => {
+  1267→            setImportError(null)
+  1268→            setImportOpen(true)
+  1269→          }}
+  1270→          className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-800"
+  1271→          title="Import JSON"
+  1272→        >
+  1273→          <Upload className="h-4 w-4" />
+  1274→          <span className="hidden sm:inline">Import</span>
+  1275→        </button>
+  1276→
+  1277→        <button
+  1278→          aria-label="Export"
+  1279→          onClick={() => setExportOpen(true)}
+  1280→          className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-800"
+  1281→          title="Export"
+  1282→        >
+  1283→          <Download className="h-4 w-4" />
+  1284→          <span className="hidden sm:inline">Export</span>
+  1285→        </button>
+  1286→      </div>
+  1287→      )}
+  1288→
+  1289→      <div
+  1290→        ref={boardRef}
+  1291→        className="absolute inset-0 overflow-hidden"
+  1292→        style={{ contain: "layout paint size" as React.CSSProperties["contain"] }}
+  1293→        onContextMenu={(e) => {
+  1294→          // Right-click / trackpad two-finger tap opens the radial menu
+  1295→          e.preventDefault()
+  1296→          openRadialMenu({ x: e.clientX, y: e.clientY })
+  1297→        }}
+  1298→        onTouchStart={handleBoardTouchStart}
+  1299→        onTouchMove={handleBoardTouchMove}
+  1300→        onTouchEnd={handleBoardTouchEnd}
+  1301→        onDoubleClick={handlePaneDoubleClick}
+  1302→      >
+  1303→        <ReactFlow
+  1304→          className={cn("h-full w-full", locked && "board-locked")}
+  1305→          proOptions={useMemo(() => ({ hideAttribution: true }), [])}
+  1306→          nodes={displayNodes}
+  1307→          edges={edges}
+  1308→          onNodesChange={handleNodesChange}
+  1309→          onEdgesChange={handleEdgesChange}
+  1310→          onConnect={onConnect}
+  1311→          onConnectStart={onConnectStart}
+  1312→          onConnectEnd={onConnectEnd}
+  1313→          nodeTypes={nodeTypes}
+  1314→          edgeTypes={useMemo(() => ({ smart: SmartEdge }), [])}
+  1315→          connectionLineComponent={SmartConnectionLine}
+  1316→          onPaneClick={handlePaneClick}
+  1317→          onMoveEnd={schedulePersist}
+  1318→          onSelectionChange={onSelectionChange}
+  1319→          onEdgesDelete={(deleted) => {
+  1320→            if (deleted.some((e) => e.id === selectedEdgeId)) setSelectedEdgeId(null)
+  1321→          }}
+  1322→          onNodesDelete={(deleted) => {
+  1323→            if (deleted.some((n) => n.id === selectedNodeId)) setSelectedNodeId(null)
+  1324→          }}
+  1325→          selectionOnDrag={tool === "select" && !locked}
+  1326→          panOnDrag={tool === "hand" || locked}
+  1327→          // View-only lock: freeze every node/edge interaction, keep panning
+  1328→          nodesDraggable={!locked}
+  1329→          nodesConnectable={!locked}
+  1330→          elementsSelectable={!locked}
+  1331→          nodesFocusable={!locked}
+  1332→          edgesFocusable={!locked}
+  1333→          zoomOnDoubleClick={false}
+  1334→          deleteKeyCode={null}
+  1335→          onNodeDragStart={useCallback(() => {
+  1336→            if (typeof window !== "undefined" && !(window as any).__boardRestoring) {
+  1337→              window.dispatchEvent(new CustomEvent("board:commit"))
+  1338→            }
+  1339→          }, [])}
+  1340→          defaultEdgeOptions={{
+  1341→            type: "smart",
+  1342→            style: { strokeWidth: 1 },
+  1343→            markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6 },
+  1344→          }}
+  1345→          elevateNodesOnSelect={false}
+  1346→          connectionMode={ConnectionMode.Loose}
+  1347→          isValidConnection={useCallback(
+  1348→            (conn: Connection | Edge | null) => !!conn?.source && !!conn.target && conn.source !== conn.target,
+  1349→            [],
+  1350→          )}
+  1351→          connectionRadius={24}
+  1352→        >
+  1353→          <BoardShortcuts locked={locked} />
+  1354→        </ReactFlow>
+  1355→      </div>
+  1356→
+  1357→      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+  1358→        <DialogContent className="max-w-md border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-xl">
+  1359→          <DialogHeader className="border-b border-zinc-800 px-5 py-4">
+  1360→            <DialogTitle className="text-sm font-semibold text-white">Export diagram</DialogTitle>
+  1361→            <DialogDescription className="text-xs text-zinc-400">
+  1362→              Download the board as an image, or save it as a JSON project file you can re-import later.
+  1363→            </DialogDescription>
+  1364→          </DialogHeader>
+  1365→
+  1366→          <div className="space-y-4 px-5 py-4">
+  1367→            <div className="space-y-1.5">
+  1368→              <label htmlFor="export-title" className="text-xs font-medium text-zinc-300">
+  1369→                File name
+  1370→              </label>
+  1371→              <input
+  1372→                id="export-title"
+  1373→                value={exportTitle}
+  1374→                onChange={(e) => setExportTitle(e.target.value)}
+  1375→                className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-teal-500"
+  1376→                placeholder="diagram"
+  1377→              />
+  1378→            </div>
+  1379→
+  1380→            <div className="space-y-1.5">
+  1381→              <span className="text-xs font-medium text-zinc-300">Format</span>
+  1382→              <div className="grid grid-cols-3 gap-2">
+  1383→                {(
+  1384→                  [
+  1385→                    { value: "png", label: "PNG", hint: "Raster image", icon: ImageIcon },
+  1386→                    { value: "svg", label: "SVG", hint: "Vector image", icon: FileCode },
+  1387→                    { value: "json", label: "JSON", hint: "Editable project", icon: Braces },
+  1388→                  ] as const
+  1389→                ).map((f) => (
+  1390→                  <button
+  1391→                    key={f.value}
+  1392→                    type="button"
+  1393→                    onClick={() => setExportType(f.value)}
+  1394→                    aria-pressed={exportType === f.value}
+  1395→                    className={cn(
+  1396→                      "flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-xs transition-colors",
+  1397→                      exportType === f.value
+  1398→                        ? "border-teal-600 bg-teal-600/10 text-white"
+  1399→                        : "border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900",
+  1400→                    )}
+  1401→                  >
+  1402→                    <f.icon className="h-4 w-4" />
+  1403→                    <span className="font-medium">{f.label}</span>
+  1404→                    <span className="text-[10px] text-zinc-500">{f.hint}</span>
+  1405→                  </button>
+  1406→                ))}
+  1407→              </div>
+  1408→              {exportType === "json" && (
+  1409→                <p className="text-[11px] text-zinc-500">
+  1410→                  {nodes.length} node{nodes.length === 1 ? "" : "s"} · {edges.length} connection
+  1411→                  {edges.length === 1 ? "" : "s"} — shapes, styles and layout are preserved.
+  1412→                </p>
+  1413→              )}
+  1414→            </div>
+  1415→          </div>
+  1416→
+  1417→          <DialogFooter className="border-t border-zinc-800 px-5 py-3">
+  1418→            <button
+  1419→              onClick={() => setExportOpen(false)}
+  1420→              className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+  1421→            >
+  1422→              Cancel
+  1423→            </button>
+  1424→            <button
+  1425→              onClick={exportDiagram}
+  1426→              className="rounded-md border border-teal-600 bg-teal-600 px-3 py-1.5 text-xs text-white hover:bg-teal-500"
+  1427→            >
+  1428→              Export {exportType.toUpperCase()}
+  1429→            </button>
+  1430→          </DialogFooter>
+  1431→        </DialogContent>
+  1432→      </Dialog>
+  1433→
+  1434→      <Dialog
+  1435→        open={importOpen}
+  1436→        onOpenChange={(open) => {
+  1437→          setImportOpen(open)
+  1438→          if (!open) setImportError(null)
+  1439→        }}
+  1440→      >
+  1441→        <DialogContent className="max-w-md border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-xl">
+  1442→          <DialogHeader className="border-b border-zinc-800 px-5 py-4">
+  1443→            <DialogTitle className="text-sm font-semibold text-white">Import diagram</DialogTitle>
+  1444→            <DialogDescription className="text-xs text-zinc-400">
+  1445→              Load a .json file previously exported from Atom Flow. This replaces the current board — undo still works.
+  1446→            </DialogDescription>
+  1447→          </DialogHeader>
+  1448→
+  1449→          <div className="space-y-4 px-5 py-4">
+  1450→            <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-700 bg-zinc-950 px-4 py-6 text-center transition-colors hover:border-teal-600 hover:bg-zinc-900">
+  1451→              <Upload className="h-5 w-5 text-zinc-400" />
+  1452→              <span className="text-xs font-medium text-zinc-200">{importFileName || "Choose a .json file"}</span>
+  1453→              <span className="text-[10px] text-zinc-500">or paste the JSON below</span>
+  1454→              <input
+  1455→                type="file"
+  1456→                accept=".json,application/json"
+  1457→                className="sr-only"
+  1458→                aria-label="Choose a JSON file to import"
+  1459→                onChange={onImportFile}
+  1460→              />
+  1461→            </label>
+  1462→
+  1463→            <div className="space-y-1.5">
+  1464→              <label htmlFor="import-json" className="text-xs font-medium text-zinc-300">
+  1465→                Paste JSON
+  1466→              </label>
+  1467→              <textarea
+  1468→                id="import-json"
+  1469→                value={importText}
+  1470→                onChange={(e) => setImportText(e.target.value)}
+  1471→                rows={5}
+  1472→                placeholder={'{ "nodes": [...], "edges": [...] }'}
+  1473→                className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 font-mono text-[11px] leading-relaxed text-zinc-100 outline-none focus:ring-2 focus:ring-teal-500"
+  1474→              />
+  1475→            </div>
+  1476→
+  1477→            {importError && (
+  1478→              <p role="alert" className="rounded-md border border-red-900/50 bg-red-950/40 px-2.5 py-1.5 text-xs text-red-400">
+  1479→                {importError}
+  1480→              </p>
+  1481→            )}
+  1482→          </div>
+  1483→
+  1484→          <DialogFooter className="border-t border-zinc-800 px-5 py-3">
+  1485→            <button
+  1486→              onClick={() => setImportOpen(false)}
+  1487→              className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+  1488→            >
+  1489→              Cancel
+  1490→            </button>
+  1491→            <button
+  1492→              onClick={submitImport}
+  1493→              disabled={!importText.trim()}
+  1494→              className={cn(
+  1495→                "rounded-md border px-3 py-1.5 text-xs",
+  1496→                importText.trim()
+  1497→                  ? "border-teal-600 bg-teal-600 text-white hover:bg-teal-500"
+  1498→                  : "border-zinc-800 bg-zinc-900 text-zinc-500",
+  1499→              )}
+  1500→            >
+  1501→              Import
+  1502→            </button>
+  1503→          </DialogFooter>
+  1504→        </DialogContent>
+  1505→      </Dialog>
+  1506→
+  1507→      <BottomToolbar
+  1508→        visible={!locked && (!!selectedNodeId || !!selectedEdgeId)}
+  1509→        isNodeSelected={!!selectedNodeId}
+  1510→        isEdgeSelected={!!selectedEdgeId}
+  1511→        currentFill={selectedNode?.data?.fill}
+  1512→        currentFillOpacity={selectedNode?.data?.fillOpacity}
+  1513→        onChangeShape={changeSelectedNodeType}
+  1514→        onChangeBG={(color) => updateSelectedNode({ fill: color })}
+  1515→        onFillOpacityStart={commitHistory}
+  1516→        onFillOpacity={(v) => updateSelectedNodeSilent({ fillOpacity: v })}
+  1517→        onBorderStyle={(style) => updateSelectedNode({ borderStyle: style })}
+  1518→        onBorderColor={(color) => updateSelectedNode({ borderColor: color, borderColorCustom: true })}
+  1519→        onBorderWidth={(w) => updateSelectedNode({ borderWidth: w })}
+  1520→        onChangeTextSize={(fontSize) => updateSelectedNode({ fontSize })}
+  1521→        onChangeTextColor={(color) => updateSelectedNode({ fontColor: color, fontColorCustom: true })}
+  1522→        onAlign={(align) => updateSelectedNode({ align })}
+  1523→        onBold={(bold) => updateSelectedNode({ fontWeight: bold ? 700 : 400 })}
+  1524→        onEdgeStyle={(style) => setSelectedEdgeStyle({ strokeDasharray: style === "dashed" ? "6 6" : "0" })}
+  1525→        onEdgeColor={(color) => setSelectedEdgeStyle({ stroke: color })}
+  1526→        onEdgeWidth={(w) => setSelectedEdgeStyle({ strokeWidth: w })}
+  1527→        onEdgeAnimate={(animate) => setSelectedEdge({ animated: animate })}
+  1528→        onRotate={(deg) => updateSelectedNode({ rotation: deg })}
+  1529→        onRotateSilent={(deg) => updateSelectedNodeSilent({ rotation: deg })}
+  1530→        onRotateStart={commitHistory}
+  1531→      />
+  1532→
+  1533→      {/* Animated circular menu — right-click / two-finger tap */}
+  1534→      <RadialMenu
+  1535→        open={radialOpen}
+  1536→        position={radialPos}
+  1537→        items={radialItems}
+  1538→        onClose={() => setRadialOpen(false)}
+  1539→      />
+  1540→    </div>
+  1541→  )
+  1542→}
+  1543→
+  1544→export default function DesignBoard() {
+  1545→  return (
+  1546→    <ReactFlowProvider>
+  1547→      <BoardInner />
+  1548→    </ReactFlowProvider>
+  1549→  )
+  1550→}
+  1551→

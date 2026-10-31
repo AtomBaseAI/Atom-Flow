@@ -60,9 +60,9 @@ function ToolBtn({
           aria-label={label}
           onClick={onClick}
           className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900 text-zinc-200",
-            "hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-teal-500",
-            active && "border-teal-500 text-white",
+            "flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-foreground",
+            "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500",
+            active && "border-teal-500 text-teal-600 dark:text-white",
           )}
         >
           {children}
@@ -91,8 +91,8 @@ function LucideTile({
       className={cn(
         "flex aspect-square items-center justify-center rounded border p-1.5 transition-colors",
         selected
-          ? "border-teal-600 bg-teal-950/40 text-white ring-1 ring-teal-600"
-          : "border-zinc-300 bg-zinc-200 text-zinc-700 hover:bg-white",
+          ? "border-teal-600 bg-teal-500/10 text-teal-700 dark:text-white ring-1 ring-teal-600"
+          : "border-border bg-muted text-foreground hover:bg-accent",
       )}
       title={entry.name + (entry.experimental ? " (experimental)" : "")}
       aria-pressed={selected}
@@ -281,7 +281,7 @@ export default function LeftToolbar({
           <Dialog open={iconOpen} onOpenChange={setIconOpen}>
             <DialogContent
               className={cn(
-                "border-zinc-800 bg-zinc-900 text-zinc-100",
+                "border-border bg-card text-foreground",
                 // Centering, sizing and viewport-fit fixes
                 "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
                 "max-h-[90vh] w-[94vw] max-w-2xl overflow-y-auto md:max-w-4xl", // wider so grid doesn't collapse
@@ -289,7 +289,7 @@ export default function LeftToolbar({
               )}
             >
               <DialogHeader>
-                <DialogTitle className="text-white text-sm">Add Icon</DialogTitle>
+                <DialogTitle className="text-foreground text-sm">Add Icon</DialogTitle>
                 <DialogDescription className="sr-only">
                   Choose an icon, optionally filter by folder, and set bottom text
                 </DialogDescription>
@@ -298,14 +298,14 @@ export default function LeftToolbar({
               <div className="min-w-0 space-y-3 w-full">
                 {/* Search + category badges */}
                 <div className="space-y-2">
-                  <label className="block text-xs text-zinc-300" htmlFor="icon-search">
+                  <label className="block text-xs text-muted-foreground" htmlFor="icon-search">
                     Search icons
                   </label>
                   <input
                     id="icon-search"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder={isSystem ? "Search by name or tag (e.g., house, arrow, cloud)" : "Search by name (e.g., aws, angular, ec2)"}
                   />
                   <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -320,7 +320,7 @@ export default function LeftToolbar({
                           "rounded-full px-3 py-1 text-xs border",
                           category === cat
                             ? "border-teal-600 bg-teal-600 text-white"
-                            : "border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800",
+                            : "border-border bg-card text-foreground hover:bg-accent",
                         )}
                         aria-pressed={category === cat}
                       >
@@ -331,7 +331,7 @@ export default function LeftToolbar({
 
                   {/* System sub-groups (lucide categories) */}
                   {isSystem && lucideReg && (
-                    <div className="max-h-20 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950 p-1.5">
+                    <div className="max-h-20 overflow-y-auto rounded-md border border-border bg-background p-1.5">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           onClick={() => setSystemSub("all")}
@@ -339,7 +339,7 @@ export default function LeftToolbar({
                             "rounded-full border px-2 py-0.5 text-[10px]",
                             systemSub === "all"
                               ? "border-teal-600 bg-teal-600 text-white"
-                              : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800",
+                              : "border-border bg-card text-muted-foreground hover:bg-accent",
                           )}
                           aria-pressed={systemSub === "all"}
                         >
@@ -353,7 +353,7 @@ export default function LeftToolbar({
                               "rounded-full border px-2 py-0.5 text-[10px]",
                               systemSub === g.slug
                                 ? "border-teal-600 bg-teal-600 text-white"
-                                : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800",
+                                : "border-border bg-card text-muted-foreground hover:bg-accent",
                             )}
                             aria-pressed={systemSub === g.slug}
                           >
@@ -366,14 +366,14 @@ export default function LeftToolbar({
                 </div>
 
                 {/* Selected preview */}
-                <div className="rounded-md border border-zinc-800 bg-zinc-950 p-3">
+                <div className="rounded-md border border-border bg-background p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-16 w-16 items-center justify-center rounded bg-zinc-200">
+                    <div className="flex h-16 w-16 items-center justify-center rounded bg-muted">
                       {selected ? (
                         selectedLucide ? (
-                          <selectedLucide.comp className="h-10 w-10 text-zinc-800" aria-hidden />
+                          <selectedLucide.comp className="h-10 w-10 text-foreground" aria-hidden />
                         ) : selected.cat === "system" ? (
-                          <Loader2 className="h-5 w-5 animate-spin text-zinc-500" aria-hidden />
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
                         ) : (
                           <img
                             src={selectedSrc || "/placeholder.svg"}
@@ -383,14 +383,14 @@ export default function LeftToolbar({
                           />
                         )
                       ) : (
-                        <span className="text-xs text-zinc-400">Preview</span>
+                        <span className="text-xs text-muted-foreground">Preview</span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="truncate text-sm text-white">
+                      <div className="truncate text-sm text-foreground">
                         {selected ? (selectedLucide?.experimental ? `${selected.name} (experimental)` : selected.name) : "No icon selected"}
                       </div>
-                      <div className="text-xs text-zinc-400">
+                      <div className="text-xs text-muted-foreground">
                         {selected ? (selected.cat === "system" ? `system / lucide${selectedLucide ? "" : " (loading)"}` : selected.cat) : "Choose an icon"}
                       </div>
                     </div>
@@ -398,17 +398,17 @@ export default function LeftToolbar({
                 </div>
 
                 {/* Results grid - widen and keep stable height */}
-                <div className="max-h-[420px] min-h-[240px] overflow-x-hidden overflow-y-auto rounded-md border border-zinc-800 bg-zinc-950 p-2 icon-picker-scroll">
+                <div className="max-h-[420px] min-h-[240px] overflow-x-hidden overflow-y-auto rounded-md border border-border bg-background p-2 icon-picker-scroll">
                   {isSystem ? (
                     regLoading && !lucideReg ? (
-                      <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-zinc-400">
+                      <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
                         <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
                         Loading system icons…
                       </div>
                     ) : !lucideReg ? (
-                      <div className="py-6 text-center text-xs text-zinc-400">Could not load system icons</div>
+                      <div className="py-6 text-center text-xs text-muted-foreground">Could not load system icons</div>
                     ) : systemGroups.length === 0 ? (
-                      <div className="py-6 text-center text-xs text-zinc-400">No icons found</div>
+                      <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
                     ) : (
                       <div className="space-y-4">
                         {systemGroups.map((g) => (
@@ -421,10 +421,10 @@ export default function LeftToolbar({
                             } as React.CSSProperties}
                           >
                             <header className="flex items-center justify-between px-1 pb-1.5">
-                              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                                 {g.title}
                               </span>
-                              <span className="text-[10px] text-zinc-600">{g.entries.length}</span>
+                              <span className="text-[10px] text-muted-foreground/70">{g.entries.length}</span>
                             </header>
                             <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
                               {g.entries.map((e) => (
@@ -441,7 +441,7 @@ export default function LeftToolbar({
                       </div>
                     )
                   ) : items.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-zinc-400">No icons found</div>
+                    <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
                   ) : (
                     <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                       {items.map((it) => {
@@ -453,7 +453,7 @@ export default function LeftToolbar({
                             onClick={() => setSelected({ cat: it.cat, name: it.name })}
                             className={cn(
                               "flex aspect-square items-center justify-center rounded border p-1",
-                              isSel ? "border-teal-600 bg-teal-950/40" : "border-zinc-800 bg-zinc-200 hover:bg-white",
+                              isSel ? "border-teal-600 bg-teal-500/10" : "border-border bg-muted hover:bg-accent",
                             )}
                             title={it.name}
                             aria-pressed={isSel}
@@ -473,14 +473,14 @@ export default function LeftToolbar({
 
                 {/* Bottom text */}
                 <div className="space-y-2">
-                  <label className="block text-xs text-zinc-300" htmlFor="icon-text">
+                  <label className="block text-xs text-muted-foreground" htmlFor="icon-text">
                     Bottom text
                   </label>
                   <input
                     id="icon-text"
                     value={bottomText}
                     onChange={(e) => setBottomText(e.target.value)}
-                    className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="e.g., AWS Lambda"
                   />
                 </div>
@@ -489,7 +489,7 @@ export default function LeftToolbar({
               <DialogFooter className="mt-2">
                 <button
                   onClick={() => setIconOpen(false)}
-                  className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200"
+                  className="rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-accent"
                 >
                   Cancel
                 </button>
@@ -507,7 +507,7 @@ export default function LeftToolbar({
                   }}
                   className={cn(
                     "rounded-md border px-3 py-1.5 text-xs",
-                    selected ? "border-teal-600 bg-teal-600 text-white" : "border-zinc-800 bg-zinc-900 text-zinc-400",
+                    selected ? "border-teal-600 bg-teal-600 text-white" : "border-border bg-card text-muted-foreground",
                   )}
                 >
                   Add

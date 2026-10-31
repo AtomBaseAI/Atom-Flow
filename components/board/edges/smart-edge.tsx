@@ -72,7 +72,9 @@ export default function SmartEdge(props: EdgeProps) {
   const path = points && points.length >= 2 ? roundedPath(points) : fallbackPath(props)
 
   // Per-edge arrow so multiple edges never share/clash one marker definition.
-  const strokeColor = style?.stroke ?? "#a3a3a3"
+  // Default (no explicit stroke) follows the theme via the --af-edge token;
+  // a user-picked stroke color is a literal value and stays across themes.
+  const strokeColor = style?.stroke ?? "var(--af-edge)"
   const arrowId = `smart-edge-arrow-${id}`
 
   return (
@@ -88,7 +90,8 @@ export default function SmartEdge(props: EdgeProps) {
           orient="auto"
           markerUnits="userSpaceOnUse"
         >
-          <path d="M0,0 L12,6 L0,12 L4,6 Z" fill={strokeColor} />
+          {/* var() is only valid in style properties, never in presentation attributes */}
+          <path d="M0,0 L12,6 L0,12 L4,6 Z" style={{ fill: strokeColor }} />
         </marker>
       </defs>
 
@@ -110,9 +113,8 @@ export default function SmartEdge(props: EdgeProps) {
         id={id}
         d={path}
         fill="none"
-        stroke={strokeColor}
         strokeWidth={style?.strokeWidth ?? 1}
-        style={style}
+        style={{ ...style, stroke: strokeColor }}
         markerStart={undefined}
         markerEnd={`url(#${arrowId})`}
         strokeLinecap="round"

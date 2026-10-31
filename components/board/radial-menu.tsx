@@ -109,7 +109,7 @@ export default function RadialMenu({ open, position, items, onClose }: RadialMen
           className={cn("radial-ring absolute", open ? "radial-ring-open" : "radial-ring-closed")}
           style={{ width: RADIUS * 2, height: RADIUS * 2, left: -RADIUS, top: -RADIUS }}
         >
-          <div className="radial-ring-spin absolute inset-0 rounded-full border border-dashed border-zinc-600/40" />
+          <div className="radial-ring-spin absolute inset-0 rounded-full border border-dashed border-foreground/20" />
         </div>
 
         {/* One-shot ripple — restarts on every open */}
@@ -129,7 +129,7 @@ export default function RadialMenu({ open, position, items, onClose }: RadialMen
             // NOTE: no transform/rotate/scale on hover — animating a transform on an
             // element that had backdrop-filter caused the close button to glitch while
             // hovering (Chromium compositing bug). Hover feedback = colors only.
-            "radial-hub pointer-events-auto absolute flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-300 shadow-xl hover:border-teal-500 hover:text-white focus-visible:border-teal-500 focus-visible:outline-none",
+            "radial-hub pointer-events-auto absolute flex items-center justify-center rounded-full border border-border bg-popover text-muted-foreground shadow-xl hover:border-teal-500 hover:text-foreground focus-visible:border-teal-500 focus-visible:outline-none",
             open ? "radial-hub-open" : "radial-hub-closed",
           )}
           style={{
@@ -171,17 +171,17 @@ export default function RadialMenu({ open, position, items, onClose }: RadialMen
                 className={cn(
                   // No backdrop-filter here either — scale hover + backdrop-filter
                   // flickers in Chromium. Solid bg keeps it crisp.
-                  "pointer-events-auto absolute flex items-center justify-center rounded-full border bg-zinc-900 shadow-lg transition-[scale,border-color,background-color,color] duration-150 hover:scale-110 focus-visible:scale-110 focus-visible:outline-none",
+                  "pointer-events-auto absolute flex items-center justify-center rounded-full border bg-popover shadow-lg transition-[scale,border-color,background-color,color] duration-150 hover:scale-110 focus-visible:scale-110 focus-visible:outline-none",
                   item.active
-                    ? "border-teal-500 text-teal-300"
-                    : "border-zinc-700 text-zinc-200 hover:border-teal-500 hover:bg-zinc-800 hover:text-white",
+                    ? "border-teal-500 text-teal-500 dark:text-teal-300"
+                    : "border-border text-foreground hover:border-teal-500 hover:bg-accent hover:text-foreground",
                 )}
                 style={{ width: ITEM_SIZE, height: ITEM_SIZE, left: 0, top: 0, transform: "translate(-50%, -50%)" }}
               >
                 <Icon className="h-[18px] w-[18px]" />
               </button>
               <span
-                className="pointer-events-none absolute left-0 whitespace-nowrap rounded-full border border-zinc-800 bg-zinc-900/95 px-2 py-0.5 text-[10px] font-medium text-zinc-300 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+                className="pointer-events-none absolute left-0 whitespace-nowrap rounded-full border border-border bg-popover/95 px-2 py-0.5 text-[10px] font-medium text-popover-foreground opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
                 style={{ top: ITEM_SIZE / 2 + 6, transform: "translate(-50%, 0)" }}
               >
                 {item.label}

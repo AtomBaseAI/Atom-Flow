@@ -37,6 +37,19 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* ---- Atom Flow board tokens (light theme) ----
+     DEFAULT element colors flip with the theme: light canvas → dark element
+     borders/text; dark canvas → light borders/text. Custom (user-picked)
+     colors are stored explicitly on nodes/edges and never use these vars. */
+  --af-board-bg: #ffffff;
+  --af-node-border: #27272a;
+  --af-node-text: #09090b;
+  --af-edge: #52525b;
+  --af-handle: #52525b;
+  --af-edit-bg: rgba(255, 255, 255, 0.75);
+  /* Canvas background pattern (grid lines / dots) — subtle on the light board */
+  --af-bg-pattern: #d4d4d8;
 }
 
 .dark {
@@ -72,6 +85,15 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+
+  /* ---- Atom Flow board tokens (dark theme — preserves the original look) ---- */
+  --af-board-bg: #000000;
+  --af-node-border: #a3a3a3;
+  --af-node-text: #ffffff;
+  --af-edge: #a3a3a3;
+  --af-handle: #e4e4e7;
+  --af-edit-bg: rgba(23, 23, 23, 0.7);
+  --af-bg-pattern: #27272a;
 }
 
 @theme inline {
@@ -293,3 +315,41 @@
   }
 }
 
+
+/* ---- View-only lock mode ----------------------------------------------
+   While the board is locked, nodes/edges/handles ignore the pointer entirely:
+   in-place text editing and resizers become unreachable, and every drag
+   (even starting on top of a shape) falls through to the pane so panning
+   behaves exactly like the hand tool. React Flow props provide a second
+   layer of defense on top of this. */
+.board-locked .react-flow__node,
+.board-locked .react-flow__edge,
+.board-locked .react-flow__handle,
+.board-locked .react-flow__edge-text,
+.board-locked .react-flow__edge-textbg {
+  pointer-events: none !important;
+}
+.board-locked .react-flow__pane {
+  cursor: grab;
+}
+.board-locked .react-flow__pane.dragging {
+  cursor: grabbing;
+}
+
+/* View-only lock mode: teal ring on the element the user tapped. Applied as a
+   transient className on the React Flow node wrapper (stripped on persist). */
+.board-locked .react-flow__node.board-locked-highlight {
+  outline: 2px solid #2dd4bf;
+  outline-offset: 3px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 7px rgba(45, 212, 191, 0.15);
+}
+
+/* ---- MagicUI AnimatedThemeToggler (View Transitions circular reveal) ----
+   Disable the default cross-fade so only the clip-path circle animation from
+   the click point is visible while switching themes. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

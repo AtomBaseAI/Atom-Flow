@@ -2,7 +2,7 @@
 
 import type React from "react"
 import * as htmlToImage from "html-to-image"
-import { useCallback, useMemo, useRef, useState, useEffect } from "react"
+import { useCallback, useMemo, useRef, useState, useEffect, useSyncExternalStore } from "react"
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -10,6 +10,8 @@ import {
   useEdgesState,
   addEdge,
   useReactFlow,
+  Background,
+  BackgroundVariant,
   type Node,
   type Edge,
   type Connection,
@@ -36,7 +38,7 @@ import {
 import SmartEdge from "./edges/smart-edge"
 import SmartConnectionLine from "./edges/smart-connection-line"
 import BoardShortcuts from "./board-shortcuts"
-import { Download, Trash2, Type, TagIcon, Hand, Upload, Image as ImageIcon, FileCode, Braces, Maximize2, Minimize2, Plus, MousePointer2, Scan } from "lucide-react"
+import { Download, Trash2, Hand, Upload, Image as ImageIcon, FileCode, Braces, Maximize2, Minimize2, Plus, MousePointer2, Scan, Lock, LockOpen, Square, Grid3x3, Grip } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   AlertDialog,
@@ -50,6 +52,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import RadialMenu, { type RadialMenuItem } from "./radial-menu"
+import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
+import { useTheme } from "next-themes"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import {
   Dialog,
@@ -68,10 +72,16 @@ export type ShapeData = {
   /** Fill opacity multiplier (0–1). Undefined = fully opaque. */
   fillOpacity?: number
   fontColor?: string
+  /** True once the user explicitly picked a text color — it then survives
+      theme switches (only DEFAULT text/borders flip with the theme). */
+  fontColorCustom?: boolean
   align?: "left" | "center" | "right"
   fontWeight?: number
   fontSize?: number
   borderColor?: string
+  /** True once the user explicitly picked a border color — survives theme
+      switches (only DEFAULT borders flip with the theme). */
+  borderColorCustom?: boolean
   borderStyle?: "solid" | "dashed"
   borderWidth?: number
   iconSrc?: string
@@ -86,11 +96,9 @@ const initialNodes: Node<ShapeData>[] = [
     data: {
       label: "",
       fill: "transparent",
-      fontColor: "#ffffff",
       fontSize: 8,
       fontWeight: 400,
       align: "center",
-      borderColor: "#a3a3a3",
       borderStyle: "solid",
       borderWidth: 1,
     },
@@ -112,6 +120,89 @@ function newNodeId(): string {
 // ---- Layout persistence (localStorage) ----
 const STORAGE_KEY = "atomflow:board:v1"
 
+// View-only lock mode (persists across reloads): hides the editing chrome,
+// forces the hand tool and freezes node/edge interactions while panning and
+// zooming stay available.
+const LOCK_STORAGE_KEY = "atomflow:board:locked:v1"
+
+// The lock flag lives in localStorage (an external system), so it is exposed
+// through useSyncExternalStore: no setState-in-effect, and the server snapshot
+// (unlocked) prevents hydration mismatches while still re-rendering locked
+// right after hydration when the stored flag is "1".
+const lockListeners = new Set<() => void>()
+
+function subscribeLock(onChange: () => void) {
+  lockListeners.add(onChange)
+  return () => {
+    lockListeners.delete(onChange)
+  }
+}
+
+function getLockedSnapshot(): boolean {
+  try {
+    return window.localStorage.getItem(LOCK_STORAGE_KEY) === "1"
+  } catch {
+    return false
+  }
+}
+
+function getLockedServerSnapshot(): boolean {
+  return false
+}
+
+function writeLocked(next: boolean) {
+  try {
+    window.localStorage.setItem(LOCK_STORAGE_KEY, next ? "1" : "0")
+  } catch {
+    // storage unavailable — the mode still applies for this session
+  }
+  lockListeners.forEach((listener) => listener())
+}
+
+// Background layout variant ("plain" | "grid" | "dots"): also persisted in
+// localStorage and exposed via useSyncExternalStore, same pattern as the lock
+// flag — server snapshot (plain) avoids hydration mismatches.
+type BoardBgVariant = "plain" | "grid" | "dots"
+
+const BG_STORAGE_KEY = "atomflow:board:bg:v1"
+const BG_ORDER: BoardBgVariant[] = ["plain", "grid", "dots"]
+const BG_LABELS: Record<BoardBgVariant, string> = {
+  plain: "Plain",
+  grid: "Grid",
+  dots: "Dotted",
+}
+
+const bgListeners = new Set<() => void>()
+
+function subscribeBg(onChange: () => void) {
+  bgListeners.add(onChange)
+  return () => {
+    bgListeners.delete(onChange)
+  }
+}
+
+function getBgSnapshot(): BoardBgVariant {
+  try {
+    const v = window.localStorage.getItem(BG_STORAGE_KEY)
+    return v === "grid" || v === "dots" ? v : "plain"
+  } catch {
+    return "plain"
+  }
+}
+
+function getBgServerSnapshot(): BoardBgVariant {
+  return "plain"
+}
+
+function writeBg(next: BoardBgVariant) {
+  try {
+    window.localStorage.setItem(BG_STORAGE_KEY, next)
+  } catch {
+    // storage unavailable — the variant still applies for this session
+  }
+  bgListeners.forEach((listener) => listener())
+}
+
 type PersistedBoard = {
   version: 1
   savedAt: string
@@ -123,13 +214,55 @@ type PersistedBoard = {
 // Removes runtime-only fields React Flow attaches to nodes/edges so the
 // stored payload stays canonical (same shape as an exported JSON file).
 function stripTransientNode(n: Node): Node {
-  const { measured, selected, dragging, resizing, events, ...rest } = n as any
+  const { measured, selected, dragging, resizing, events, className, ...rest } = n as any
   return rest as Node
 }
 
 function stripTransientEdge(e: Edge): Edge {
   const { selected, ...rest } = e as any
   return rest as Edge
+}
+
+// ---- Theme-aware default colors -----------------------------------------
+// Old boards stored the *default* border/text colors as literal hex values
+// ("#a3a3a3" border, "#ffffff" text). Those now map to "no explicit color",
+// so they render from the --af-* CSS variables and flip with the theme.
+// Any other stored value is treated as a user-picked color and marked custom
+// so it stays fixed across theme switches.
+const LEGACY_DEFAULT_BORDER = "#a3a3a3"
+const LEGACY_DEFAULT_TEXT = "#ffffff"
+
+function migrateShapeDefaults(raw: Record<string, any> | undefined): Record<string, any> {
+  const data = { ...(raw ?? {}) }
+  const border = typeof data.borderColor === "string" ? data.borderColor.toLowerCase() : undefined
+  if (!data.borderColorCustom && (!border || border === LEGACY_DEFAULT_BORDER)) {
+    delete data.borderColor
+  } else if (data.borderColor) {
+    data.borderColorCustom = true
+  }
+  const font = typeof data.fontColor === "string" ? data.fontColor.toLowerCase() : undefined
+  if (!data.fontColorCustom && (!font || font === LEGACY_DEFAULT_TEXT)) {
+    delete data.fontColor
+  } else if (data.fontColor) {
+    data.fontColorCustom = true
+  }
+  return data
+}
+
+function migrateEdgeDefaults(e: Record<string, any>): Record<string, any> {
+  const next: Record<string, any> = { ...e }
+  const style = { ...(e.style ?? {}) }
+  if (typeof style.stroke === "string" && style.stroke.toLowerCase() === LEGACY_DEFAULT_BORDER) {
+    delete style.stroke
+  }
+  next.style = style
+  const marker = next.markerEnd
+  if (marker && typeof marker === "object" && typeof marker.color === "string" && marker.color.toLowerCase() === LEGACY_DEFAULT_BORDER) {
+    const markerEnd = { ...marker }
+    delete markerEnd.color
+    next.markerEnd = markerEnd
+  }
+  return next
 }
 
 const nodeTypes: NodeTypes = {
@@ -188,7 +321,7 @@ function sanitizeImportPayload(raw: unknown): {
         x: Number.isFinite(Number(record.position?.x)) ? Number(record.position.x) : 0,
         y: Number.isFinite(Number(record.position?.y)) ? Number(record.position.y) : 0,
       },
-      data: { ...(record.data ?? {}) },
+      data: migrateShapeDefaults(record.data),
       style: {
         ...(record.style ?? {}),
         ...(width !== undefined ? { width } : {}),
@@ -215,7 +348,7 @@ function sanitizeImportPayload(raw: unknown): {
         e.source !== e.target,
     )
     .map((e, i) => ({
-      ...e,
+      ...migrateEdgeDefaults(e),
       id: typeof e.id === "string" && e.id ? e.id : `e-import-${stamp}-${i}`,
       type: typeof e.type === "string" && e.type ? e.type : "smart",
       selected: false,
@@ -226,13 +359,24 @@ function sanitizeImportPayload(raw: unknown): {
 
 function BoardInner() {
   const [tool, setTool] = useState<Tool>("select")
+  // View-only lock: hides all editing UI, forces the hand tool and freezes elements
+  const locked = useSyncExternalStore(subscribeLock, getLockedSnapshot, getLockedServerSnapshot)
+  // Canvas background layout: plain (default) / grid / dotted — cycles via the
+  // button next to the theme toggler and persists across reloads.
+  const bgVariant = useSyncExternalStore(subscribeBg, getBgSnapshot, getBgServerSnapshot)
+  // Radial (circular) tap menu — opened via right-click / two-finger tap
+  const [radialOpen, setRadialOpen] = useState(false)
+  const [radialPos, setRadialPos] = useState<{ x: number; y: number } | null>(null)
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<ShapeData>>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
+  // View-only mode: id of the node highlighted by the last tap/click (layout stays frozen)
+  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null)
 
   const rf = useReactFlow()
+  const { resolvedTheme } = useTheme()
   const connectStartIdRef = useRef<string | null>(null)
   const boardRef = useRef<HTMLDivElement>(null)
 
@@ -281,6 +425,35 @@ function BoardInner() {
       setPseudoFullscreen((p) => !p)
     }
   }, [])
+
+  // View-only lock: while locked only the hand tool is active, every editing
+  // surface is hidden and elements cannot be moved/edited until unlocked.
+  const toggleLocked = useCallback(() => {
+    const next = !locked
+    writeLocked(next)
+    if (next) {
+      // Force the hand tool so the user can still pan/zoom the frozen board,
+      // and drop any active selection/highlight along with the radial menu.
+      setTool("hand")
+      setSelectedNodeId(null)
+      setSelectedEdgeId(null)
+      setHighlightedNodeId(null)
+      setRadialOpen(false)
+      setNodes((nds) => nds.map((n) => (n.selected ? { ...n, selected: false } : n)))
+      setEdges((eds) => eds.map((e) => (e.selected ? { ...e, selected: false } : e)))
+    } else {
+      // Back to the normal editing default
+      setTool("select")
+      setHighlightedNodeId(null)
+    }
+  }, [locked, setNodes, setEdges])
+
+  // Background layout switcher: cycles plain → grid → dotted → plain and
+  // persists the choice (see BG_ORDER / writeBg).
+  const cycleBgVariant = useCallback(() => {
+    const next = BG_ORDER[(BG_ORDER.indexOf(bgVariant) + 1) % BG_ORDER.length]
+    writeBg(next)
+  }, [bgVariant])
 
   const resizeActiveRef = useRef(false)
 
@@ -404,9 +577,6 @@ function BoardInner() {
     [onNodesChange, commitHistory],
   )
 
-  // Radial (circular) tap menu — opened via right-click / two-finger tap
-  const [radialOpen, setRadialOpen] = useState(false)
-  const [radialPos, setRadialPos] = useState<{ x: number; y: number } | null>(null)
   const suppressPaneClickRef = useRef(false)
   const touchTapRef = useRef<{
     mid: { x: number; y: number }
@@ -416,6 +586,8 @@ function BoardInner() {
   } | null>(null)
 
   const openRadialMenu = useCallback((pt: { x: number; y: number }) => {
+    // The radial menu shows mode-appropriate actions in BOTH editing and
+    // view-only (locked) mode, so it opens in either state.
     // Swallow the synthetic pane click that can follow a two-finger tap so it
     // doesn't clear the selection or drop a shape right after opening.
     suppressPaneClickRef.current = true
@@ -502,11 +674,9 @@ function BoardInner() {
       const data: ShapeData = {
         label: t === "text" ? "Text" : "",
         fill: "transparent",
-        fontColor: "#ffffff",
         fontSize: 8,
         fontWeight: t === "tag" ? 600 : 400,
         align: t === "text" ? "left" : "center",
-        borderColor: "#a3a3a3",
         borderStyle: "solid",
         borderWidth: t === "line" ? 2 : 1,
       }
@@ -568,8 +738,8 @@ function BoardInner() {
             sourceHandle: srcHandle,
             targetHandle: tgtHandle,
             type: "smart",
-            style: { stroke: "#a3a3a3", strokeWidth: 1 },
-            markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6, color: "#a3a3a3" },
+            style: { strokeWidth: 1 },
+            markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6 },
             animated: false,
             data: { style: "solid" as const },
             zIndex: srcZ,
@@ -597,6 +767,32 @@ function BoardInner() {
         suppressPaneClickRef.current = false
         return
       }
+      // View-only mode: pane clicks highlight the element under the cursor
+      // (layout stays frozen) instead of selecting it.
+      if (locked) {
+        setSelectedEdgeId(null)
+        const clickPos = rf.screenToFlowPosition({ x: evt.clientX, y: evt.clientY })
+        const allNodes = rf.getNodes()
+        let hitId: string | null = null
+        // Later nodes render on top — scan from the end to find the topmost hit
+        for (let i = allNodes.length - 1; i >= 0; i--) {
+          const n = allNodes[i]
+          const w = (n.measured?.width ?? (n.style?.width as number | undefined)) ?? 0
+          const h = (n.measured?.height ?? (n.style?.height as number | undefined)) ?? 0
+          if (!w || !h) continue
+          if (
+            clickPos.x >= n.position.x &&
+            clickPos.x <= n.position.x + w &&
+            clickPos.y >= n.position.y &&
+            clickPos.y <= n.position.y + h
+          ) {
+            hitId = n.id
+            break
+          }
+        }
+        setHighlightedNodeId(hitId)
+        return
+      }
       const pos = rf.screenToFlowPosition({ x: evt.clientX, y: evt.clientY })
 
       if (tool === "rect" || tool === "ellipse" || tool === "text" || tool === "tag" || tool === "line") {
@@ -607,11 +803,9 @@ function BoardInner() {
           data: {
             label: tool === "text" ? "Text" : "",
             fill: "transparent",
-            fontColor: "#ffffff",
             fontSize: 8,
             fontWeight: tool === "tag" ? 600 : 400,
             align: tool === "text" ? "left" : "center",
-            borderColor: "#a3a3a3",
             borderStyle: "solid",
             borderWidth: tool === "line" ? 2 : 1,
           },
@@ -647,11 +841,13 @@ function BoardInner() {
       setSelectedNodeId(null)
       setSelectedEdgeId(null)
     },
-    [rf, tool, setNodes],
+    [rf, tool, setNodes, locked],
   )
 
   const handlePaneDoubleClick = useCallback(
     (evt: React.MouseEvent) => {
+      // View-only mode: no double-click text creation
+      if (locked) return
       // React Flow v12 has no onPaneDoubleClick prop, so we listen on the board
       // wrapper and only react to double clicks on the empty pane background.
       const target = evt.target as HTMLElement | null
@@ -674,11 +870,9 @@ function BoardInner() {
         data: {
           label: "Text",
           fill: "transparent",
-          fontColor: "#ffffff",
           fontSize: 8,
           fontWeight: 400,
           align: "left",
-          borderColor: "#a3a3a3",
           borderStyle: "solid",
           borderWidth: 1,
         },
@@ -694,7 +888,7 @@ function BoardInner() {
       setSelectedNodeId(id)
       setTool("select")
     },
-    [rf, setNodes],
+    [rf, setNodes, locked],
   )
 
   const onSelectionChange = useCallback(
@@ -784,7 +978,7 @@ function BoardInner() {
         // width/height AND style, and drop transient fields (measured,
         // selected, dragging…) that belong to the current session only.
         const canonicalNodes = nodes.map((n) => {
-          const { measured, selected, dragging, resizing, events, ...rest } = n as any
+          const { measured, selected, dragging, resizing, events, className, ...rest } = n as any
           const { width, height } = resolveNodeSizeRecord(n as any)
           return {
             ...rest,
@@ -822,7 +1016,7 @@ function BoardInner() {
       if (exportType === "png") {
         const dataUrl = await htmlToImage.toPng(el, {
           pixelRatio: Math.min(2, window.devicePixelRatio || 1.5),
-          backgroundColor: "#000000",
+          backgroundColor: resolvedTheme === "dark" ? "#000000" : "#ffffff",
           cacheBust: true,
         })
         const a = document.createElement("a")
@@ -834,7 +1028,7 @@ function BoardInner() {
         setExportOpen(false)
       } else if (exportType === "svg") {
         const dataUrl = await htmlToImage.toSvg(el, {
-          backgroundColor: "#000000",
+          backgroundColor: resolvedTheme === "dark" ? "#000000" : "#ffffff",
           cacheBust: true,
         })
         const res = await fetch(dataUrl)
@@ -853,7 +1047,7 @@ function BoardInner() {
     } catch (err) {
       console.error("[v0] export failed", err)
     }
-  }, [exportType, exportTitle, nodes, edges, rf])
+  }, [exportType, exportTitle, nodes, edges, rf, resolvedTheme])
 
   const onImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -888,8 +1082,38 @@ function BoardInner() {
     }
   }, [importText, rf, commitHistory])
 
-  const radialItems: RadialMenuItem[] = useMemo(
-    () => [
+  const radialItems: RadialMenuItem[] = useMemo(() => {
+    // Shared by both modes — label/icon reflect the current fullscreen state
+    const fullscreenItem: RadialMenuItem = {
+      id: "fullscreen",
+      label: isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Fullscreen",
+      icon: isFullscreen || pseudoFullscreen ? Minimize2 : Maximize2,
+      onSelect: () => {
+        void toggleFullscreen()
+      },
+    }
+    const fitViewItem: RadialMenuItem = {
+      id: "fitview",
+      label: "Fit view",
+      icon: Scan,
+      onSelect: () => rf.fitView?.({ padding: 0.2, duration: 300 }),
+    }
+
+    // View-only (locked) mode: compact menu — unlock / fullscreen / fit view
+    if (locked) {
+      return [
+        {
+          id: "unlock",
+          label: "Unlock",
+          icon: LockOpen,
+          onSelect: toggleLocked,
+        },
+        fullscreenItem,
+        fitViewItem,
+      ]
+    }
+
+    return [
       {
         id: "add",
         label: "Add shape",
@@ -912,39 +1136,42 @@ function BoardInner() {
         active: tool === "hand",
         onSelect: () => setTool("hand"),
       },
+      fitViewItem,
       {
-        id: "fitview",
-        label: "Fit view",
-        icon: Scan,
-        onSelect: () => rf.fitView?.({ padding: 0.2, duration: 300 }),
+        id: "lock",
+        label: "Lock board",
+        icon: Lock,
+        onSelect: toggleLocked,
       },
-      {
-        id: "tag",
-        label: "Tag",
-        icon: TagIcon,
-        onSelect: () => {
-          if (radialPos) createNodeAt("tag", radialPos)
-        },
-      },
-      {
-        id: "text",
-        label: "Text",
-        icon: Type,
-        onSelect: () => {
-          if (radialPos) createNodeAt("text", radialPos)
-        },
-      },
-    ],
-    [radialPos, tool, rf, createNodeAt],
+      fullscreenItem,
+    ]
+  }, [locked, radialPos, tool, rf, createNodeAt, toggleLocked, toggleFullscreen, isFullscreen, pseudoFullscreen])
+
+  // In view-only mode the tapped element gets a teal highlight ring. The ring
+  // is a transient className on the node wrapper — stripped before persistence
+  // and export so it never leaks into saved boards.
+  const displayNodes = useMemo(
+    () =>
+      nodes.map((n) =>
+        n.id === highlightedNodeId
+          ? ({ ...n, className: "board-locked-highlight" } as Node<ShapeData>)
+          : n.className
+            ? ({ ...n, className: undefined } as Node<ShapeData>)
+            : n,
+      ),
+    [nodes, highlightedNodeId],
   )
 
   return (
     <div
       className={cn(
         "relative h-full min-h-0 w-full overflow-hidden",
-        pseudoFullscreen && "fixed inset-0 z-[60] h-dvh w-screen bg-black",
+        pseudoFullscreen && "fixed inset-0 z-[60] h-dvh w-screen",
       )}
+      style={{ background: "var(--af-board-bg)" }}
     >
+      {/* Left tool rail — entirely hidden in view-only mode */}
+      {!locked && (
       <LeftToolbar
         active={tool as "select" | "rect" | "ellipse" | "text" | "hand"}
         onChangeTool={setTool}
@@ -966,11 +1193,9 @@ function BoardInner() {
               label: data.label || "",
               iconSrc: data.src,
               fill: "transparent",
-              fontColor: "#ffffff",
               fontSize: 8,
               fontWeight: 700,
               align: "center",
-              borderColor: "#a3a3a3",
               borderStyle: "solid",
               borderWidth: 1,
             },
@@ -991,11 +1216,9 @@ function BoardInner() {
             data: {
               label: "tag",
               fill: "transparent",
-              fontColor: "#ffffff",
               fontSize: 8,
               fontWeight: 600,
               align: "center",
-              borderColor: "#a3a3a3",
               borderStyle: "solid",
               borderWidth: 1,
             },
@@ -1007,8 +1230,9 @@ function BoardInner() {
           setTool("select")
         }}
       />
+      )}
 
-      {/* Top-left: fullscreen toggle */}
+      {/* Top-left: fullscreen toggle + theme switcher + background layout switcher */}
       <div className="pointer-events-auto absolute left-4 top-4 z-20 flex items-center gap-2">
         <TooltipProvider>
           <Tooltip>
@@ -1016,7 +1240,7 @@ function BoardInner() {
               <button
                 aria-label={isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
                 onClick={toggleFullscreen}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 {isFullscreen || pseudoFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </button>
@@ -1025,15 +1249,71 @@ function BoardInner() {
               {isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Fullscreen"}
             </TooltipContent>
           </Tooltip>
+          <AnimatedThemeToggler />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Background: ${BG_LABELS[bgVariant]}`}
+                aria-pressed={bgVariant !== "plain"}
+                onClick={cycleBgVariant}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                {bgVariant === "plain" ? (
+                  <Square className="h-4 w-4" />
+                ) : bgVariant === "grid" ? (
+                  <Grid3x3 className="h-4 w-4" />
+                ) : (
+                  <Grip className="h-4 w-4" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start" sideOffset={6}>
+              Background: {BG_LABELS[bgVariant]} — click for{" "}
+              {BG_LABELS[BG_ORDER[(BG_ORDER.indexOf(bgVariant) + 1) % BG_ORDER.length]]}
+            </TooltipContent>
+          </Tooltip>
         </TooltipProvider>
       </div>
 
+      {/* Bottom-left: view-only lock toggle — one of the only controls that
+          stays visible (together with fullscreen) while the board is locked */}
+      <div className="pointer-events-auto absolute bottom-4 left-4 z-30 flex items-center gap-2">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                aria-label={locked ? "Unlock board" : "Lock board"}
+                aria-pressed={locked}
+                onClick={toggleLocked}
+                className={cn(
+                  "inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card focus:outline-none focus:ring-2 focus:ring-teal-500",
+                  locked ? "border-teal-500 text-teal-600 dark:text-white" : "border-border text-foreground hover:bg-accent",
+                )}
+              >
+                {locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start" sideOffset={6}>
+              {locked ? "Unlock board" : "Lock board (view only)"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        {locked && (
+          <span className="rounded-md border border-teal-500/60 bg-teal-500/10 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-teal-700 dark:text-teal-300">
+            Locked
+          </span>
+        )}
+      </div>
+
+      {/* Top-right actions — editing-only, hidden while locked */}
+      {!locked && (
       <div className="pointer-events-auto absolute right-4 top-4 z-20 flex items-center gap-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
               aria-label="Clear"
-              className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-800"
+              className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground hover:bg-accent"
               title="Clear"
             >
               <Trash2 className="h-4 w-4" />
@@ -1066,7 +1346,7 @@ function BoardInner() {
             setImportError(null)
             setImportOpen(true)
           }}
-          className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-800"
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground hover:bg-accent"
           title="Import JSON"
         >
           <Upload className="h-4 w-4" />
@@ -1076,13 +1356,14 @@ function BoardInner() {
         <button
           aria-label="Export"
           onClick={() => setExportOpen(true)}
-          className="inline-flex items-center gap-1 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-800"
+          className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground hover:bg-accent"
           title="Export"
         >
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Export</span>
         </button>
       </div>
+      )}
 
       <div
         ref={boardRef}
@@ -1099,9 +1380,9 @@ function BoardInner() {
         onDoubleClick={handlePaneDoubleClick}
       >
         <ReactFlow
-          className="h-full w-full"
+          className={cn("h-full w-full", locked && "board-locked")}
           proOptions={useMemo(() => ({ hideAttribution: true }), [])}
-          nodes={nodes}
+          nodes={displayNodes}
           edges={edges}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
@@ -1120,8 +1401,14 @@ function BoardInner() {
           onNodesDelete={(deleted) => {
             if (deleted.some((n) => n.id === selectedNodeId)) setSelectedNodeId(null)
           }}
-          selectionOnDrag={tool === "select"}
-          panOnDrag={tool === "hand"}
+          selectionOnDrag={tool === "select" && !locked}
+          panOnDrag={tool === "hand" || locked}
+          // View-only lock: freeze every node/edge interaction, keep panning
+          nodesDraggable={!locked}
+          nodesConnectable={!locked}
+          elementsSelectable={!locked}
+          nodesFocusable={!locked}
+          edgesFocusable={!locked}
           zoomOnDoubleClick={false}
           deleteKeyCode={null}
           onNodeDragStart={useCallback(() => {
@@ -1131,8 +1418,8 @@ function BoardInner() {
           }, [])}
           defaultEdgeOptions={{
             type: "smart",
-            style: { stroke: "#a3a3a3", strokeWidth: 1 },
-            markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6, color: "#a3a3a3" },
+            style: { strokeWidth: 1 },
+            markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6 },
           }}
           elevateNodesOnSelect={false}
           connectionMode={ConnectionMode.Loose}
@@ -1142,35 +1429,55 @@ function BoardInner() {
           )}
           connectionRadius={24}
         >
-          <BoardShortcuts />
+          {/* Canvas background layout — plain (none), grid lines or dots.
+              The pattern color comes from the --af-bg-pattern theme var so it
+              stays subtle in both light and dark mode, and the React Flow
+              pattern pans/zooms together with the viewport. */}
+          {bgVariant === "grid" && (
+            <Background
+              variant={BackgroundVariant.Lines}
+              gap={26}
+              lineWidth={1}
+              color="var(--af-bg-pattern)"
+            />
+          )}
+          {bgVariant === "dots" && (
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={22}
+              size={1.6}
+              color="var(--af-bg-pattern)"
+            />
+          )}
+          <BoardShortcuts locked={locked} />
         </ReactFlow>
       </div>
 
       <Dialog open={exportOpen} onOpenChange={setExportOpen}>
-        <DialogContent className="max-w-md border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-xl">
-          <DialogHeader className="border-b border-zinc-800 px-5 py-4">
-            <DialogTitle className="text-sm font-semibold text-white">Export diagram</DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400">
+        <DialogContent className="max-w-md border-border bg-card p-0 text-foreground shadow-xl">
+          <DialogHeader className="border-b border-border px-5 py-4">
+            <DialogTitle className="text-sm font-semibold text-foreground">Export diagram</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
               Download the board as an image, or save it as a JSON project file you can re-import later.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 px-5 py-4">
             <div className="space-y-1.5">
-              <label htmlFor="export-title" className="text-xs font-medium text-zinc-300">
+              <label htmlFor="export-title" className="text-xs font-medium text-muted-foreground">
                 File name
               </label>
               <input
                 id="export-title"
                 value={exportTitle}
                 onChange={(e) => setExportTitle(e.target.value)}
-                className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 text-sm text-zinc-100 outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
                 placeholder="diagram"
               />
             </div>
 
             <div className="space-y-1.5">
-              <span className="text-xs font-medium text-zinc-300">Format</span>
+              <span className="text-xs font-medium text-muted-foreground">Format</span>
               <div className="grid grid-cols-3 gap-2">
                 {(
                   [
@@ -1187,18 +1494,18 @@ function BoardInner() {
                     className={cn(
                       "flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-xs transition-colors",
                       exportType === f.value
-                        ? "border-teal-600 bg-teal-600/10 text-white"
-                        : "border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-700 hover:bg-zinc-900",
+                        ? "border-teal-600 bg-teal-600/10 text-teal-700 dark:text-white"
+                        : "border-border bg-background text-muted-foreground hover:bg-accent",
                     )}
                   >
                     <f.icon className="h-4 w-4" />
                     <span className="font-medium">{f.label}</span>
-                    <span className="text-[10px] text-zinc-500">{f.hint}</span>
+                    <span className="text-[10px] text-muted-foreground">{f.hint}</span>
                   </button>
                 ))}
               </div>
               {exportType === "json" && (
-                <p className="text-[11px] text-zinc-500">
+                <p className="text-[11px] text-muted-foreground">
                   {nodes.length} node{nodes.length === 1 ? "" : "s"} · {edges.length} connection
                   {edges.length === 1 ? "" : "s"} — shapes, styles and layout are preserved.
                 </p>
@@ -1206,10 +1513,10 @@ function BoardInner() {
             </div>
           </div>
 
-          <DialogFooter className="border-t border-zinc-800 px-5 py-3">
+          <DialogFooter className="border-t border-border px-5 py-3">
             <button
               onClick={() => setExportOpen(false)}
-              className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-accent"
             >
               Cancel
             </button>
@@ -1230,19 +1537,19 @@ function BoardInner() {
           if (!open) setImportError(null)
         }}
       >
-        <DialogContent className="max-w-md border-zinc-800 bg-zinc-900 p-0 text-zinc-100 shadow-xl">
-          <DialogHeader className="border-b border-zinc-800 px-5 py-4">
-            <DialogTitle className="text-sm font-semibold text-white">Import diagram</DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400">
+        <DialogContent className="max-w-md border-border bg-card p-0 text-foreground shadow-xl">
+          <DialogHeader className="border-b border-border px-5 py-4">
+            <DialogTitle className="text-sm font-semibold text-foreground">Import diagram</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
               Load a .json file previously exported from Atom Flow. This replaces the current board — undo still works.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 px-5 py-4">
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-zinc-700 bg-zinc-950 px-4 py-6 text-center transition-colors hover:border-teal-600 hover:bg-zinc-900">
-              <Upload className="h-5 w-5 text-zinc-400" />
-              <span className="text-xs font-medium text-zinc-200">{importFileName || "Choose a .json file"}</span>
-              <span className="text-[10px] text-zinc-500">or paste the JSON below</span>
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-background px-4 py-6 text-center transition-colors hover:border-teal-600 hover:bg-accent">
+              <Upload className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">{importFileName || "Choose a .json file"}</span>
+              <span className="text-[10px] text-muted-foreground">or paste the JSON below</span>
               <input
                 type="file"
                 accept=".json,application/json"
@@ -1253,7 +1560,7 @@ function BoardInner() {
             </label>
 
             <div className="space-y-1.5">
-              <label htmlFor="import-json" className="text-xs font-medium text-zinc-300">
+              <label htmlFor="import-json" className="text-xs font-medium text-muted-foreground">
                 Paste JSON
               </label>
               <textarea
@@ -1262,7 +1569,7 @@ function BoardInner() {
                 onChange={(e) => setImportText(e.target.value)}
                 rows={5}
                 placeholder={'{ "nodes": [...], "edges": [...] }'}
-                className="w-full resize-none rounded-md border border-zinc-800 bg-zinc-950 px-2 py-1.5 font-mono text-[11px] leading-relaxed text-zinc-100 outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full resize-none rounded-md border border-border bg-background px-2 py-1.5 font-mono text-[11px] leading-relaxed text-foreground outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
 
@@ -1273,10 +1580,10 @@ function BoardInner() {
             )}
           </div>
 
-          <DialogFooter className="border-t border-zinc-800 px-5 py-3">
+          <DialogFooter className="border-t border-border px-5 py-3">
             <button
               onClick={() => setImportOpen(false)}
-              className="rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200 hover:bg-zinc-800"
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-accent"
             >
               Cancel
             </button>
@@ -1287,7 +1594,7 @@ function BoardInner() {
                 "rounded-md border px-3 py-1.5 text-xs",
                 importText.trim()
                   ? "border-teal-600 bg-teal-600 text-white hover:bg-teal-500"
-                  : "border-zinc-800 bg-zinc-900 text-zinc-500",
+                  : "border-border bg-card text-muted-foreground",
               )}
             >
               Import
@@ -1297,7 +1604,7 @@ function BoardInner() {
       </Dialog>
 
       <BottomToolbar
-        visible={!!selectedNodeId || !!selectedEdgeId}
+        visible={!locked && (!!selectedNodeId || !!selectedEdgeId)}
         isNodeSelected={!!selectedNodeId}
         isEdgeSelected={!!selectedEdgeId}
         currentFill={selectedNode?.data?.fill}
@@ -1307,10 +1614,10 @@ function BoardInner() {
         onFillOpacityStart={commitHistory}
         onFillOpacity={(v) => updateSelectedNodeSilent({ fillOpacity: v })}
         onBorderStyle={(style) => updateSelectedNode({ borderStyle: style })}
-        onBorderColor={(color) => updateSelectedNode({ borderColor: color })}
+        onBorderColor={(color) => updateSelectedNode({ borderColor: color, borderColorCustom: true })}
         onBorderWidth={(w) => updateSelectedNode({ borderWidth: w })}
         onChangeTextSize={(fontSize) => updateSelectedNode({ fontSize })}
-        onChangeTextColor={(color) => updateSelectedNode({ fontColor: color })}
+        onChangeTextColor={(color) => updateSelectedNode({ fontColor: color, fontColorCustom: true })}
         onAlign={(align) => updateSelectedNode({ align })}
         onBold={(bold) => updateSelectedNode({ fontWeight: bold ? 700 : 400 })}
         onEdgeStyle={(style) => setSelectedEdgeStyle({ strokeDasharray: style === "dashed" ? "6 6" : "0" })}

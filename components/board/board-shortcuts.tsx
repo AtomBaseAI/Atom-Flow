@@ -92,8 +92,14 @@ function cloneNodesWithOffset(nodes: Node[], offset = { x: 24, y: 24 }): Node[] 
   })
 }
 
-export default function BoardShortcuts() {
+export default function BoardShortcuts({ locked = false }: { locked?: boolean }) {
   const rf = useReactFlow()
+  // Mirrored into a ref so the once-bound keyboard listeners always read the
+  // current lock state without re-subscribing.
+  const lockedRef = useRef(locked)
+  useEffect(() => {
+    lockedRef.current = locked
+  }, [locked])
   const clipboardRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
   const pasteBumpRef = useRef(0)
 
@@ -249,6 +255,8 @@ export default function BoardShortcuts() {
       const ctrlOrMeta = !!(e.ctrlKey || e.metaKey)
       const editing = isEditingText()
       if (editing) return
+      // View-only lock: undo/redo/copy/paste/delete would all mutate the board
+      if (lockedRef.current) return
 
       if (ctrlOrMeta && (key === "z" || key === "y" || key === "c" || key === "v")) {
         if (pressedRef.current[key]) {
@@ -312,9 +320,18 @@ export default function BoardShortcuts() {
   }, [])
 
   useEffect(() => {
-    const onUndo: EventListener = () => undo()
-    const onRedo: EventListener = () => redo()
-    const onClear: EventListener = () => clearAll()
+    const onUndo: EventListener = () => {
+      if (lockedRef.current) return
+      undo()
+    }
+    const onRedo: EventListener = () => {
+      if (lockedRef.current) return
+      redo()
+    }
+    const onClear: EventListener = () => {
+      if (lockedRef.current) return
+      clearAll()
+    }
     const onCommit: EventListener = () => commit()
 
     window.addEventListener("board:undo", onUndo)
