@@ -50,6 +50,8 @@
   --af-edit-bg: rgba(255, 255, 255, 0.75);
   /* Canvas background pattern (grid lines / dots) — subtle on the light board */
   --af-bg-pattern: #d4d4d8;
+  /* Smart Guides (Photoshop-style alignment lines) */
+  --af-snap-line: #db2777;
 }
 
 .dark {
@@ -94,6 +96,7 @@
   --af-handle: #e4e4e7;
   --af-edit-bg: rgba(23, 23, 23, 0.7);
   --af-bg-pattern: #27272a;
+  --af-snap-line: #f472b6;
 }
 
 @theme inline {

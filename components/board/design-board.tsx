@@ -10,12 +10,15 @@ import {
   useEdgesState,
   addEdge,
   useReactFlow,
+  useStore,
+  ViewportPortal,
   Background,
   BackgroundVariant,
   type Node,
   type Edge,
   type Connection,
   type NodeChange,
+  type NodePositionChange,
   type NodeTypes,
   MarkerType,
   ConnectionMode,
@@ -203,6 +206,84 @@ function writeBg(next: BoardBgVariant) {
   bgListeners.forEach((listener) => listener())
 }
 
+// ---- Smart Guides (Photoshop-style alignment helpers) ----------------------
+// While an element is dragged, its left/center/right and top/middle/bottom
+// anchors are compared against every other element's anchors. Within a small
+// (screen-space) threshold the drag is snapped to the closest match and a
+// magenta guide line is drawn through the aligned axis, exactly like Smart
+// Guides in Photoshop.
+
+type SnapBox = { x: number; y: number; w: number; h: number }
+
+type SnapGuides = {
+  /** Vertical lines (fixed x, spanning y1..y2 in flow coords) */
+  vertical: { x: number; y1: number; y2: number }[]
+  /** Horizontal lines (fixed y, spanning x1..x2 in flow coords) */
+  horizontal: { y: number; x1: number; x2: number }[]
+}
+
+const EMPTY_SNAP_GUIDES: SnapGuides = { vertical: [], horizontal: [] }
+const SNAP_THRESHOLD_PX = 6 // screen-space snap distance
+const SNAP_GUIDE_PAD = 24 // flow-space extension of the guide beyond both boxes
+
+function nodeSnapBox(n: Node<ShapeData>): SnapBox {
+  const style = (n.style ?? {}) as { width?: number | string; height?: number | string }
+  const w = n.measured?.width ?? (typeof style.width === "number" ? style.width : 0)
+  const h = n.measured?.height ?? (typeof style.height === "number" ? style.height : 0)
+  return { x: n.position.x, y: n.position.y, w, h }
+}
+
+function unionSnapBoxes(a: SnapBox, b: SnapBox): SnapBox {
+  const x = Math.min(a.x, b.x)
+  const y = Math.min(a.y, b.y)
+  return {
+    x,
+    y,
+    w: Math.max(a.x + a.w, b.x + b.w) - x,
+    h: Math.max(a.y + a.h, b.y + b.h) - y,
+  }
+}
+
+/** Renders the active smart-guide lines inside the viewport coordinate space
+    so they pan/zoom with the canvas. Lines stay 1 screen px thick at any zoom. */
+function SnapGuidesLayer({ guides }: { guides: SnapGuides }) {
+  const zoom = useStore((s) => s.transform[2]) || 1
+  if (guides.vertical.length === 0 && guides.horizontal.length === 0) return null
+  const t = 1 / zoom
+  return (
+    <ViewportPortal>
+      {guides.vertical.map((g, i) => (
+        <div
+          key={`v-${i}-${Math.round(g.x * 10)}-${Math.round(g.y1)}`}
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0"
+          style={{
+            transform: `translate(${g.x - t / 2}px, ${g.y1}px)`,
+            width: t,
+            height: Math.max(g.y2 - g.y1, t),
+            background: "var(--af-snap-line)",
+            zIndex: 60,
+          }}
+        />
+      ))}
+      {guides.horizontal.map((g, i) => (
+        <div
+          key={`h-${i}-${Math.round(g.y * 10)}-${Math.round(g.x1)}`}
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0"
+          style={{
+            transform: `translate(${g.x1}px, ${g.y - t / 2}px)`,
+            width: Math.max(g.x2 - g.x1, t),
+            height: t,
+            background: "var(--af-snap-line)",
+            zIndex: 60,
+          }}
+        />
+      ))}
+    </ViewportPortal>
+  )
+}
+
 type PersistedBoard = {
   version: 1
   savedAt: string
@@ -364,6 +445,12 @@ function BoardInner() {
   // Canvas background layout: plain (default) / grid / dotted — cycles via the
   // button next to the theme toggler and persists across reloads.
   const bgVariant = useSyncExternalStore(subscribeBg, getBgSnapshot, getBgServerSnapshot)
+  // Smart Guides: alignment lines shown while dragging (Photoshop-style)
+  const [snapGuides, setSnapGuides] = useState<SnapGuides>(EMPTY_SNAP_GUIDES)
+  // True between onNodeDragStart and onNodeDragStop — lets handleNodesChange
+  // also snap the FINAL dragging=false position change (otherwise the last
+  // pointerup event would re-write the un-snapped position over the snapped one).
+  const nodeDragActiveRef = useRef(false)
   // Radial (circular) tap menu — opened via right-click / two-finger tap
   const [radialOpen, setRadialOpen] = useState(false)
   const [radialPos, setRadialPos] = useState<{ x: number; y: number } | null>(null)
@@ -572,10 +659,126 @@ function BoardInner() {
           resizeActiveRef.current = false
         }
       }
-      onNodesChange(changes)
+
+      // ---- Smart Guides: snap dragged elements to edges/centers of others ----
+      // The drag's intended (unsnapped) positions arrive in the position
+      // changes; the closest edge/center match within a screen-space threshold
+      // shifts the whole drag by the residual offset and records guide lines.
+      // The final dragging=false change of a drag is corrected too (drag still
+      // flagged active via nodeDragActiveRef) so the element stays snapped.
+      let effective = changes
+      if (!restoring && Array.isArray(changes)) {
+        const dragActive = nodeDragActiveRef.current
+        const dragChanges = changes.filter(
+          (c): c is NodePositionChange<Node<ShapeData>> =>
+            c.type === "position" && !!(c as any).position && ((c as any).dragging === true || (dragActive && (c as any).dragging === false)),
+        )
+        const liveDrag = dragChanges.some((c) => c.dragging === true)
+        if (dragChanges.length > 0) {
+          const zoom = rf.getViewport().zoom || 1
+          const threshold = SNAP_THRESHOLD_PX / zoom
+          const posById = new Map<string, { x: number; y: number }>()
+          for (const c of dragChanges) posById.set(c.id, c.position as { x: number; y: number })
+
+          const draggedBoxes: SnapBox[] = []
+          const targetBoxes: SnapBox[] = []
+          for (const n of nodes) {
+            const box = nodeSnapBox(n)
+            const moved = posById.get(n.id)
+            if (moved) draggedBoxes.push({ ...box, x: moved.x, y: moved.y })
+            else targetBoxes.push(box)
+          }
+
+          if (draggedBoxes.length > 0 && targetBoxes.length > 0) {
+            const dBox = draggedBoxes.reduce(unionSnapBoxes)
+            const anchorsX = [dBox.x, dBox.x + dBox.w / 2, dBox.x + dBox.w]
+            const anchorsY = [dBox.y, dBox.y + dBox.h / 2, dBox.y + dBox.h]
+            let bestX: { delta: number; coord: number; box: SnapBox } | null = null
+            let bestY: { delta: number; coord: number; box: SnapBox } | null = null
+            for (const t of targetBoxes) {
+              const tx = [t.x, t.x + t.w / 2, t.x + t.w]
+              const ty = [t.y, t.y + t.h / 2, t.y + t.h]
+              for (const a of anchorsX) {
+                for (const tc of tx) {
+                  const d = tc - a
+                  if (Math.abs(d) <= threshold && (!bestX || Math.abs(d) < Math.abs(bestX.delta))) {
+                    bestX = { delta: d, coord: tc, box: t }
+                  }
+                }
+              }
+              for (const a of anchorsY) {
+                for (const tc of ty) {
+                  const d = tc - a
+                  if (Math.abs(d) <= threshold && (!bestY || Math.abs(d) < Math.abs(bestY.delta))) {
+                    bestY = { delta: d, coord: tc, box: t }
+                  }
+                }
+              }
+            }
+
+            const dx = bestX?.delta ?? 0
+            const dy = bestY?.delta ?? 0
+            if (dx !== 0 || dy !== 0) {
+              effective = changes.map((c) => {
+                if (c.type === "position" && (c as any).position && ((c as any).dragging === true || (dragActive && (c as any).dragging === false))) {
+                  const pc = c as NodePositionChange<Node<ShapeData>>
+                  return { ...pc, position: { x: pc.position!.x + dx, y: pc.position!.y + dy } }
+                }
+                return c
+              })
+            }
+
+            // Live drag: show guides. End-of-drag event (dragging=false only):
+            // position got snapped above, guides are dropped.
+            const snapped = { ...dBox, x: dBox.x + dx, y: dBox.y + dy }
+            const vertical = liveDrag && bestX
+              ? [
+                  {
+                    x: bestX.coord,
+                    y1: Math.min(snapped.y, bestX.box.y) - SNAP_GUIDE_PAD,
+                    y2: Math.max(snapped.y + snapped.h, bestX.box.y + bestX.box.h) + SNAP_GUIDE_PAD,
+                  },
+                ]
+              : []
+            const horizontal = liveDrag && bestY
+              ? [
+                  {
+                    y: bestY.coord,
+                    x1: Math.min(snapped.x, bestY.box.x) - SNAP_GUIDE_PAD,
+                    x2: Math.max(snapped.x + snapped.w, bestY.box.x + bestY.box.w) + SNAP_GUIDE_PAD,
+                  },
+                ]
+              : []
+            setSnapGuides((prev) => {
+              const nextEmpty = vertical.length === 0 && horizontal.length === 0
+              const prevEmpty = prev.vertical.length === 0 && prev.horizontal.length === 0
+              if (nextEmpty && prevEmpty) return prev
+              return { vertical, horizontal }
+            })
+          } else {
+            setSnapGuides((prev) =>
+              prev.vertical.length === 0 && prev.horizontal.length === 0 ? prev : EMPTY_SNAP_GUIDES,
+            )
+          }
+        } else if (changes.some((c) => c.type === "position")) {
+          // Drag ended or a programmatic move — drop any guides
+          setSnapGuides((prev) =>
+            prev.vertical.length === 0 && prev.horizontal.length === 0 ? prev : EMPTY_SNAP_GUIDES,
+          )
+        }
+      }
+
+      onNodesChange(effective)
     },
-    [onNodesChange, commitHistory],
+    [onNodesChange, commitHistory, nodes, rf],
   )
+
+  const clearSnapGuides = useCallback(() => {
+    nodeDragActiveRef.current = false
+    setSnapGuides((prev) =>
+      prev.vertical.length === 0 && prev.horizontal.length === 0 ? prev : EMPTY_SNAP_GUIDES,
+    )
+  }, [])
 
   const suppressPaneClickRef = useRef(false)
   const touchTapRef = useRef<{
@@ -1412,10 +1615,12 @@ function BoardInner() {
           zoomOnDoubleClick={false}
           deleteKeyCode={null}
           onNodeDragStart={useCallback(() => {
+            nodeDragActiveRef.current = true
             if (typeof window !== "undefined" && !(window as any).__boardRestoring) {
               window.dispatchEvent(new CustomEvent("board:commit"))
             }
           }, [])}
+          onNodeDragStop={clearSnapGuides}
           defaultEdgeOptions={{
             type: "smart",
             style: { strokeWidth: 1 },
@@ -1450,6 +1655,7 @@ function BoardInner() {
             />
           )}
           <BoardShortcuts locked={locked} />
+          <SnapGuidesLayer guides={snapGuides} />
         </ReactFlow>
       </div>
 
