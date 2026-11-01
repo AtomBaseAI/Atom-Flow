@@ -23,6 +23,25 @@
  *     finds an orthogonal detour around the obstacles (inflated by a margin),
  *     which keeps edges from cutting through unrelated nodes.
  *
+ * Stability guarantees (the "random paths" fixes):
+ *
+ *  - CONTAINMENT-AWARE OBSTACLES. A node that fully contains an endpoint
+ *    (a group/container rectangle drawn around icon nodes, for example) is
+ *    never an obstacle for that endpoint's edges — a child edge has to cross
+ *    the container border, and treating the container as an obstacle used to
+ *    force every side combo to score as blocked, producing squiggly A*
+ *    escape paths that changed with every unrelated drag.
+ *
+ *  - SIDE-CHOICE HYSTERESIS. The chosen attachment sides are remembered per
+ *    edge; while the remembered combo keeps a clean route it is retained
+ *    unless the best combo becomes substantially shorter. Near-tied combos
+ *    therefore stop flapping when an unrelated node moves.
+ *
+ *  - DIRECTION-CONSTRAINED A*. Detours leave the source along its stub and
+ *    arrive at the target along its stub, and folded (back-and-forth)
+ *    segments are pruned, so detours never render as hooks or loops at the
+ *    anchors.
+ *
  * Everything here is pure geometry (no React, no store) so it can be unit
  * tested directly.
  */
@@ -72,8 +91,10 @@ const STUB = 16
 const OBSTACLE_PAD = 14
 // Gap between edges bundled onto the same border / corridor.
 const LANE_SPACING = 18
-// Minimum clearance between two edge anchors that run parallel approaches.
-const ANCHOR_CLEAR = LANE_SPACING / 2
+// Smallest stub-end offset that is still worth flattening into a straight
+// run when the far border is otherwise unoccupied (larger dips keep their
+// Z shape and get a deconflicted lane instead).
+const DIP_SNAP_MAX = 30
 // Corner radius of the drawn path.
 const CORNER_RADIUS = 8
 // How strongly a stub direction disagreeing with the straight line toward the
@@ -107,6 +128,53 @@ function inflateRect(r: Rect, p: number): Rect {
 
 function shrinkRect(r: Rect, p: number): Rect {
   return { x: r.x + p, y: r.y + p, width: Math.max(1, r.width - 2 * p), height: Math.max(1, r.height - 2 * p) }
+}
+
+/** True when `outer` fully encloses `inner` (with a small tolerance). */
+export function containsRect(outer: Rect, inner: Rect, tol = 8): boolean {
+  if (outer.width <= 0 || outer.height <= 0 || inner.width <= 0 || inner.height <= 0) return false
+  // A container must be strictly larger than what it contains — two separate
+  // nodes of the same size never contain each other.
+  if (outer.width * outer.height <= inner.width * inner.height) return false
+  return (
+    inner.x >= outer.x - tol &&
+    inner.y >= outer.y - tol &&
+    inner.x + inner.width <= outer.x + outer.width + tol &&
+    inner.y + inner.height <= outer.y + outer.height + tol
+  )
+}
+
+/**
+ * Node ids that must NOT act as obstacles for an edge between `sourceId` and
+ * `targetId`. Beyond the endpoints themselves this excludes visual
+ * container ancestors: a node whose rect fully contains an endpoint (e.g. a
+ * "group" rectangle drawn around several icon nodes). Edges attached to a
+ * container's children have to cross the container border, so treating the
+ * container as an obstacle would block every side combination and produce
+ * squiggly A* escape paths. Children of an endpoint stay obstacles on
+ * purpose — an edge leaving a container should still detour around the
+ * icons it visually passes over.
+ */
+function obstacleExclusionsFor(
+  sourceId: string,
+  targetId: string,
+  boxes: Box[],
+  boxById: Map<string, Box>,
+): Set<string> {
+  const excluded = new Set<string>([sourceId, targetId])
+  const src = boxById.get(sourceId)
+  const tgt = boxById.get(targetId)
+  for (const bx of boxes) {
+    if (excluded.has(bx.id)) continue
+    if (src && containsRect(bx.rect, src.rect)) {
+      excluded.add(bx.id)
+      continue
+    }
+    if (tgt && containsRect(bx.rect, tgt.rect)) {
+      excluded.add(bx.id)
+    }
+  }
+  return excluded
 }
 
 export function rectCenter(r: Rect): Pt {
@@ -205,6 +273,39 @@ export function simplifyPath(pts: Pt[]): Pt[] {
   return out
 }
 
+/**
+ * Cancels folded (overlapping back-and-forth) segments, e.g. a route that
+ * runs right past an anchor and then doubles back over itself. Removing the
+ * corner point of each fold shortens the drawn overlap while keeping the
+ * exact endpoints, so detours never render as scribbles. Non-orthogonal
+ * input is returned untouched.
+ */
+export function pruneBacktracks(pts: Pt[]): Pt[] {
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const dx = Math.abs(pts[i + 1].x - pts[i].x)
+    const dy = Math.abs(pts[i + 1].y - pts[i].y)
+    if (dx > 0.01 && dy > 0.01) return pts
+  }
+  const out = pts.map((p) => ({ x: p.x, y: p.y }))
+  let i = 1
+  while (i + 1 < out.length) {
+    const d1x = Math.sign(out[i].x - out[i - 1].x)
+    const d1y = Math.sign(out[i].y - out[i - 1].y)
+    const d2x = Math.sign(out[i + 1].x - out[i].x)
+    const d2y = Math.sign(out[i + 1].y - out[i].y)
+    const opposite =
+      (d1x !== 0 && d2x !== 0 && d1x === -d2x) || (d1y !== 0 && d2y !== 0 && d1y === -d2y)
+    if (opposite) {
+      // Drop the corner; the two segments collapse into their net run.
+      out.splice(i, 1)
+      if (i > 1) i-- // the fold may cascade with the run before it
+    } else {
+      i++
+    }
+  }
+  return simplifyPath(out)
+}
+
 // ---------------------------------------------------------------------------
 // Naive orthogonal route for a side combination
 // ---------------------------------------------------------------------------
@@ -238,8 +339,10 @@ export function simpleRoute(p0: Pt, d0: Pt, p3: Pt, d3: Pt, stub = STUB, midShif
         pts.push({ x: mx, y: s0.y }, { x: mx, y: s1.y }, s1)
       }
     } else {
-      // Same direction: swing around the far side (S/U shape).
-      const mx = d0.x > 0 ? Math.max(s0.x, s1.x) + stub : Math.min(s0.x, s1.x) - stub
+      // Same direction: swing around the far side (S/U shape). The shift
+      // separates same-side edges (duplicates, shared endpoints) whose swing
+      // verticals would otherwise coincide exactly.
+      const mx = (d0.x > 0 ? Math.max(s0.x, s1.x) + stub : Math.min(s0.x, s1.x) - stub) + midShift
       pts.push({ x: mx, y: s0.y }, { x: mx, y: s1.y }, s1)
     }
   } else if (!h0 && !h3) {
@@ -257,7 +360,7 @@ export function simpleRoute(p0: Pt, d0: Pt, p3: Pt, d3: Pt, stub = STUB, midShif
         pts.push({ x: s0.x, y: my }, { x: s1.x, y: my }, s1)
       }
     } else {
-      const my = d0.y > 0 ? Math.max(s0.y, s1.y) + stub : Math.min(s0.y, s1.y) - stub
+      const my = (d0.y > 0 ? Math.max(s0.y, s1.y) + stub : Math.min(s0.y, s1.y) - stub) + midShift
       pts.push({ x: s0.x, y: my }, { x: s1.x, y: my }, s1)
     }
   } else {
@@ -279,6 +382,27 @@ interface RankedCombo {
   score: number
   /** Naive route is free of obstacle hits. */
   clean: boolean
+}
+
+// Temporal side-choice memory (edge id → last chosen sides). Routing the same
+// edge again prefers the previously chosen combination while it still yields
+// a clean route, so near-tied combos stop flapping whenever an unrelated node
+// moves a fraction of a pixel. Purely a preference — a blocked or clearly
+// worse remembered combo is dropped immediately.
+const sidesMemory = new Map<string, Sides>()
+
+/** How much better (relative + absolute) a new combo must be to overcome the
+    stability bias of the remembered sides. */
+const SWITCH_RATIO = 0.72
+const SWITCH_MARGIN = 20
+
+function pruneSidesMemory(liveEdgeIds: Set<string>) {
+  // Only sweep occasionally (amortised): when the map has clearly outgrown
+  // the live edge set, drop entries whose edge no longer exists.
+  if (sidesMemory.size <= liveEdgeIds.size * 3 + 24) return
+  for (const key of sidesMemory.keys()) {
+    if (!liveEdgeIds.has(key)) sidesMemory.delete(key)
+  }
 }
 
 function rankCombos(srcRect: Rect, tgtRect: Rect, othersInf: Rect[], ownShrunk: Rect[]): RankedCombo[] {
@@ -316,9 +440,40 @@ function rankCombos(srcRect: Rect, tgtRect: Rect, othersInf: Rect[], ownShrunk: 
   return combos
 }
 
-export function chooseSides(srcRect: Rect, tgtRect: Rect, othersInf: Rect[], ownShrunk: Rect[]): Sides {
-  const best = rankCombos(srcRect, tgtRect, othersInf, ownShrunk)[0]
-  return { source: best.source, target: best.target }
+/**
+ * Picks the best side combination. When `preferred` (the previously chosen
+ * sides for this edge) still routes clean it is kept unless the best clean
+ * combo is substantially shorter — this hysteresis keeps edge shapes stable
+ * while unrelated nodes move or during the middle of a drag.
+ */
+export function chooseSides(
+  srcRect: Rect,
+  tgtRect: Rect,
+  othersInf: Rect[],
+  ownShrunk: Rect[],
+  preferred?: Sides,
+): Sides {
+  const ranked = rankCombos(srcRect, tgtRect, othersInf, ownShrunk)
+  const bestClean = ranked.find((c) => c.clean)
+  if (preferred) {
+    const prev = ranked.find((c) => c.source === preferred.source && c.target === preferred.target)
+    if (prev) {
+      if (prev.clean) {
+        const clearlyBetter =
+          bestClean !== undefined && bestClean.score < prev.score * SWITCH_RATIO - SWITCH_MARGIN
+        if (!clearlyBetter) return { source: prev.source, target: prev.target }
+      } else if (bestClean) {
+        // Remembered shape is now blocked — take the best clean route.
+        return { source: bestClean.source, target: bestClean.target }
+      } else {
+        // Everything is blocked: keep the remembered shape so A* detours
+        // around obstacles without flipping the attachment sides.
+        return { source: prev.source, target: prev.target }
+      }
+    }
+  }
+  const pick = bestClean ?? ranked[0]
+  return { source: pick.source, target: pick.target }
 }
 
 // ---------------------------------------------------------------------------
@@ -329,12 +484,6 @@ export function chooseSides(srcRect: Rect, tgtRect: Rect, othersInf: Rect[], own
 function halfFor(rect: Rect, side: Side4): number {
   const span = side === "top" || side === "bottom" ? rect.width : rect.height
   return Math.max(0, span / 2 - 12)
-}
-
-/** Absolute coordinate of an anchor along its border axis. */
-function borderV(rect: Rect, side: Side4, along: number): number {
-  const b = borderPoint(rect, side, along)
-  return side === "top" || side === "bottom" ? b.x : b.y
 }
 
 /**
@@ -380,116 +529,406 @@ function attachmentOffset(
 }
 
 // ---------------------------------------------------------------------------
-// Anchor de-confliction for parallel final approaches
+// Anchor assignment: border ladders + bidirectional-pair straightening
 // ---------------------------------------------------------------------------
 
-function intervalsOverlap(a: [number, number], b: [number, number]): boolean {
-  return a[0] <= b[1] && b[0] <= a[1]
-}
-
-/** u-range spanned by an edge's corridor between its anchor node and far node. */
-function corridorBand(edge: EdgeRef, anchorNodeId: string, side: Side4, boxById: Map<string, Box>): [number, number] {
-  const horizontalCorridor = side === "left" || side === "right"
-  const farId = edge.source === anchorNodeId ? edge.target : edge.source
-  const a = boxById.get(anchorNodeId)
-  const b = boxById.get(farId)
-  if (!a || !b) return [Infinity, -Infinity]
-  const lo = horizontalCorridor ? (r: Rect) => r.x : (r: Rect) => r.y
-  const hi = horizontalCorridor ? (r: Rect) => r.x + r.width : (r: Rect) => r.y + r.height
-  return [Math.min(lo(a.rect), lo(b.rect)) - ANCHOR_GAP, Math.max(hi(a.rect), hi(b.rect)) + ANCHOR_GAP]
+/**
+ * Number of OTHER edges anchored on the same node border (using the final
+ * assigned offsets). The alignment snap only slides anchors on otherwise
+ * unoccupied borders, so it can never collide with a neighbour.
+ */
+function borderPeerCount(
+  selfId: string,
+  nodeId: string,
+  side: Side4,
+  edges: EdgeRef[],
+  sidesFor: (e: EdgeRef) => Sides,
+  assignments: Map<string, { source: number; target: number }>,
+): number {
+  let count = 0
+  for (const e of edges) {
+    if (e.id === selfId) continue
+    if (!assignments.has(e.id)) continue
+    const s = sidesFor(e)
+    if ((e.source === nodeId && s.source === side) || (e.target === nodeId && s.target === side)) count++
+  }
+  return count
 }
 
 /**
- * Final approach segments into left/right borders run horizontally at the
- * anchor's y (into top/bottom borders: vertically at its x). When two edges
- * anchor at nearly the same coordinate on such borders and their corridors
- * overlap, their approaches would render as one merged line. This slides own
- * anchor along its border to the nearest clear slot. Deterministic from both
- * sides: the edge with more sliding headroom (ties: higher id) is the one
- * that moves, and everyone evaluates conflicts against original offsets.
+ * Final anchor offsets for every edge.
+ *
+ * Base layer: the border ladder (`attachmentOffset`) spreads edges sharing a
+ * node border.
+ *
+ * Pair layer: the two edges of a bidirectional pair attach the SAME two
+ * borders, but the two ladders are computed independently and can hand the
+ * pair different absolute positions on each side — the pair then renders as
+ * jittery Z-jogs instead of clean parallel lines (and when the two borders
+ * order the pair differently, as crossing lines). Both partners are therefore
+ * PINNED to one canonical order — the leader's (smaller id) source border
+ * positions — transferred unchanged to the leader's target border so each
+ * edge runs straight (equal offset at both ends). Other edges anchored on
+ * the affected border are nudged upward in lane-width steps until clear.
+ *
+ * Everything here is a pure function of the board, and every edge's route
+ * computes the same assignments — no coordination needed.
  */
-function deconflictAnchor(
-  self: EdgeRef,
-  nodeId: string,
-  side: Side4,
-  off: number,
+function computeAnchorAssignments(
   edges: EdgeRef[],
   boxById: Map<string, Box>,
   sidesFor: (e: EdgeRef) => Sides,
-  offsetsFor: (e: EdgeRef) => { source: number; target: number },
-): number {
-  const box = boxById.get(nodeId)
-  if (!box) return off
-  const axis: "x" | "y" = side === "top" || side === "bottom" ? "x" : "y"
-  const myV = borderV(box.rect, side, off)
-  const myBand = corridorBand(self, nodeId, side, boxById)
-  const myHeadroom = halfFor(box.rect, side) - Math.abs(off)
+): Map<string, { source: number; target: number }> {
+  const result = new Map<string, { source: number; target: number }>()
+  for (const e of edges) {
+    const s = sidesFor(e)
+    result.set(e.id, {
+      source: attachmentOffset(e.id, e.source, s.source, edges, boxById, sidesFor),
+      target: attachmentOffset(e.id, e.target, s.target, edges, boxById, sidesFor),
+    })
+  }
 
-  const conflicts: { id: string; v: number; headroom: number }[] = []
-  for (const peer of edges) {
-    if (peer.id === self.id) continue
-    const ps = sidesFor(peer)
-    const pOffs = offsetsFor(peer)
-    const attachments: [string, Side4, number][] = [
-      [peer.source, ps.source, pOffs.source],
-      [peer.target, ps.target, pOffs.target],
-    ]
-    for (const [pNode, pSide, pOff] of attachments) {
-      const pAxis: "x" | "y" = pSide === "top" || pSide === "bottom" ? "x" : "y"
-      if (pAxis !== axis) continue
-      const pBox = boxById.get(pNode)
-      if (!pBox) continue
-      const pv = borderV(pBox.rect, pSide, pOff)
-      if (Math.abs(pv - myV) >= ANCHOR_CLEAR) continue
-      if (!intervalsOverlap(myBand, corridorBand(peer, pNode, pSide, boxById))) continue
-      conflicts.push({ id: peer.id, v: pv, headroom: halfFor(pBox.rect, pSide) - Math.abs(pOff) })
+  // Push `v` to the nearest free slot: positions a lane-width clear of every
+  // pinned value, searched outwards from `v` (nearest first; ties prefer the
+  // upper slot). Candidate slots sit a lane width beyond the pinned values so
+  // the search can cross lattice offsets between different borders.
+  const nudge = (v: number, half: number, pinned: number[]): number => {
+    const clear = (x: number) =>
+      Math.abs(x) <= half + 0.01 && !pinned.some((p) => Math.abs(p - x) < LANE_SPACING - 0.01)
+    if (clear(v)) return v
+    const candidates = new Set<number>([v])
+    for (const p of pinned) {
+      candidates.add(p + LANE_SPACING)
+      candidates.add(p - LANE_SPACING)
+    }
+    let best: number | null = null
+    for (const c of candidates) {
+      if (!clear(c)) continue
+      const dist = Math.abs(c - v)
+      if (best === null || dist < Math.abs(best - v) || (dist === Math.abs(best - v) && c > best)) best = c
+    }
+    return best ?? clamp(v, -half, half)
+  }
+
+  const paired = new Set<string>()
+  const ordered = [...edges].sort((a, b) => (a.id < b.id ? -1 : 1))
+  for (const e of ordered) {
+    if (paired.has(e.id) || e.source === e.target) continue
+    const reverse = edges.find((r) => r.id !== e.id && r.source === e.target && r.target === e.source)
+    if (!reverse || paired.has(reverse.id) || reverse.source === reverse.target) continue
+    const s = sidesFor(e)
+    const rs = sidesFor(reverse)
+    // Pair only mirrored attachments (the two edges attach the same two
+    // borders with swapped roles).
+    if (rs.source !== s.target || rs.target !== s.source) continue
+    paired.add(e.id)
+    paired.add(reverse.id)
+
+    const leader = e.id < reverse.id ? e : reverse
+    const partner = leader.id === e.id ? reverse : e
+    const leaderAssign = result.get(leader.id)!
+    const partnerAssign = result.get(partner.id)!
+    const ls = sidesFor(leader)
+    const ld0 = OUTWARD[ls.source]
+    const ld3 = OUTWARD[ls.target]
+    // Head-on mirror (right↔left) → straighten both edges into parallel runs.
+    // Perpendicular mirror (right→bottom + bottom→right, a pair of nested
+    // L-shapes) can NEVER run straight without crossing: instead both edges
+    // share the same ordered offset pair (small at the leader's source
+    // border, large at its target border), which nests the two Ls cleanly.
+    const perpendicularMirror = ld0.x !== 0 !== (ld3.x !== 0)
+    // For perpendicular mirrors the crossing-free nesting depends on the
+    // road's travel direction: down-right (or up-left) roads need the swapped
+    // offsets, the other diagonals nest when both edges run straight.
+    const lb = boxById.get(leader.source)
+    const lt = boxById.get(leader.target)
+    const roadSigma =
+      (Math.sign((lt?.rect.x ?? 0) + (lt?.rect.width ?? 0) / 2 - ((lb?.rect.x ?? 0) + (lb?.rect.width ?? 0) / 2)) || 1) *
+      (Math.sign((lt?.rect.y ?? 0) + (lt?.rect.height ?? 0) / 2 - ((lb?.rect.y ?? 0) + (lb?.rect.height ?? 0) / 2)) || 1)
+
+    // Canonical border = the leader's source border (the leader attaches it
+    // as source, the partner as target). Keep the two positions a lane apart.
+    let leaderPos = leaderAssign.source
+    let partnerPos = partnerAssign.target
+    if (Math.abs(leaderPos - partnerPos) < LANE_SPACING) {
+      const lo = Math.min(leaderPos, partnerPos)
+      const hi = Math.max(lo + LANE_SPACING, Math.max(leaderPos, partnerPos))
+      if (leaderPos <= partnerPos) {
+        leaderPos = lo
+        partnerPos = hi
+      } else {
+        leaderPos = hi
+        partnerPos = lo
+      }
+    }
+    leaderAssign.source = leaderPos
+    partnerAssign.target = partnerPos
+
+    // Clamp helper for the leader's target border (both edges anchor there).
+    const tgtSide = ls.target
+    const tgtBox = boxById.get(leader.target)
+    const half = tgtBox ? halfFor(tgtBox.rect, tgtSide) : Infinity
+    const savedLeaderTgt = leaderAssign.target
+    const savedPartnerSrc = partnerAssign.source
+
+    if (perpendicularMirror && roadSigma > 0) {
+      // Both edges: small offset at the leader's source border, large at the
+      // leader's target border — the nested-L configuration for this diagonal.
+      leaderAssign.target = clamp(partnerPos, -half, half)
+      partnerAssign.source = clamp(leaderPos, -half, half)
+    } else {
+      // Straighten: transfer each edge's canonical position to the leader's
+      // target border (leader as target, partner as source).
+      leaderAssign.target = clamp(leaderPos, -half, half)
+      partnerAssign.source = clamp(partnerPos, -half, half)
+    }
+    if (Math.abs(leaderAssign.target - partnerAssign.source) < LANE_SPACING - 0.01) {
+      // The target border is too small for the canonical pair (clamping
+      // broke the separation). Fall back to the border's own compressed
+      // ladder for everyone — the dip/lane layers handle the resulting jogs.
+      leaderAssign.target = savedLeaderTgt
+      partnerAssign.source = savedPartnerSrc
+    }
+
+    // Absolute coordinates of every assigned anchor on a border (excluding
+    // one edge) — used to keep far-end moves collision-free.
+    const anchorsOn = (nodeId: string, side: Side4, excludeId: string): number[] => {
+      const vals: number[] = []
+      for (const o of edges) {
+        if (o.id === excludeId) continue
+        const os = sidesFor(o)
+        const oa = result.get(o.id)
+        if (!oa) continue
+        if (o.source === nodeId && os.source === side) vals.push(oa.source)
+        if (o.target === nodeId && os.target === side) vals.push(oa.target)
+      }
+      return vals
+    }
+
+    // Nudge other edges anchored on the target border until they clear the
+    // pinned pair (and each other). When a nudged edge's far end has room,
+    // it is shifted by the same amount so the edge stays straight.
+    const pinned = [leaderAssign.target, partnerAssign.source]
+    for (const o of edges) {
+      if (o.id === leader.id || o.id === partner.id) continue
+      const os = sidesFor(o)
+      const oa = result.get(o.id)
+      if (!oa) continue
+      for (const role of ["source", "target"] as const) {
+        const node = role === "source" ? o.source : o.target
+        const side = role === "source" ? os.source : os.target
+        if (node !== leader.target || side !== tgtSide) continue
+        const before = oa[role]
+        const nv = nudge(before, half, pinned)
+        pinned.push(nv)
+        oa[role] = nv
+        const shift = nv - before
+        if (Math.abs(shift) > 0.01) {
+          const otherRole = role === "source" ? "target" : "source"
+          const otherNode = role === "source" ? o.target : o.source
+          const otherSide = role === "source" ? os.target : os.source
+          const otherBox = boxById.get(otherNode)
+          if (otherBox) {
+            const oh = halfFor(otherBox.rect, otherSide)
+            const candidate = clamp(oa[otherRole] + shift, -oh, oh)
+            if (
+              Math.abs(candidate - (oa[otherRole] + shift)) < 0.01 &&
+              anchorsOn(otherNode, otherSide, o.id).every(
+                (p) => Math.abs(p - candidate) >= LANE_SPACING - 0.01,
+              )
+            ) {
+              oa[otherRole] = candidate
+            }
+          }
+        }
+      }
     }
   }
-  if (conflicts.length === 0) return off
-
-  const mustMove = conflicts.some(
-    (c) => myHeadroom > c.headroom || (myHeadroom === c.headroom && self.id > c.id),
-  )
-  if (!mustMove) return off
-
-  const avoid = conflicts.map((c) => c.v)
-  const half = halfFor(box.rect, side)
-  for (let step = 1; step <= 6; step++) {
-    for (const dir of [1, -1]) {
-      const candidate = off + dir * step * ANCHOR_CLEAR
-      if (Math.abs(candidate) > half) continue
-      const cv = borderV(box.rect, side, candidate)
-      if (avoid.every((v) => Math.abs(cv - v) >= ANCHOR_CLEAR)) return candidate
-    }
-  }
-  return off
+  return result
 }
 
 /**
- * Bidirectional pairs run two head-on corridors over the same span. Each
- * edge slides its corridor lane half a lane-width toward its own target so
- * the two routes become parallel lines instead of interweaving.
+ * Lane base for a head-on Z route: minus the exit anchor scaled by the road's
+ * direction product (σ = dx·dy of the source→target centers). Ordering the
+ * base by the exit anchor keeps edges sharing a corridor in exit order — the
+ * crossing-free lane order for parallel runs (the lower-exiting edge takes
+ * the more positive lane side).
  */
-function pairLaneShift(
+function headOnLaneBase(
+  offs: { source: number; target: number },
+  sourceBox: Box,
+  targetBox: Box,
+): number {
+  const sigma =
+    (Math.sign(targetBox.rect.x + targetBox.rect.width / 2 - (sourceBox.rect.x + sourceBox.rect.width / 2)) || 1) *
+    (Math.sign(targetBox.rect.y + targetBox.rect.height / 2 - (sourceBox.rect.y + sourceBox.rect.height / 2)) || 1)
+  return -sigma * offs.source
+}
+
+/**
+ * Fallback lane split for bidirectional pairs whose straightened anchors got
+ * clamped (the transferred offset did not fit the border): the two head-on
+ * corridors still need lanes a full width apart. Which SIDE of the corridor
+ * the first-anchored edge takes depends on the road's travel direction: the
+ * pair forms a racetrack, and the wrong side makes the two Z-routes cross.
+ * With the leader's travel direction (dx, dy) the first-anchored edge takes
+ * the + lane side when dx·dy > 0 and the − side when dx·dy < 0 — captured by
+ * the product of the two direction signs. Both partners evaluate the same
+ * σ from the same boxes, so they always agree.
+ */
+function pairLaneDelta(
   self: EdgeRef,
   sides: Sides,
+  selfOffs: { source: number; target: number },
   edges: EdgeRef[],
   boxById: Map<string, Box>,
+  offsFor: (e: EdgeRef) => { source: number; target: number },
   sidesFor: (e: EdgeRef) => Sides,
 ): number {
   const reverse = edges.find((e) => e.id !== self.id && e.source === self.target && e.target === self.source)
   if (!reverse) return 0
-  // Only meaningful for head-on combos (opposite sides).
   const d0 = OUTWARD[sides.source]
   const d3 = OUTWARD[sides.target]
+  // Only meaningful for head-on combos (opposite stub directions).
   if (d0.x !== -d3.x || d0.y !== -d3.y) return 0
   const rs = sidesFor(reverse)
   if (rs.source !== sides.target || rs.target !== sides.source) return 0
-  const sc = rectCenter(boxById.get(self.source)!.rect)
-  const tc = rectCenter(boxById.get(self.target)!.rect)
-  const horizontal = sides.source === "left" || sides.source === "right"
-  const dir = horizontal ? Math.sign(tc.x - sc.x) : Math.sign(tc.y - sc.y)
-  return (LANE_SPACING / 2) * dir
+  const rOffs = offsFor(reverse)
+  const selfBox = boxById.get(self.source)
+  const revBox = boxById.get(reverse.source)
+  if (!selfBox || !revBox) return 0
+  const leaderIsSelf = self.id < reverse.id
+  const leader = leaderIsSelf ? self : reverse
+  const lb = boxById.get(leader.source)
+  const lt = boxById.get(leader.target)
+  if (!lb || !lt) return 0
+  const sigma =
+    (Math.sign(lt.rect.x + lt.rect.width / 2 - (lb.rect.x + lb.rect.width / 2)) || 1) *
+    (Math.sign(lt.rect.y + lt.rect.height / 2 - (lb.rect.y + lb.rect.height / 2)) || 1)
+  // "selfFirst" = my anchor sits before my partner's along the border axis at
+  // the canonical border (the leader's source border) — evaluated identically
+  // by both partners.
+  const aSelf = leaderIsSelf ? selfOffs.source : selfOffs.target
+  const aRev = leaderIsSelf ? rOffs.target : rOffs.source
+  const selfFirst = aSelf < aRev || (aSelf === aRev && self.id < reverse.id)
+  // Base difference must mirror what the route adds (headOnLaneBase) so the
+  // separation algebra cancels exactly.
+  const baseSelf = headOnLaneBase(selfOffs, selfBox, boxById.get(self.target)!)
+  const baseRev = headOnLaneBase(rOffs, revBox, boxById.get(reverse.target)!)
+  const d = baseSelf - baseRev
+  return selfFirst ? (sigma * LANE_SPACING - d) / 2 : -(sigma * LANE_SPACING + d) / 2
+}
+
+// ---------------------------------------------------------------------------
+// Corridor lanes: keep head-on Z routes of the same region a width apart
+// ---------------------------------------------------------------------------
+
+interface LaneNode {
+  id: string
+  /** Absolute coordinate of the corridor lane (x on horizontal runs, y on vertical). */
+  lane: number
+  /** Span of the lane's perpendicular segment (the Z's cross-country run). */
+  lo: number
+  hi: number
+}
+
+/**
+ * Provisional corridor lane for every routed edge with a free mid segment
+ * (head-on Z bends and same-direction swings), derived from the final anchor
+ * assignments. Everything here is a pure function of the board, so every edge
+ * evaluates identical values and the sweep below stays consistent across
+ * independently routed edges.
+ */
+function collectLaneNodes(
+  edges: EdgeRef[],
+  boxById: Map<string, Box>,
+  offsFor: (e: EdgeRef) => { source: number; target: number },
+  sidesFor: (e: EdgeRef) => Sides,
+): LaneNode[] {
+  const nodes: LaneNode[] = []
+  for (const e of edges) {
+    const s = sidesFor(e)
+    const d0 = OUTWARD[s.source]
+    const d3 = OUTWARD[s.target]
+    const headOn = d0.x === -d3.x && d0.y === -d3.y
+    const sameDir = d0.x === d3.x && d0.y === d3.y
+    if (!headOn && !sameDir) continue // perpendicular elbows have no free mid segment
+    const a = boxById.get(e.source)
+    const b = boxById.get(e.target)
+    if (!a || !b) continue
+    const offs = offsFor(e)
+    const a0 = anchorPoint(a.rect, s.source, offs.source)
+    const a3 = anchorPoint(b.rect, s.target, offs.target)
+    const s0 = { x: a0.x + d0.x * STUB, y: a0.y + d0.y * STUB }
+    const s1 = { x: a3.x + d3.x * STUB, y: a3.y + d3.y * STUB }
+    const horizontal = d0.x !== 0
+    const dip = horizontal ? s1.y - s0.y : s1.x - s0.x
+    if (Math.abs(dip) < 0.5) continue // straight run — owns no lane segment
+    // Head-on routes bend at the corridor mid; same-direction routes swing
+    // just beyond the farther node. Either way the segment needs a lane.
+    const laneCoord = headOn
+      ? horizontal
+        ? (s0.x + s1.x) / 2
+        : (s0.y + s1.y) / 2
+      : horizontal
+        ? d0.x > 0
+          ? Math.max(s0.x, s1.x) + STUB
+          : Math.min(s0.x, s1.x) - STUB
+        : d0.y > 0
+          ? Math.max(s0.y, s1.y) + STUB
+          : Math.min(s0.y, s1.y) - STUB
+    const base = headOn
+      ? headOnLaneBase(offs, a, b)
+      : (offs.source - offs.target) / 2
+    const delta = pairLaneDelta(e, s, offs, edges, boxById, offsFor, sidesFor)
+    nodes.push({
+      id: e.id,
+      lane: laneCoord + base + delta,
+      lo: horizontal ? Math.min(s0.y, s1.y) : Math.min(s0.x, s1.x),
+      hi: horizontal ? Math.max(s0.y, s1.y) : Math.max(s0.x, s1.x),
+    })
+  }
+  return nodes
+}
+
+/** How far a swept lane may travel from its provisional position before the
+    sweep gives up (caps cascades in very dense regions). */
+const LANE_PUSH_CAP = LANE_SPACING * 4
+
+/**
+ * Spreads the corridor lanes of edges traversing the same region at least one
+ * lane width apart. Each edge resolves the same connected component of
+ * mutually-close, span-overlapping lanes and sweeps it in lane order — the
+ * first lane keeps its place, every later one slides to a width past its
+ * predecessor — so independently routed edges land on consistent lanes.
+ */
+function deconflictCorridorLane(selfId: string, nodes: LaneNode[]): number {
+  const self = nodes.find((n) => n.id === selfId)
+  if (!self) return 0
+  const component: LaneNode[] = [self]
+  const seen = new Set<string>([self.id])
+  for (let i = 0; i < component.length; i++) {
+    for (const n of nodes) {
+      if (seen.has(n.id)) continue
+      const c = component[i]
+      if (Math.abs(c.lane - n.lane) < LANE_SPACING - 0.01 && c.lo <= n.hi && n.lo <= c.hi) {
+        component.push(n)
+        seen.add(n.id)
+      }
+    }
+  }
+  if (component.length === 1) return 0
+  component.sort((a, b) => a.lane - b.lane || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+  let prev = -Infinity
+  let assignedSelf = self.lane
+  for (const n of component) {
+    let assigned = n.lane
+    if (assigned < prev + LANE_SPACING) assigned = prev + LANE_SPACING
+    if (assigned - n.lane > LANE_PUSH_CAP) assigned = n.lane
+    if (n.id === selfId) assignedSelf = assigned
+    prev = assigned
+  }
+  return assignedSelf - self.lane
 }
 
 // ---------------------------------------------------------------------------
@@ -499,8 +938,21 @@ function pairLaneShift(
 /**
  * Orthogonal A* on a coarse grid. Obstacles must already be inflated. Returns
  * interior waypoints from `s0` to `s1` (excluding the endpoints), or null.
+ *
+ * When `exitDir` is given the first step is forced along that direction (the
+ * source stub axis) and when `entryDir` is given the final step into the goal
+ * must travel along it (the direction into the target stub) — without these
+ * constraints the grid path used to hook/double-back right at the anchors.
  */
-function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
+function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[], exitDir?: Pt, entryDir?: Pt): Pt[] | null {
+  if (exitDir && entryDir) {
+    const constrained = astarSearch(s0, s1, obstacles, exitDir, entryDir)
+    if (constrained) return constrained
+  }
+  return astarSearch(s0, s1, obstacles)
+}
+
+function astarSearch(s0: Pt, s1: Pt, obstacles: Rect[], exitDir?: Pt, entryDir?: Pt): Pt[] | null {
   const cellBase = 16
   let minX = Math.min(s0.x, s1.x)
   let minY = Math.min(s0.y, s1.y)
@@ -527,15 +979,64 @@ function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
     rows = Math.ceil((maxY - minY) / cell) + 1
   }
 
+  // Grid line coordinates. The exact stub-axis coordinates of both endpoints
+  // are inserted as grid lines, so the constrained exit/entry steps run along
+  // the stub axes with zero jog (the previous uniform grid forced the anchor
+  // alignment to shift points, which rendered as diagonal kinks).
+  const xs: number[] = []
+  for (let c = 0; c < cols; c++) xs.push(minX + c * cell)
+  const ys: number[] = []
+  for (let r = 0; r < rows; r++) ys.push(minY + r * cell)
+  const ensureLine = (arr: number[], v: number) => {
+    for (let i = 0; i < arr.length; i++) {
+      if (Math.abs(arr[i] - v) <= 0.01) return
+    }
+    let best = 0
+    for (let i = 1; i < arr.length; i++) {
+      if (Math.abs(arr[i] - v) < Math.abs(arr[best] - v)) best = i
+    }
+    arr.splice(arr[best] < v ? best + 1 : best, 0, v)
+  }
+  ensureLine(xs, s0.x)
+  ensureLine(xs, s1.x)
+  ensureLine(ys, s0.y)
+  ensureLine(ys, s1.y)
+  // An inserted endpoint line can sit right next to the uniform line it
+  // replaced — drop the near-duplicate (endpoint lines always win).
+  const squeeze = (arr: number[], exact: number[]) => {
+    const isExact = (v: number) => exact.some((k) => Math.abs(k - v) <= 0.01)
+    const out: number[] = []
+    for (const v of arr) {
+      const prev = out[out.length - 1]
+      if (prev !== undefined && v - prev < 2) {
+        if (isExact(prev)) continue // keep the exact line, drop the near-dup
+        if (isExact(v)) out.pop() // replace the uniform line with the exact one
+        else continue // two near-duplicate uniform lines — keep the first
+      }
+      out.push(v)
+    }
+    return out
+  }
+  const sx = squeeze(xs, [s0.x, s1.x])
+  const sy = squeeze(ys, [s0.y, s1.y])
+  xs.length = 0
+  xs.push(...sx)
+  ys.length = 0
+  ys.push(...sy)
+  cols = xs.length
+  rows = ys.length
+
   const size = cols * rows
   const blocked = new Uint8Array(size)
   const cellIdx = (c: number, r: number) => r * cols + c
   for (let r = 0; r < rows; r++) {
-    const y = minY + r * cell
+    const y = ys[r]
+    const hh = (r + 1 < rows ? ys[r + 1] : ys[r] + cell) - y
     for (let c = 0; c < cols; c++) {
-      const x = minX + c * cell
+      const x = xs[c]
+      const ww = (c + 1 < cols ? xs[c + 1] : xs[c] + cell) - x
       for (const o of obstacles) {
-        if (x < o.x + o.width + 2 && x + cell > o.x - 2 && y < o.y + o.height + 2 && y + cell > o.y - 2) {
+        if (x < o.x + o.width + 2 && x + ww > o.x - 2 && y < o.y + o.height + 2 && y + hh > o.y - 2) {
           blocked[cellIdx(c, r)] = 1
           break
         }
@@ -543,10 +1044,20 @@ function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
     }
   }
 
-  const toCell = (v: number, lo: number) => clamp(Math.round((v - lo) / cell), 0, cols - 1)
+  const nearestIndex = (arr: number[], v: number) => {
+    let lo = 0
+    let hi = arr.length - 1
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (arr[mid] < v) lo = mid + 1
+      else hi = mid
+    }
+    if (lo > 0 && Math.abs(arr[lo - 1] - v) < Math.abs(arr[lo] - v)) lo--
+    return lo
+  }
   const clearNear = (p: Pt) => {
-    const c0 = clamp(Math.round((p.x - minX) / cell), 0, cols - 1)
-    const r0 = clamp(Math.round((p.y - minY) / cell), 0, rows - 1)
+    const c0 = nearestIndex(xs, p.x)
+    const r0 = nearestIndex(ys, p.y)
     for (let dr = -1; dr <= 1; dr++) {
       for (let dc = -1; dc <= 1; dc++) {
         const c = c0 + dc
@@ -558,10 +1069,10 @@ function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
   clearNear(s0)
   clearNear(s1)
 
-  const startC = toCell(s0.x, minX)
-  const startR = toCell(s0.y, minY)
-  const goalC = toCell(s1.x, minX)
-  const goalR = toCell(s1.y, minY)
+  const startC = nearestIndex(xs, s0.x)
+  const startR = nearestIndex(ys, s0.y)
+  const goalC = nearestIndex(xs, s1.x)
+  const goalR = nearestIndex(ys, s1.y)
   const startIdx = cellIdx(startC, startR)
   const goalIdx = cellIdx(goalC, goalR)
 
@@ -572,6 +1083,10 @@ function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
     { x: 0, y: 1 },
     { x: 0, y: -1 },
   ]
+  // Direction the route must leave the source stub along, and the direction
+  // it must travel when arriving at the target stub (-1 = unconstrained).
+  const seedDir = exitDir ? DIRS.findIndex((d) => d.x === exitDir.x && d.y === exitDir.y) : -1
+  const wantDir = entryDir ? DIRS.findIndex((d) => d.x === entryDir.x && d.y === entryDir.y) : -1
   const TURN_COST = 0.4
   const states = size * 4
   const gScore = new Float64Array(states).fill(Infinity)
@@ -619,6 +1134,7 @@ function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
   }
 
   for (let d = 0; d < 4; d++) {
+    if (seedDir >= 0 && d !== seedDir) continue
     gScore[startIdx * 4 + d] = 0
     push(h(startC, startR), startIdx * 4 + d)
   }
@@ -631,6 +1147,9 @@ function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
     const cellId = Math.floor(state / 4)
     const dir = state % 4
     if (cellId === goalIdx) {
+      // Only accept an arrival that continues straight into the target stub;
+      // other approach angles would bend the last segment into a hook.
+      if (wantDir >= 0 && dir !== wantDir) continue
       goalState = state
       break
     }
@@ -663,24 +1182,15 @@ function astarRoute(s0: Pt, s1: Pt, obstacles: Rect[]): Pt[] | null {
     const cellId = Math.floor(cur / 4)
     const c = cellId % cols
     const r = Math.floor(cellId / cols)
-    rev.push({ x: minX + c * cell, y: minY + r * cell })
+    rev.push({ x: xs[c], y: ys[r] })
     cur = parent[cur]
   }
   rev.reverse()
-  // rev[0] is the start cell, rev[last] the goal cell. Align the first/last
-  // interior points with the stub axes so no jog appears next to the anchor.
+  // With the endpoint-snapped grid the start cell is exactly (s0.x, s0.y), the
+  // goal cell exactly (s1.x, s1.y), and the constrained first/last steps run
+  // along the stub axes — no anchor alignment (and thus no jog) is needed.
   const pts = rev.slice(1, -1)
-  if (pts.length > 0) {
-    const first = pts[0]
-    const startDirIsX = Math.abs(first.x - rev[0].x) >= Math.abs(first.y - rev[0].y)
-    if (startDirIsX) first.y = s0.y
-    else first.x = s0.x
-    const last = pts[pts.length - 1]
-    const endDirIsX = Math.abs(rev[rev.length - 1].x - last.x) >= Math.abs(rev[rev.length - 1].y - last.y)
-    if (endDirIsX) last.y = s1.y
-    else last.x = s1.x
-  }
-  return simplifyPath(pts)
+  return pruneBacktracks(simplifyPath(pts))
 }
 
 // ---------------------------------------------------------------------------
@@ -695,6 +1205,8 @@ export interface RouteInput {
   boxes: Box[]
   /** Every edge on the board (used for lane bundling). */
   edges: EdgeRef[]
+  /** Optional debug sink (used by scripts/check-routes.ts). */
+  debug?: (info: Record<string, unknown>) => void
 }
 
 /**
@@ -719,78 +1231,115 @@ export function routeEdge(input: RouteInput): RouteResult | null {
     if (!a || !b || (a.rect.width <= 0 || a.rect.height <= 0 || b.rect.width <= 0 || b.rect.height <= 0)) {
       result = { source: "right", target: "left" }
     } else {
+      // Container ancestors of the endpoints are never obstacles for their
+      // edges (a child edge must cross the container border).
+      const excluded = obstacleExclusionsFor(e.source, e.target, boxes, boxById)
       const othersInf = boxes
-        .filter((bx) => bx.id !== e.source && bx.id !== e.target)
+        .filter((bx) => !excluded.has(bx.id))
         .map((bx) => inflateRect(bx.rect, OBSTACLE_PAD))
       const ownShrunk = [shrinkRect(a.rect, 1), shrinkRect(b.rect, 1)]
-      result = chooseSides(a.rect, b.rect, othersInf, ownShrunk)
+      result = chooseSides(a.rect, b.rect, othersInf, ownShrunk, sidesMemory.get(e.id))
     }
     sidesCache.set(e.id, result)
-    return result
-  }
-
-  const offsCache = new Map<string, { source: number; target: number }>()
-  const offsetsFor = (e: EdgeRef): { source: number; target: number } => {
-    const hit = offsCache.get(e.id)
-    if (hit) return hit
-    const s = sidesFor(e)
-    const result = {
-      source: attachmentOffset(e.id, e.source, s.source, edges, boxById, sidesFor),
-      target: attachmentOffset(e.id, e.target, s.target, edges, boxById, sidesFor),
-    }
-    offsCache.set(e.id, result)
+    sidesMemory.set(e.id, result)
     return result
   }
 
   const self: EdgeRef = { id: edgeId, source: sourceId, target: targetId }
+  // Drop memory entries for edges that no longer exist (amortised sweep).
+  pruneSidesMemory(new Set(edges.map((e) => e.id)))
   const sides = sidesFor(self)
 
-  // Spread on shared borders.
-  const baseOffs = offsetsFor(self)
+  // Coordinated anchor assignment (border ladder + bidirectional-pair
+  // straightening). Every edge computes the identical map from the same board
+  // state, so independently routed edges stay consistent.
+  const assignments = computeAnchorAssignments(edges, boxById, sidesFor)
+  const offsFor = (e: EdgeRef): { source: number; target: number } =>
+    assignments.get(e.id) ?? { source: 0, target: 0 }
+
+  // Spread on shared borders (already pair-coordinated).
+  const baseOffs = offsFor(self)
   let srcOff = baseOffs.source
   let tgtOff = baseOffs.target
 
-  // Mirrored *perpendicular* pairs (one edge L-shaped one way, its reverse
-  // the other way) interweave unless their anchor order at one shared border
-  // is reversed. The border to fix is the leader edge's (smaller id) target
-  // border — both edges compute the same leader, so they agree.
-  const reverse = edges.find((e) => e.id !== edgeId && e.source === targetId && e.target === sourceId)
-  if (reverse) {
-    const rs = sidesFor(reverse)
-    const mirrored = rs.source === sides.target && rs.target === sides.source
-    const d0 = OUTWARD[sides.source]
-    const d3 = OUTWARD[sides.target]
-    const headOn = d0.x === -d3.x && d0.y === -d3.y
-    const perpendicular = d0.x !== 0 !== (d3.x !== 0)
-    if (mirrored && perpendicular) {
-      const leader = self.id < reverse.id ? self : reverse
-      const rOffs = offsetsFor(reverse)
-      if (leader.id === self.id) {
-        // Reverse the order at my target border (partner's source border).
-        const sigma = -Math.sign(srcOff - rOffs.target || (self.id < reverse.id ? 1 : -1))
-        const desired = sigma > 0 ? Math.max(tgtOff, rOffs.source) : Math.min(tgtOff, rOffs.source)
-        if (desired !== tgtOff) tgtOff = desired
-      } else {
-        // Leader's target border is my source border: I take the slot that
-        // keeps the two borders' orders opposed (leader picks the other one).
-        const sigma = -Math.sign(rOffs.source - tgtOff || (reverse.id < self.id ? 1 : -1))
-        const desired = sigma > 0 ? Math.min(srcOff, rOffs.target) : Math.max(srcOff, rOffs.target)
-        if (desired !== srcOff) srcOff = desired
+  // Dip alignment snap: a head-on route whose two stub ends are only a few
+  // pixels apart renders as a pointless little jog (two same-height nodes
+  // whose anchors were spread apart by border bundling, for example). When
+  // the far border has no other bundled edge, slide that anchor to meet the
+  // near one so the edge renders as a clean straight run. (Bidirectional
+  // pairs are already straightened by the assignment; their borders always
+  // have an occupant, so this is a no-op for them.)
+  const d0 = OUTWARD[sides.source]
+  const d3 = OUTWARD[sides.target]
+  const headOn = d0.x === -d3.x && d0.y === -d3.y
+  if (headOn) {
+    const horizontal = d0.x !== 0
+    const a0 = anchorPoint(srcBox.rect, sides.source, srcOff)
+    const a3 = anchorPoint(tgtBox.rect, sides.target, tgtOff)
+    const stub0 = { x: a0.x + d0.x * STUB, y: a0.y + d0.y * STUB }
+    const stub1 = { x: a3.x + d3.x * STUB, y: a3.y + d3.y * STUB }
+    const dip = horizontal ? stub1.y - stub0.y : stub1.x - stub0.x
+    if (Math.abs(dip) > 0.5 && Math.abs(dip) <= DIP_SNAP_MAX) {
+      const srcFree = borderPeerCount(edgeId, sourceId, sides.source, edges, sidesFor, assignments) === 0
+      const tgtFree = borderPeerCount(edgeId, targetId, sides.target, edges, sidesFor, assignments) === 0
+      const slide = (nodeId: string, side: Side4, off: number, delta: number): number => {
+        const box = boxById.get(nodeId)
+        if (!box) return off
+        return clamp(off + delta, -halfFor(box.rect, side), halfFor(box.rect, side))
       }
+      // The free side absorbs the dip; with both free the target aligns to
+      // the source (deterministic either way).
+      if (tgtFree) tgtOff = slide(targetId, sides.target, tgtOff, -dip)
+      else if (srcFree) srcOff = slide(sourceId, sides.source, srcOff, dip)
     }
   }
 
-  // Slide anchors whose parallel approaches would collide with another
-  // edge's approach.
-  srcOff = deconflictAnchor(self, sourceId, sides.source, srcOff, edges, boxById, sidesFor, offsetsFor)
-  tgtOff = deconflictAnchor(self, targetId, sides.target, tgtOff, edges, boxById, sidesFor, offsetsFor)
+  // Corridor lane: the bidirectional-pair split (full width apart, side set
+  // by the road's travel direction so the pair nests without crossings) plus
+  // a deterministic sweep that keeps the free segments of ALL routed edges
+  // passing through the same region a width apart — head-on Zs and same-side
+  // swings alike.
+  const rawBase = headOn
+    ? headOnLaneBase(baseOffs, srcBox, tgtBox)
+    : (baseOffs.source - baseOffs.target) / 2
+  const pairDelta = pairLaneDelta(self, sides, baseOffs, edges, boxById, offsFor, sidesFor)
+  let midShift = rawBase + pairDelta
+  const sameDir = d0.x === d3.x && d0.y === d3.y
+  const dbg: Record<string, unknown> = {
+    sides,
+    offs: { ...baseOffs },
+    rawBase,
+    pairDelta,
+  }
+  if (headOn || sameDir) {
+    const laneNodes = collectLaneNodes(edges, boxById, offsFor, sidesFor)
+    const laneAdjust = deconflictCorridorLane(edgeId, laneNodes)
+    midShift += laneAdjust
+    dbg.laneNodes = laneNodes
+    dbg.laneAdjust = laneAdjust
+  }
+  if (headOn) {
+    // Keep the lane inside the corridor so the Z never hooks backwards.
+    const horizontal = d0.x !== 0
+    const a0 = anchorPoint(srcBox.rect, sides.source, baseOffs.source)
+    const a3 = anchorPoint(tgtBox.rect, sides.target, baseOffs.target)
+    const stub0 = { x: a0.x + d0.x * STUB, y: a0.y + d0.y * STUB }
+    const stub1 = { x: a3.x + d3.x * STUB, y: a3.y + d3.y * STUB }
+    const mid = horizontal ? (stub0.x + stub1.x) / 2 : (stub0.y + stub1.y) / 2
+    const axis0 = horizontal ? stub0.x : stub0.y
+    const axis1 = horizontal ? stub1.x : stub1.y
+    const lo = Math.min(axis0, axis1)
+    const hi = Math.max(axis0, axis1)
+    if (hi - lo > 8) {
+      midShift = clamp(mid + midShift, lo + 2, hi - 2) - mid
+    }
+  }
+  dbg.midShift = midShift
 
-  // Corridor lane: counter-shift by the endpoint spread plus the bidirectional
-  // pair bias so parallel edges keep a constant gap along the whole run.
-  const midShift = (srcOff - tgtOff) / 2 + pairLaneShift(self, sides, edges, boxById, sidesFor)
-
+  // Same containment rule for this edge's own obstacle set.
+  const selfExcluded = obstacleExclusionsFor(sourceId, targetId, boxes, boxById)
   const othersInf = boxes
-    .filter((bx) => bx.id !== sourceId && bx.id !== targetId)
+    .filter((bx) => !selfExcluded.has(bx.id))
     .map((bx) => inflateRect(bx.rect, OBSTACLE_PAD))
   const ownShrunk = [shrinkRect(srcBox.rect, 1), shrinkRect(tgtBox.rect, 1)]
 
@@ -799,42 +1348,62 @@ export function routeEdge(input: RouteInput): RouteResult | null {
   const buildSimple = (ss: Side4, ts: Side4, shift: number): Pt[] => {
     const a0 = anchorPoint(srcBox.rect, ss, ss === sides.source ? srcOff : 0)
     const a3 = anchorPoint(tgtBox.rect, ts, ts === sides.target ? tgtOff : 0)
-    return simpleRoute(a0, OUTWARD[ss], a3, OUTWARD[ts], STUB, shift)
+    return pruneBacktracks(simpleRoute(a0, OUTWARD[ss], a3, OUTWARD[ts], STUB, shift))
   }
 
-  // 1) Fast path: first clean combo (best-scored) already avoids everything.
-  //    If the full lane shift pushes the corridor into an obstacle, degrade
-  //    it gracefully (half, then zero) — never flip its sign, which would
-  //    re-introduce pair interweaving.
+  // 1) Fast path: first clean combo already avoids everything. The chosen
+  //    (hysteresis-stable) combo is tried first so unrelated movement cannot
+  //    flip the shape to a marginally shorter alternative. If the full lane
+  //    shift pushes the corridor into an obstacle, degrade it gracefully
+  //    (half, then zero) — never flip its sign, which would re-introduce
+  //    pair interweaving.
   const ranked = rankCombos(srcBox.rect, tgtBox.rect, othersInf, ownShrunk)
-  for (const combo of ranked) {
+  const chosen = ranked.find((c) => c.source === sides.source && c.target === sides.target)
+  const ordered = chosen ? [chosen, ...ranked.filter((c) => c !== chosen)] : ranked
+  for (const combo of ordered) {
     if (!combo.clean) continue
     for (const shift of [midShift, midShift / 2, 0]) {
       const pts = buildSimple(combo.source, combo.target, shift)
       if (isClean(pts)) {
+        input.debug?.({ ...dbg, branch: `fast:${shift}` })
         return { points: pts, sourceSide: combo.source, targetSide: combo.target }
       }
     }
   }
 
-  // 2) Nothing clean: A* detours for the most promising combos.
+  // 2) Nothing clean: A* detours for the most promising combos, constrained
+  //    to leave/enter along the stub axes so the detour has no anchor hooks.
+  //    The chosen combo is evaluated first to keep the shape stable.
+  const candidates: RankedCombo[] = []
+  if (chosen) candidates.push(chosen)
+  for (const combo of ranked) {
+    if (candidates.length >= ASTAR_CANDIDATES) break
+    if (!candidates.includes(combo)) candidates.push(combo)
+  }
   let best: { pts: Pt[]; cost: number; ss: Side4; ts: Side4 } | null = null
-  for (const combo of ranked.slice(0, ASTAR_CANDIDATES)) {
+  for (const combo of candidates) {
     const a0 = anchorPoint(srcBox.rect, combo.source, combo.source === sides.source ? srcOff : 0)
     const a3 = anchorPoint(tgtBox.rect, combo.target, combo.target === sides.target ? tgtOff : 0)
-    const s0 = { x: a0.x + OUTWARD[combo.source].x * STUB, y: a0.y + OUTWARD[combo.source].y * STUB }
-    const s1 = { x: a3.x + OUTWARD[combo.target].x * STUB, y: a3.y + OUTWARD[combo.target].y * STUB }
+    const d0 = OUTWARD[combo.source]
+    const d3 = OUTWARD[combo.target]
+    const s0 = { x: a0.x + d0.x * STUB, y: a0.y + d0.y * STUB }
+    const s1 = { x: a3.x + d3.x * STUB, y: a3.y + d3.y * STUB }
     const astarObstacles = [...othersInf, ...ownShrunk]
-    const mid = astarRoute(s0, s1, astarObstacles)
+    const mid = astarRoute(s0, s1, astarObstacles, d0, { x: -d3.x, y: -d3.y })
     if (!mid) continue
-    const pts = simplifyPath([a0, s0, ...mid, s1, a3])
+    const pts = pruneBacktracks(simplifyPath([a0, s0, ...mid, s1, a3]))
     const cost = polyLength(pts) + countTurns(pts) * 8
     if (!best || cost < best.cost) best = { pts, cost, ss: combo.source, ts: combo.target }
   }
-  if (best) return { points: best.pts, sourceSide: best.ss, targetSide: best.ts }
+  if (best) {
+    input.debug?.({ ...dbg, branch: "astar" })
+    return { points: best.pts, sourceSide: best.ss, targetSide: best.ts }
+  }
 
-  // 3) Last resort: best combo's naive route even if it grazes something.
-  const fallback = ranked[0]
+  // 3) Last resort: the chosen combo's naive route even if it grazes
+  //    something (keeps the previous shape instead of jumping elsewhere).
+  const fallback = chosen ?? ranked[0]
+  input.debug?.({ ...dbg, branch: "fallback" })
   return {
     points: buildSimple(fallback.source, fallback.target, midShift),
     sourceSide: fallback.source,
