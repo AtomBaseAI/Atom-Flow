@@ -980,7 +980,13 @@ export const CodeNode = memo(function CodeNode({
   const userFill = data.fill && data.fill !== "transparent" ? data.fill : undefined
   const bodyBg = userFill ? withAlpha(userFill, data.fillOpacity) : "var(--af-frame-bg)"
   const code = typeof data.code === "string" ? data.code : ""
-  const codeLang = data.codeLang || "code"
+  // Language badge follows the filename's extension (e.g. index.js → JS,
+  // script.py → PY) instead of a static value. A leading dot (".gitignore"),
+  // a trailing dot or a missing dot fall back to the stored codeLang.
+  const fileName = data.label ?? ""
+  const dotIdx = fileName.lastIndexOf(".")
+  const fileExt = dotIdx > 0 ? fileName.slice(dotIdx + 1).trim().slice(0, 10) : ""
+  const codeLang = fileExt || data.codeLang || "code"
   const codeFontSize = (data.fontSize ?? 9) + "px"
   const baseText = { color: data.fontColor || "var(--af-node-text)" }
   const lines = code.split("\n")

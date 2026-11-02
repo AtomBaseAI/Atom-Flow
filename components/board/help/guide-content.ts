@@ -151,7 +151,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "figure",
         figure: "workspace",
-        caption: "The whole workspace in one picture: tool rail, canvas, style bar, corner controls and the lock button.",
+        caption: "The whole workspace in one picture: the real tool rail, canvas, style bar, corner controls and the lock button.",
       },
       {
         kind: "tip",
@@ -166,14 +166,13 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "The left tool rail is your toolbox. Each button adds a different kind of element to the center of your view.",
+        text: "The left tool rail is your toolbox, and every tool works the same way: one click and the element is added straight to the center of your view — no drawing and no dragging needed.",
       },
       {
         kind: "steps",
         items: [
-          "Pick a tool: Rectangle, Ellipse, Line, Tag, Text, Table or Code snippet.",
-          "For Rectangle and Ellipse, drag on the canvas to draw the size you want.",
-          "For Text, Table, Code snippet and Tag, just click the button — the element is placed in the middle of the screen.",
+          "Click a tool button in the left rail: Rectangle, Ellipse, Line, Tag, Text, Table or Code snippet.",
+          "The element appears instantly at the center of your view, already selected — drag it into place, then resize it by its corner handles.",
           "Double-click empty canvas to instantly drop a text box.",
           "Double-click any element to edit its label — type, then click away or press Escape to finish.",
         ],
@@ -181,7 +180,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "figure",
         figure: "add-elements",
-        caption: "Pick a tool from the rail — drag on the canvas for shapes, or click once for text, tables and code.",
+        caption: "Click a tool once — the element lands at the center of your view, ready to move and connect. One click adds Rectangle, Ellipse, Line, Tag, Text, Table and Code alike.",
       },
       {
         kind: "list",
@@ -204,7 +203,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     blocks: [
       {
         kind: "p",
-        text: "The icon library ships 250+ ready-made icons — AWS services, databases, browsers, frameworks, programming languages, operating systems, file types and more.",
+        text: "The icon library ships 1,900+ ready-made icons — AWS services, Lucide system icons, databases, browsers, frameworks, programming languages, operating systems, file types, cloud platforms, dev tools and testing frameworks.",
       },
       {
         kind: "steps",
@@ -212,14 +211,14 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           "Click the Add icon button at the top of the left tool rail.",
           "Search by name, or tap a category chip (AWS, Database, Browser, Framework…) to browse.",
           "Click an icon to select it — a live preview shows exactly how it will land.",
-          "Pick a style: Icon only (a clean 96 × 96 icon), Icon + text (classic label underneath) or Icon frame (an app-window card with a title).",
+          "Pick a style: Icon only (a clean 96 × 96 icon), Icon + text (classic label underneath) or Icon frame (a 160 × 120 app-window card with a title).",
           "Press Add to board — the icon appears at the center of your view, ready to connect.",
         ],
       },
       {
         kind: "figure",
         figure: "icons",
-        caption: "Icon styles side by side — the Icon frame option gives services a tidy app-window card with a title.",
+        caption: "The Add Icon dialog: search, category chips, a live preview and the three styles — Icon only, Icon + text and the 160 × 120 Icon frame.",
       },
       {
         kind: "tip",
@@ -280,7 +279,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "figure",
         figure: "style-elements",
-        caption: "The style bar in action: shapes, background colors, borders, text size, typography and rotation.",
+        caption: "The style bar in action: Shapes, BG, Border, Text size, Typography and Rotate — with the real color swatches and opacity slider.",
       },
       {
         kind: "tip",
@@ -360,8 +359,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "list",
         items: [
-          "Zoom — scroll wheel or pinch, or the magnifier buttons in the left rail.",
-          "Fit view — the frame button in the left rail (also in the radial menu) frames your whole diagram perfectly.",
+          "Zoom — scroll wheel or pinch, or the Zoom in / Zoom out buttons in the left rail.",
+          "Fit view — the Scan button at the bottom of the left rail (also in the radial menu) frames your whole diagram perfectly.",
           "Pan — switch to the Hand tool and drag the canvas anywhere.",
           "Fullscreen — the expand button in the top-left corner hides everything but your diagram; press Esc to leave.",
           "Theme — the sun / moon button switches light and dark; exports follow the active theme.",
@@ -371,7 +370,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "figure",
         figure: "view",
-        caption: "Zoom pill, fit view, hand panning, fullscreen brackets and the plain / grid / dots background switch.",
+        caption: "Zoom in / Zoom out / Fit view rail buttons, Hand panning, fullscreen brackets and the plain / grid / dots background cycle.",
       },
     ],
   },
@@ -416,7 +415,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         kind: "figure",
         figure: "import-export",
-        caption: "JSON in, PNG & SVG out — the whole board round-trips through files.",
+        caption: "Import rebuilds the board from a .json file or pasted JSON; Export saves a PNG, an SVG or an editable JSON project.",
       },
       {
         kind: "list",

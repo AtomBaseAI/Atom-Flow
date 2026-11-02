@@ -468,7 +468,8 @@ export default function UserGuideSheet({ open, onOpenChange }: Props) {
               onScroll={handleScroll}
               className="relative min-h-0 flex-1 overflow-y-auto"
             >
-              <div className="mx-auto max-w-3xl px-4 py-6 md:px-10 md:py-8">
+              {/* Full width right after the sidebar — no centered max-width container */}
+              <div className="w-full px-4 py-6 md:px-10 md:py-8">
                 {visibleSections.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 py-24 text-center">
                     <Search aria-hidden className="h-8 w-8 text-muted-foreground/50" />

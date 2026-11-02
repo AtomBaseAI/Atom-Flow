@@ -365,99 +365,99 @@
    365→            </ToolBtn>
    366→          </DockIn>
    367→
-   368→          {/* 2. Square */}
+   368→          {/* 2. Hand (pan) — sits right under Select like the Figma toolbar */}
    369→          <DockIn index={bootIndexBase + 2} booted={booted}>
-   370→            <ToolBtn
-   371→              active={active === "rect"}
-   372→              onClick={() => (onQuickAdd ? onQuickAdd("rect") : onChangeTool("rect"))}
-   373→              label="Rectangle"
-   374→            >
-   375→              <Square className="h-4 w-4" />
-   376→            </ToolBtn>
-   377→          </DockIn>
-   378→
-   379→          {/* 3. Ellipse */}
-   380→          <DockIn index={bootIndexBase + 3} booted={booted}>
-   381→            <ToolBtn
-   382→              active={active === "ellipse"}
-   383→              onClick={() => (onQuickAdd ? onQuickAdd("ellipse") : onChangeTool("ellipse"))}
-   384→              label="Ellipse"
-   385→            >
-   386→              <Circle className="h-4 w-4" />
-   387→            </ToolBtn>
-   388→          </DockIn>
-   389→
-   390→          {/* 4. Line */}
-   391→          <DockIn index={bootIndexBase + 4} booted={booted}>
-   392→            <ToolBtn onClick={() => (onQuickAdd ? onQuickAdd("line") : onChangeTool("select"))} label="Line">
-   393→              <Minus className="h-4 w-4" />
+   370→            <ToolBtn active={active === "hand"} onClick={() => onChangeTool("hand")} label="Hand">
+   371→              <Hand className="h-4 w-4" />
+   372→            </ToolBtn>
+   373→          </DockIn>
+   374→
+   375→          {/* 3. Square */}
+   376→          <DockIn index={bootIndexBase + 3} booted={booted}>
+   377→            <ToolBtn
+   378→              active={active === "rect"}
+   379→              onClick={() => (onQuickAdd ? onQuickAdd("rect") : onChangeTool("rect"))}
+   380→              label="Rectangle"
+   381→            >
+   382→              <Square className="h-4 w-4" />
+   383→            </ToolBtn>
+   384→          </DockIn>
+   385→
+   386→          {/* 4. Ellipse */}
+   387→          <DockIn index={bootIndexBase + 4} booted={booted}>
+   388→            <ToolBtn
+   389→              active={active === "ellipse"}
+   390→              onClick={() => (onQuickAdd ? onQuickAdd("ellipse") : onChangeTool("ellipse"))}
+   391→              label="Ellipse"
+   392→            >
+   393→              <Circle className="h-4 w-4" />
    394→            </ToolBtn>
    395→          </DockIn>
    396→
-   397→          {/* spacer */}
-   398→          <div className="h-1" aria-hidden />
-   399→
-   400→          {/* Tag */}
-   401→          <DockIn index={bootIndexBase + 5} booted={booted}>
-   402→            <ToolBtn onClick={onAddTag} label="Tag">
-   403→              <TagIcon className="h-4 w-4" />
-   404→            </ToolBtn>
-   405→          </DockIn>
+   397→          {/* 5. Line */}
+   398→          <DockIn index={bootIndexBase + 5} booted={booted}>
+   399→            <ToolBtn onClick={() => (onQuickAdd ? onQuickAdd("line") : onChangeTool("select"))} label="Line">
+   400→              <Minus className="h-4 w-4" />
+   401→            </ToolBtn>
+   402→          </DockIn>
+   403→
+   404→          {/* spacer */}
+   405→          <div className="h-1" aria-hidden />
    406→
-   407→          {/* 7. Text */}
+   407→          {/* Tag */}
    408→          <DockIn index={bootIndexBase + 6} booted={booted}>
-   409→            <ToolBtn
-   410→              active={active === "text"}
-   411→              onClick={() => (onQuickAdd ? onQuickAdd("text") : onChangeTool("text"))}
-   412→              label="Text"
-   413→            >
-   414→              <Type className="h-4 w-4" />
-   415→            </ToolBtn>
-   416→          </DockIn>
-   417→
-   418→          {/* Table element */}
-   419→          <DockIn index={bootIndexBase + 13} booted={booted}>
-   420→            <ToolBtn onClick={onAddTable} label="Table">
-   421→              <Table2 className="h-4 w-4" />
+   409→            <ToolBtn onClick={onAddTag} label="Tag">
+   410→              <TagIcon className="h-4 w-4" />
+   411→            </ToolBtn>
+   412→          </DockIn>
+   413→
+   414→          {/* 7. Text */}
+   415→          <DockIn index={bootIndexBase + 7} booted={booted}>
+   416→            <ToolBtn
+   417→              active={active === "text"}
+   418→              onClick={() => (onQuickAdd ? onQuickAdd("text") : onChangeTool("text"))}
+   419→              label="Text"
+   420→            >
+   421→              <Type className="h-4 w-4" />
    422→            </ToolBtn>
    423→          </DockIn>
    424→
-   425→          {/* Code snippet element */}
-   426→          <DockIn index={bootIndexBase + 14} booted={booted}>
-   427→            <ToolBtn onClick={onAddCode} label="Code snippet">
-   428→              <FileCode className="h-4 w-4" />
+   425→          {/* Table element */}
+   426→          <DockIn index={bootIndexBase + 8} booted={booted}>
+   427→            <ToolBtn onClick={onAddTable} label="Table">
+   428→              <Table2 className="h-4 w-4" />
    429→            </ToolBtn>
    430→          </DockIn>
    431→
-   432→          {/* spacer */}
-   433→          <div className="h-1" aria-hidden />
-   434→
-   435→          {/* Hand (pan) */}
-   436→          <DockIn index={bootIndexBase + 7} booted={booted}>
-   437→            <ToolBtn active={active === "hand"} onClick={() => onChangeTool("hand")} label="Hand">
-   438→              <Hand className="h-4 w-4" />
-   439→            </ToolBtn>
-   440→          </DockIn>
+   432→          {/* Code snippet element */}
+   433→          <DockIn index={bootIndexBase + 9} booted={booted}>
+   434→            <ToolBtn onClick={onAddCode} label="Code snippet">
+   435→              <FileCode className="h-4 w-4" />
+   436→            </ToolBtn>
+   437→          </DockIn>
+   438→
+   439→          {/* spacer */}
+   440→          <div className="h-1" aria-hidden />
    441→
    442→          {/* Zoom controls */}
-   443→          <DockIn index={bootIndexBase + 8} booted={booted}>
+   443→          <DockIn index={bootIndexBase + 10} booted={booted}>
    444→            <ToolBtn onClick={onZoomIn} label="Zoom in">
    445→              <ZoomIn className="h-4 w-4" />
    446→            </ToolBtn>
    447→          </DockIn>
-   448→          <DockIn index={bootIndexBase + 9} booted={booted}>
+   448→          <DockIn index={bootIndexBase + 11} booted={booted}>
    449→            <ToolBtn onClick={onZoomOut} label="Zoom out">
    450→              <ZoomOut className="h-4 w-4" />
    451→            </ToolBtn>
    452→          </DockIn>
-   453→          <DockIn index={bootIndexBase + 10} booted={booted}>
+   453→          <DockIn index={bootIndexBase + 12} booted={booted}>
    454→            <ToolBtn onClick={onFitView} label="Fit view">
    455→              <Scan className="h-4 w-4" />
    456→            </ToolBtn>
    457→          </DockIn>
    458→
    459→          {/* Undo / Redo */}
-   460→          <DockIn index={bootIndexBase + 11} booted={booted}>
+   460→          <DockIn index={bootIndexBase + 13} booted={booted}>
    461→            <ToolBtn
    462→              onClick={() => {
    463→                if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:undo"))
@@ -467,7 +467,7 @@
    467→              <Undo2 className="h-4 w-4" />
    468→            </ToolBtn>
    469→          </DockIn>
-   470→          <DockIn index={bootIndexBase + 12} booted={booted}>
+   470→          <DockIn index={bootIndexBase + 14} booted={booted}>
    471→            <ToolBtn
    472→              onClick={() => {
    473→                if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:redo"))

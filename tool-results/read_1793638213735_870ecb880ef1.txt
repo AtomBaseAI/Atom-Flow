@@ -1,0 +1,1003 @@
+     1→"use client"
+     2→
+     3→/**
+     4→ * Hand-drawn SVG illustrations for the user guide — "screens" drawn as
+     5→ * vectors, never real screenshots. Every figure mirrors the actual Atom Flow
+     6→ * UI using theme tokens (card / border / muted-foreground) plus teal accents,
+     7→ * so the same drawing reads correctly in light AND dark mode.
+     8→ *
+     9→ * The tool tiles embed the REAL lucide-react icon components the board
+    10→ * renders (nested <svg> inside the figure), so each figure shows exactly the
+    11→ * same glyphs as the panel it describes — same icon, same order, same active
+    12→ * state.
+    13→ *
+    14→ * Figures are referenced from guide-content.ts via the `figure` block kind
+    15→ * and rendered by GuideFigure below.
+    16→ */
+    17→
+    18→import * as React from "react"
+    19→import {
+    20→  AppWindow,
+    21→  Boxes,
+    22→  Braces,
+    23→  Circle,
+    24→  CircleHelp,
+    25→  Cloud,
+    26→  Database,
+    27→  Download,
+    28→  FileCode,
+    29→  FolderPlus as BorderAll,
+    30→  GitBranch,
+    31→  Globe,
+    32→  Grip,
+    33→  Grid3x3,
+    34→  Hand,
+    35→  Image as ImageIcon,
+    36→  Layers,
+    37→  Lock,
+    38→  LockOpen,
+    39→  Maximize2,
+    40→  Minus,
+    41→  Moon,
+    42→  MousePointer2,
+    43→  PaintBucket,
+    44→  Plus,
+    45→  RotateCw,
+    46→  Scan,
+    47→  Server,
+    48→  Shapes,
+    49→  Square,
+    50→  Sun,
+    51→  Table2,
+    52→  Tag,
+    53→  Terminal,
+    54→  Trash2,
+    55→  Type,
+    56→  Undo2,
+    57→  Redo2,
+    58→  Upload,
+    59→  ZoomIn,
+    60→  ZoomOut,
+    61→  type LucideIcon,
+    62→} from "lucide-react"
+    63→
+    64→import { cn } from "@/lib/utils"
+    65→import type { GuideFigureId } from "./guide-content"
+    66→
+    67→/* ---------------- shared building blocks ---------------- */
+    68→
+    69→const panelCls = "fill-card stroke-border"
+    70→const canvasCls = "fill-background stroke-border"
+    71→
+    72→/** Rounded canvas every figure draws on (default 360×200). */
+    73→function Frame({
+    74→  label,
+    75→  children,
+    76→  height = 200,
+    77→}: {
+    78→  label: string
+    79→  children: React.ReactNode
+    80→  height?: number
+    81→}) {
+    82→  return (
+    83→    <svg
+    84→      viewBox={`0 0 360 ${height}`}
+    85→      role="img"
+    86→      aria-label={label}
+    87→      className="block h-auto w-full"
+    88→    >
+    89→      {children}
+    90→    </svg>
+    91→  )
+    92→}
+    93→
+    94→/** Teal / muted / rose arrowhead marker — must live inside <defs> with a unique id. */
+    95→function ArrowHead({ id, tone = "teal" }: { id: string; tone?: "teal" | "muted" | "rose" }) {
+    96→  const fill =
+    97→    tone === "muted"
+    98→      ? "fill-muted-foreground/60"
+    99→      : tone === "rose"
+   100→        ? "fill-rose-500"
+   101→        : "fill-teal-500"
+   102→  return (
+   103→    <marker
+   104→      id={id}
+   105→      viewBox="0 0 8 8"
+   106→      refX={7}
+   107→      refY={4}
+   108→      markerWidth={6.5}
+   109→      markerHeight={6.5}
+   110→      orient="auto-start-reverse"
+   111→    >
+   112→      <path d="M0 0L8 4L0 8Z" className={fill} />
+   113→    </marker>
+   114→  )
+   115→}
+   116→
+   117→/** A UI node box with optional centered label. */
+   118→function Box({
+   119→  x,
+   120→  y,
+   121→  w,
+   122→  h,
+   123→  label,
+   124→  rx = 6,
+   125→  className,
+   126→}: {
+   127→  x: number
+   128→  y: number
+   129→  w: number
+   130→  h: number
+   131→  label?: string
+   132→  rx?: number
+   133→  className?: string
+   134→}) {
+   135→  return (
+   136→    <g>
+   137→      <rect x={x} y={y} width={w} height={h} rx={rx} strokeWidth={1.5} className={cn(panelCls, className)} />
+   138→      {label !== undefined && (
+   139→        <text x={x + w / 2} y={y + h / 2 + 3} fontSize={8.5} textAnchor="middle" className="fill-foreground/80">
+   140→          {label}
+   141→        </text>
+   142→      )}
+   143→    </g>
+   144→  )
+   145→}
+   146→
+   147→/** Teal selection grips on the four corners of a box. */
+   148→function Grips({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+   149→  const s = 5
+   150→  const pts: Array<[number, number]> = [
+   151→    [x - s / 2, y - s / 2],
+   152→    [x + w - s / 2, y - s / 2],
+   153→    [x - s / 2, y + h - s / 2],
+   154→    [x + w - s / 2, y + h - s / 2],
+   155→  ]
+   156→  return (
+   157→    <g>
+   158→      {pts.map(([gx, gy], i) => (
+   159→        <rect
+   160→          key={i}
+   161→          x={gx}
+   162→          y={gy}
+   163→          width={s}
+   164→          height={s}
+   165→          rx={1}
+   166→          strokeWidth={1.2}
+   167→          className="fill-background stroke-teal-500"
+   168→        />
+   169→      ))}
+   170→    </g>
+   171→  )
+   172→}
+   173→
+   174→/** Small in-figure annotation label. */
+   175→function Lab({
+   176→  x,
+   177→  y,
+   178→  children,
+   179→  anchor = "middle",
+   180→  size = 7.5,
+   181→  className,
+   182→}: {
+   183→  x: number
+   184→  y: number
+   185→  children: React.ReactNode
+   186→  anchor?: "start" | "middle" | "end"
+   187→  size?: number
+   188→  className?: string
+   189→}) {
+   190→  return (
+   191→    <text x={x} y={y} fontSize={size} textAnchor={anchor} className={cn("fill-muted-foreground", className)}>
+   192→      {children}
+   193→    </text>
+   194→  )
+   195→}
+   196→
+   197→/** Mouse pointer arrow. */
+   198→function Cursor({ x, y }: { x: number; y: number }) {
+   199→  return (
+   200→    <path
+   201→      d={`M${x} ${y} l0 12 l3 -2.9 l1.9 4.4 l2.4 -1 l-1.9 -4.4 l4.1 0 Z`}
+   202→      strokeWidth={1.2}
+   203→      strokeLinejoin="round"
+   204→      className="fill-foreground stroke-background"
+   205→    />
+   206→  )
+   207→}
+   208→
+   209→/**
+   210→ * A rounded UI button tile with the REAL lucide icon inside (nested svg),
+   211→ * exactly the glyph the board renders for that control. `active` reproduces
+   212→ * the teal highlight the UI uses for the selected tool / panel.
+   213→ */
+   214→function Tile({
+   215→  x,
+   216→  y,
+   217→  size = 14,
+   218→  icon,
+   219→  active = false,
+   220→  tileClassName,
+   221→  iconClassName,
+   222→}: {
+   223→  x: number
+   224→  y: number
+   225→  size?: number
+   226→  icon: LucideIcon
+   227→  active?: boolean
+   228→  tileClassName?: string
+   229→  iconClassName?: string
+   230→}) {
+   231→  const iconSize = size * 0.78
+   232→  const Icon = icon
+   233→  return (
+   234→    <g>
+   235→      <rect
+   236→        x={x}
+   237→        y={y}
+   238→        width={size}
+   239→        height={size}
+   240→        rx={size * 0.26}
+   241→        strokeWidth={1.2}
+   242→        className={cn(
+   243→          active ? "fill-teal-500/15 stroke-teal-500" : "fill-card stroke-border",
+   244→          tileClassName,
+   245→        )}
+   246→      />
+   247→      <Icon
+   248→        x={x + (size - iconSize) / 2}
+   249→        y={y + (size - iconSize) / 2}
+   250→        width={iconSize}
+   251→        height={iconSize}
+   252→        aria-hidden
+   253→        className={cn(
+   254→          active ? "text-teal-600 dark:text-teal-300" : "text-foreground/75",
+   255→          iconClassName,
+   256→        )}
+   257→      />
+   258→    </g>
+   259→  )
+   260→}
+   261→
+   262→/**
+   263→ * Bottom-bar pill button showing icon + tiny caption, mirroring the real
+   264→ * style-bar buttons ("Shapes", "BG", "Border", …).
+   265→ */
+   266→function BarBtn({
+   267→  x,
+   268→  y,
+   269→  w = 34,
+   270→  h = 18,
+   271→  icon,
+   272→  label,
+   273→  textGlyph,
+   274→  active = false,
+   275→}: {
+   276→  x: number
+   277→  y: number
+   278→  w?: number
+   279→  h?: number
+   280→  icon?: LucideIcon
+   281→  label?: string
+   282→  /** Renders a text glyph (e.g. "T", "Aa") instead of an icon. */
+   283→  textGlyph?: string
+   284→  active?: boolean
+   285→}) {
+   286→  const Icon = icon
+   287→  return (
+   288→    <g>
+   289→      <rect
+   290→        x={x}
+   291→        y={y}
+   292→        width={w}
+   293→        height={h}
+   294→        rx={4}
+   295→        strokeWidth={1.1}
+   296→        className={cn(active ? "fill-teal-500/15 stroke-teal-500" : "fill-background stroke-border")}
+   297→      />
+   298→      {Icon && label && (
+   299→        <>
+   300→          <Icon
+   301→            x={x + 3.5}
+   302→            y={y + (h - 9) / 2}
+   303→            width={9}
+   304→            height={9}
+   305→            aria-hidden
+   306→            className="text-teal-600 dark:text-teal-400"
+   307→          />
+   308→          <text x={x + 14} y={y + h / 2 + 2.4} fontSize={6.2} className="fill-foreground/80">
+   309→            {label}
+   310→          </text>
+   311→        </>
+   312→      )}
+   313→      {textGlyph && (
+   314→        <text
+   315→          x={x + w / 2}
+   316→          y={y + h / 2 + 3.2}
+   317→          fontSize={9}
+   318→          fontWeight={700}
+   319→          textAnchor="middle"
+   320→          className="fill-foreground/80"
+   321→        >
+   322→          {textGlyph}
+   323→        </text>
+   324→      )}
+   325→    </g>
+   326→  )
+   327→}
+   328→
+   329→/* ---------------- the real rail / clusters (shared) ---------------- */
+   330→
+   331→/** Left tool rail buttons, exact order & icons of the real UI. */
+   332→const RAIL_TOOLS: { icon: LucideIcon; label: string }[] = [
+   333→  { icon: Plus, label: "Add Icon" },
+   334→  { icon: MousePointer2, label: "Select" },
+   335→  { icon: Hand, label: "Hand" },
+   336→  { icon: Square, label: "Rectangle" },
+   337→  { icon: Circle, label: "Ellipse" },
+   338→  { icon: Minus, label: "Line" },
+   339→  { icon: Tag, label: "Tag" },
+   340→  { icon: Type, label: "Text" },
+   341→  { icon: Table2, label: "Table" },
+   342→  { icon: FileCode, label: "Code" },
+   343→  { icon: ZoomIn, label: "Zoom in" },
+   344→  { icon: ZoomOut, label: "Zoom out" },
+   345→  { icon: Scan, label: "Fit view" },
+   346→  { icon: Undo2, label: "Undo" },
+   347→  { icon: Redo2, label: "Redo" },
+   348→]
+   349→
+   350→/** Theme toggle renders Sun in light mode and Moon in dark mode (as the real toggler does). */
+   351→function ThemeGlyph({ x, y, size }: { x: number; y: number; size: number }) {
+   352→  return (
+   353→    <g aria-hidden>
+   354→      <Sun x={x} y={y} width={size} height={size} className="text-foreground/75 dark:hidden" />
+   355→      <Moon x={x} y={y} width={size} height={size} className="hidden text-foreground/75 dark:block" />
+   356→    </g>
+   357→  )
+   358→}
+   359→
+   360→/* ---------------- figures ---------------- */
+   361→
+   362→function WelcomeFig() {
+   363→  return (
+   364→    <Frame label="A small architecture diagram: Frontend and API boxes connected to a Database ellipse, with a prod tag">
+   365→      <defs>
+   366→        <ArrowHead id="af-w-teal" />
+   367→        <ArrowHead id="af-w-muted" tone="muted" />
+   368→      </defs>
+   369→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   370→      {/* edges first so nodes render on top */}
+   371→      <path d="M144 69 H212" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-w-teal)" />
+   372→      <path d="M98 90 C98 120 122 138 132 142" fill="none" strokeWidth={2} className="stroke-muted-foreground/60" markerEnd="url(#af-w-muted)" />
+   373→      <path d="M262 90 C262 118 240 136 230 141" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-w-teal)" />
+   374→      <Box x={52} y={48} w={92} h={42} label="Frontend" />
+   375→      <Box x={216} y={48} w={92} h={42} label="API" />
+   376→      <ellipse cx={180} cy={146} rx={52} ry={24} strokeWidth={1.5} className={panelCls} />
+   377→      <text x={180} y={149} fontSize={8.5} textAnchor="middle" className="fill-foreground/80">Database</text>
+   378→      {/* tag pill — the real Tag element */}
+   379→      <rect x={56} y={30} width={30} height={12} rx={6} strokeWidth={1.1} className="fill-amber-500/15 stroke-amber-500" />
+   380→      <text x={71} y={38.5} fontSize={6.5} textAnchor="middle" className="fill-amber-600 dark:fill-amber-400">prod</text>
+   381→      <Grips x={52} y={48} w={92} h={42} />
+   382→      {/* sparkle accents + add badge */}
+   383→      <path d="M322 30 l2.4 7.4 7.4 2.4 -7.4 2.4 -2.4 7.4 -2.4 -7.4 -7.4 -2.4 7.4 -2.4 Z" className="fill-teal-500/40" />
+   384→      <path d="M300 58 l1.7 5.2 5.2 1.7 -5.2 1.7 -1.7 5.2 -1.7 -5.2 -5.2 -1.7 5.2 -1.7 Z" className="fill-teal-500/25" />
+   385→      <circle cx={308} cy={48} r={8} className="fill-teal-500" />
+   386→      <path d="M308 44.5 V51.5 M304.5 48 H311.5" strokeWidth={1.8} strokeLinecap="round" className="stroke-background" />
+   387→    </Frame>
+   388→  )
+   389→}
+   390→
+   391→function WorkspaceFig() {
+   392→  return (
+   393→    <Frame
+   394→      height={280}
+   395→      label="The Atom Flow workspace: the real left tool rail with its fifteen buttons, canvas with two connected nodes, bottom style bar, corner controls and the lock button"
+   396→    >
+   397→      <rect x={5} y={5} width={350} height={270} rx={10} strokeWidth={1.5} className={canvasCls} />
+   398→
+   399→      {/* left tool rail — the real 15 buttons in order */}
+   400→      <rect x={10} y={10} width={26} height={216} rx={6} strokeWidth={1.5} className={panelCls} />
+   401→      {RAIL_TOOLS.map((t, i) => (
+   402→        <Tile
+   403→          key={t.label}
+   404→          x={16.5}
+   405→          y={13 + i * 14}
+   406→          size={13}
+   407→          icon={t.icon}
+   408→          active={i === 1 /* Select is the default tool */}
+   409→        />
+   410→      ))}
+   411→
+   412→      {/* top-left cluster: fullscreen / theme / background (real order) */}
+   413→      <Tile x={46} y={13} icon={Maximize2} />
+   414→      {/* theme tile — sun in light mode, moon in dark mode, like the real toggler */}
+   415→      <rect x={64} y={13} width={14} height={14} rx={3.6} strokeWidth={1.2} className="fill-card stroke-border" />
+   416→      <ThemeGlyph x={66.5} y={15.5} size={9} />
+   417→      {/* background tile — shows the Plain variant icon (Square) */}
+   418→      <Tile x={82} y={13} icon={Square} />
+   419→      <Lab x={46} y={36} anchor="start" size={6.5}>Fullscreen · Theme · Background</Lab>
+   420→
+   421→      {/* top-right cluster: clear / import / export / help (real order) */}
+   422→      <Tile x={248} y={13} icon={Trash2} />
+   423→      <Tile x={268} y={13} icon={Upload} />
+   424→      <Tile x={288} y={13} icon={Download} />
+   425→      <Tile x={308} y={13} icon={CircleHelp} active />
+   426→      <Lab x={322} y={36} anchor="end" size={6.5}>Clear · Import · Export · Help</Lab>
+   427→
+   428→      {/* canvas nodes + smart edge */}
+   429→      <path d="M166 138 C 188 138 188 176 210 176" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" />
+   430→      <Box x={90} y={120} w={76} h={36} label="Frontend" />
+   431→      <Box x={210} y={158} w={72} h={36} label="API" />
+   432→      <Grips x={90} y={120} w={76} h={36} />
+   433→
+   434→      {/* bottom style bar — the real six panels */}
+   435→      <rect x={60} y={238} width={240} height={26} rx={8} strokeWidth={1.5} className={panelCls} />
+   436→      <BarBtn x={66} y={241} icon={Shapes} label="Shapes" />
+   437→      <BarBtn x={102} y={241} icon={PaintBucket} label="BG" />
+   438→      <BarBtn x={138} y={241} icon={BorderAll} label="Border" />
+   439→      <BarBtn x={174} y={241} textGlyph="T" />
+   440→      <BarBtn x={210} y={241} textGlyph="Aa" />
+   441→      <BarBtn x={246} y={241} icon={RotateCw} label="Rotate" />
+   442→      <Lab x={180} y={273} size={6.5}>Style bar</Lab>
+   443→
+   444→      {/* lock button — bottom-left, below the rail */}
+   445→      <Tile x={16} y={244} size={14} icon={LockOpen} />
+   446→      <Lab x={23} y={273} anchor="middle" size={6.5}>Lock board</Lab>
+   447→    </Frame>
+   448→  )
+   449→}
+   450→
+   451→function QuickMenuFig() {
+   452→  // Real radial menu: 6 items, 60° apart, starting at the top, radius 92 →
+   453→  // drawn here at radius 54. Order: Add shape, Select, Hand, Fit view,
+   454→  // Lock board, Fullscreen. Active tool (Select) glows teal.
+   455→  const cx = 180
+   456→  const cy = 102
+   457→  const r = 54
+   458→  const items: { icon: LucideIcon; label: string; lx: number; ly: number; anchor: "start" | "middle" | "end"; active?: boolean }[] = [
+   459→    { icon: Plus, label: "Add shape", lx: cx, ly: cy - r - 16, anchor: "middle" },
+   460→    { icon: MousePointer2, label: "Select", lx: cx + r + 16, ly: cy - r / 2 + 3, anchor: "start", active: true },
+   461→    { icon: Hand, label: "Hand", lx: cx + r + 16, ly: cy + r / 2 + 3, anchor: "start" },
+   462→    { icon: Scan, label: "Fit view", lx: cx, ly: cy + r + 22, anchor: "middle" },
+   463→    { icon: Lock, label: "Lock board", lx: cx - r - 16, ly: cy + r / 2 + 3, anchor: "end" },
+   464→    { icon: Maximize2, label: "Fullscreen", lx: cx - r - 16, ly: cy - r / 2 + 3, anchor: "end" },
+   465→  ]
+   466→  return (
+   467→    <Frame label="The radial quick menu with the real six actions — Add shape, Select, Hand, Fit view, Lock board and Fullscreen — fanned around a close hub">
+   468→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   469→      {/* dimmed board behind (the menu opens over a dark backdrop) */}
+   470→      <rect x={5} y={5} width={350} height={190} rx={10} className="fill-black/40" />
+   471→      <Box x={24} y={24} w={64} h={30} className="opacity-40" />
+   472→      <Box x={284} y={146} w={56} h={30} className="opacity-40" />
+   473→      {/* rotating dashed orbit + teal ripple (real radii scaled) */}
+   474→      <circle cx={cx} cy={cy} r={r} fill="none" strokeDasharray="4 4" className="stroke-foreground/25" />
+   475→      <circle cx={cx} cy={cy} r={r} fill="none" className="stroke-teal-500/30" />
+   476→      {/* items at -90° + i·60°, clockwise from the top */}
+   477→      {items.map((it, i) => {
+   478→        const angle = ((-90 + i * 60) * Math.PI) / 180
+   479→        const ix = cx + Math.cos(angle) * r
+   480→        const iy = cy + Math.sin(angle) * r
+   481→        return (
+   482→          <g key={it.label}>
+   483→            {it.active && <circle cx={ix} cy={iy} r={14} className="fill-teal-500/20" />}
+   484→            <circle cx={ix} cy={iy} r={11} strokeWidth={1.5} className={cn("fill-popover stroke-border", it.active && "stroke-teal-500")} />
+   485→            <it.icon
+   486→              x={ix - 6}
+   487→              y={iy - 6}
+   488→              width={12}
+   489→              height={12}
+   490→              aria-hidden
+   491→              className={cn(it.active ? "text-teal-600 dark:text-teal-300" : "text-foreground/85")}
+   492→            />
+   493→            <Lab x={it.lx} y={it.ly} anchor={it.anchor} size={7} className="fill-foreground/90">
+   494→              {it.label}
+   495→            </Lab>
+   496→          </g>
+   497→        )
+   498→      })}
+   499→      {/* hub = close (real: ✕ in a popover circle) */}
+   500→      <circle cx={cx} cy={cy} r={13} strokeWidth={1.5} className={panelCls} />
+   501→      <path d={`M${cx - 4} ${cy - 4} L${cx + 4} ${cy + 4} M${cx + 4} ${cy - 4} L${cx - 4} ${cy + 4}`} strokeWidth={1.6} strokeLinecap="round" className="stroke-muted-foreground" />
+   502→      <Lab x={cx} y={186} size={7}>Tap the dark backdrop or the ✕ hub to close</Lab>
+   503→    </Frame>
+   504→  )
+   505→}
+   506→
+   507→function AddElementsFig() {
+   508→  return (
+   509→    <Frame label="The tool rail with its real icons — Rectangle highlighted — an arrow leading to a dashed rectangle being drawn on the canvas, plus the click-to-add tools">
+   510→      <defs>
+   511→        <ArrowHead id="af-ae-teal" />
+   512→      </defs>
+   513→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   514→
+   515→      {/* left tool rail — first 10 buttons, Rectangle active */}
+   516→      <rect x={10} y={10} width={26} height={150} rx={6} strokeWidth={1.5} className={panelCls} />
+   517→      {RAIL_TOOLS.slice(0, 10).map((t, i) => (
+   518→        <Tile key={t.label} x={16.5} y={14 + i * 14} size={13} icon={t.icon} active={i === 3 /* Rectangle */} />
+   519→      ))}
+   520→      <Lab x={42} y={20} anchor="start" size={7}>Left tool rail</Lab>
+   521→
+   522→      {/* drag-to-draw crosshair */}
+   523→      <path d="M120 60 H130 M125 55 V65" strokeWidth={1.2} strokeLinecap="round" className="stroke-muted-foreground/60" />
+   524→      <circle cx={125} cy={60} r={3} fill="none" strokeWidth={1.2} className="stroke-muted-foreground/60" />
+   525→      <Lab x={138} y={58} anchor="start" size={7}>Drag to draw</Lab>
+   526→
+   527→      {/* arrow from the rail to the ghost node */}
+   528→      <path d="M46 42 C 90 42 120 62 148 80" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ae-teal)" />
+   529→
+   530→      {/* ghost rectangle appearing */}
+   531→      <rect x={152} y={84} width={86} height={42} rx={6} strokeWidth={1.5} strokeDasharray="4 3" className="fill-teal-500/10 stroke-teal-500" />
+   532→      <circle cx={238} cy={84} r={8} className="fill-teal-500" />
+   533→      <path d="M238 80 V88 M234 84 H242" strokeWidth={1.8} strokeLinecap="round" className="stroke-background" />
+   534→
+   535→      {/* click-to-add tools: Line, Tag, Text, Table, Code land at the view center */}
+   536→      <Tile x={228} y={148} size={13} icon={Minus} />
+   537→      <Tile x={246} y={148} size={13} icon={Tag} />
+   538→      <Tile x={264} y={148} size={13} icon={Type} />
+   539→      <Tile x={282} y={148} size={13} icon={Table2} />
+   540→      <Tile x={300} y={148} size={13} icon={FileCode} />
+   541→      <Lab x={271} y={172} size={7}>Line · Tag · Text · Table · Code — click once,</Lab>
+   542→      <Lab x={271} y={181} size={7}>added at the center of your view</Lab>
+   543→    </Frame>
+   544→  )
+   545→}
+   546→
+   547→function IconsFig() {
+   548→  // Grid icons — a representative slice of the real library categories.
+   549→  const gridRow1 = [Database, Cloud, Globe, Server, Terminal]
+   550→  const gridRow2 = [Boxes, GitBranch, Layers, Braces, Shapes]
+   551→  return (
+   552→    <Frame
+   553→      height={220}
+   554→      label="The Add Icon dialog: search field, category chips, an icon grid, style options with their real icons, and a live preview of the Icon frame card"
+   555→    >
+   556→      <rect x={5} y={5} width={350} height={210} rx={10} strokeWidth={1.5} className={canvasCls} />
+   557→
+   558→      {/* dialog card */}
+   559→      <rect x={18} y={14} width={186} height={192} rx={10} strokeWidth={1.5} className={panelCls} />
+   560→      <text x={30} y={29} fontSize={8.5} fontWeight={600} className="fill-foreground">Add Icon</text>
+   561→
+   562→      {/* search */}
+   563→      <rect x={30} y={36} width={162} height={13} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+   564→      <circle cx={38.5} cy={42.5} r={2.6} fill="none" strokeWidth={1.1} className="stroke-muted-foreground" />
+   565→      <path d="M40.5 44.5 L43 47" strokeWidth={1.1} strokeLinecap="round" className="stroke-muted-foreground" />
+   566→      <text x={48} y={45} fontSize={6.2} className="fill-muted-foreground">Search 1,900+ icons…</text>
+   567→
+   568→      {/* category chips — real categories */}
+   569→      {[
+   570→        { t: "system", x: 30, active: true },
+   571→        { t: "aws", x: 66, active: false },
+   572→        { t: "database", x: 96, active: false },
+   573→        { t: "dev", x: 136, active: false },
+   574→        { t: "os", x: 160, active: false },
+   575→      ].map((c) => (
+   576→        <g key={c.t}>
+   577→          <rect
+   578→            x={c.x}
+   579→            y={56}
+   580→            width={c.t.length * 3.6 + 10}
+   581→            height={11}
+   582→            rx={5.5}
+   583→            strokeWidth={1}
+   584→            className={c.active ? "fill-teal-500/15 stroke-teal-500" : "fill-background stroke-border"}
+   585→          />
+   586→          <text
+   587→            x={c.x + (c.t.length * 3.6 + 10) / 2}
+   588→            y={63.8}
+   589→            fontSize={6}
+   590→            textAnchor="middle"
+   591→            className={c.active ? "fill-teal-600 dark:fill-teal-300" : "fill-muted-foreground"}
+   592→          >
+   593→            {c.t}
+   594→          </text>
+   595→        </g>
+   596→      ))}
+   597→
+   598→      {/* icon grid 5×2 */}
+   599→      {[gridRow1, gridRow2].map((row, r) =>
+   600→        row.map((Icon, i) => (
+   601→          <g key={`${r}-${i}`}>
+   602→            <rect
+   603→              x={30 + i * 33}
+   604→              y={74 + r * 28}
+   605→              width={24}
+   606→              height={24}
+   607→              rx={4}
+   608→              strokeWidth={1.1}
+   609→              className={r === 0 && i === 0 ? "fill-teal-500/15 stroke-teal-500" : "fill-background stroke-border"}
+   610→            />
+   611→            <Icon
+   612→              x={30 + i * 33 + 5}
+   613→              y={74 + r * 28 + 5}
+   614→              width={14}
+   615→              height={14}
+   616→              aria-hidden
+   617→              className={r === 0 && i === 0 ? "text-teal-600 dark:text-teal-300" : "text-foreground/70"}
+   618→            />
+   619→          </g>
+   620→        )),
+   621→      )}
+   622→
+   623→      {/* style options — the real three, with the icons the dialog uses */}
+   624→      <text x={30} y={142} fontSize={6.2} className="fill-muted-foreground">Style</text>
+   625→      <rect x={30} y={146} width={50} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+   626→      <ImageIcon x={34} y={149.5} width={7} height={7} aria-hidden className="text-muted-foreground" />
+   627→      <text x={44} y={155.5} fontSize={5.8} className="fill-foreground/80">Icon only</text>
+   628→      <rect x={84} y={146} width={54} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+   629→      <Type x={88} y={149.5} width={7} height={7} aria-hidden className="text-muted-foreground" />
+   630→      <text x={98} y={155.5} fontSize={5.8} className="fill-foreground/80">Icon + text</text>
+   631→      <rect x={142} y={146} width={50} height={14} rx={4} strokeWidth={1.1} className="fill-teal-500/15 stroke-teal-500" />
+   632→      <AppWindow x={146} y={149.5} width={7} height={7} aria-hidden className="text-teal-600 dark:text-teal-300" />
+   633→      <text x={156} y={155.5} fontSize={5.8} className="fill-teal-600 dark:fill-teal-300">Icon frame</text>
+   634→
+   635→      {/* add button */}
+   636→      <rect x={30} y={170} width={162} height={16} rx={5} className="fill-teal-500" />
+   637→      <text x={111} y={181} fontSize={7.5} fontWeight={600} textAnchor="middle" className="fill-background">Add to board</text>
+   638→
+   639→      {/* live preview — the real Icon frame: title top-left, icon top-right */}
+   640→      <Lab x={296} y={26} size={7}>Live preview</Lab>
+   641→      <rect x={244} y={34} width={104} height={78} rx={6} strokeWidth={1.5} className={panelCls} />
+   642→      <path d="M244 50 H348" strokeWidth={1.1} className="stroke-border" />
+   643→      <text x={250} y={45.5} fontSize={6.5} className="fill-foreground/85">Database</text>
+   644→      <Database x={320} y={56} width={22} height={22} aria-hidden className="text-foreground/70" />
+   645→      <Grips x={244} y={34} w={104} h={78} />
+   646→      {/* real frame size badge */}
+   647→      <rect x={266} y={122} width={60} height={14} rx={7} strokeWidth={1.1} className="fill-teal-500/10 stroke-teal-500" />
+   648→      <text x={296} y={131.8} fontSize={7} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">160 × 120</text>
+   649→      <Lab x={296} y={150} size={6.5}>Icon frame — app-window card</Lab>
+   650→      <Lab x={296} y={160} size={6.5}>Icon only &amp; Icon + text are 96 × 96</Lab>
+   651→      <Lab x={296} y={178} size={6.5}>Resize later by dragging the</Lab>
+   652→      <Lab x={296} y={187} size={6.5}>corner handles</Lab>
+   653→    </Frame>
+   654→  )
+   655→}
+   656→
+   657→function ConnectFig() {
+   658→  return (
+   659→    <Frame label="A dashed connection line being dragged from a round handle on Frontend, bending around an obstacle box into Database">
+   660→      <defs>
+   661→        <ArrowHead id="af-cn-teal" />
+   662→      </defs>
+   663→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   664→      {/* obstacle */}
+   665→      <rect x={158} y={66} width={48} height={30} rx={4} strokeWidth={1.2} strokeDasharray="3 3" className="fill-muted/60 stroke-border" />
+   666→      <Lab x={182} y={84} size={6.5}>obstacle</Lab>
+   667→      {/* smart route under the obstacle */}
+   668→      <path d="M127 94 C 150 94 152 128 182 128 C 212 128 214 108 242 108" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-cn-teal)" />
+   669→      <Box x={30} y={72} w={92} h={44} label="Frontend" />
+   670→      <Box x={242} y={86} w={88} h={44} label="Database" />
+   671→      {/* handles */}
+   672→      <circle cx={122} cy={84} r={2.6} className="fill-muted-foreground/60" />
+   673→      <circle cx={122} cy={104} r={2.6} className="fill-muted-foreground/60" />
+   674→      <circle cx={122} cy={94} r={9} fill="none" strokeWidth={1.2} className="stroke-teal-500/40" />
+   675→      <circle cx={122} cy={94} r={4.5} className="fill-teal-500" />
+   676→      <Cursor x={132} y={99} />
+   677→      <Lab x={146} y={90} anchor="start">Drag</Lab>
+   678→      <Lab x={242} y={78} anchor="start" size={7}>release here</Lab>
+   679→    </Frame>
+   680→  )
+   681→}
+   682→
+   683→function StyleElementsFig() {
+   684→  // The real swatch palette used by BG / Border / Edge / Text color panels.
+   685→  const swatches = [
+   686→    { name: "Black", css: "#000000" },
+   687→    { name: "White", css: "#ffffff" },
+   688→    { name: "Green", css: "#10b981" },
+   689→    { name: "Red", css: "#ef4444" },
+   690→    { name: "Purple", css: "#a855f7" },
+   691→    { name: "Yellow", css: "#f59e0b" },
+   692→  ]
+   693→  return (
+   694→    <Frame label="A selected node with grips above the real bottom style bar — Shapes, BG, Border, T, Aa and Rotate buttons — with the BG panel open showing the six color swatches and the opacity slider">
+   695→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   696→      {/* selected node */}
+   697→      <rect x={24} y={40} width={130} height={60} rx={6} strokeWidth={1.5} className="fill-teal-500/10 stroke-teal-500" />
+   698→      <text x={89} y={73} fontSize={9} textAnchor="middle" className="fill-foreground/85">API gateway</text>
+   699→      <Grips x={24} y={40} w={130} h={60} />
+   700→      <path d="M89 102 V124" strokeDasharray="2 3" className="stroke-muted-foreground/40" />
+   701→
+   702→      {/* style bar — primary row with the real buttons */}
+   703→      <rect x={14} y={126} width={332} height={60} rx={10} strokeWidth={1.5} className={panelCls} />
+   704→      <BarBtn x={24} y={134} w={48} icon={Shapes} label="Shapes" active />
+   705→      <BarBtn x={76} y={134} w={42} icon={PaintBucket} label="BG" />
+   706→      <BarBtn x={122} y={134} w={48} icon={BorderAll} label="Border" />
+   707→      <BarBtn x={174} y={134} w={26} textGlyph="T" />
+   708→      <BarBtn x={204} y={134} w={30} textGlyph="Aa" />
+   709→      <BarBtn x={238} y={134} w={50} icon={RotateCw} label="Rotate" />
+   710→      <Lab x={326} y={146} size={6} className="fill-muted-foreground/70">Edge panel appears</Lab>
+   711→      <Lab x={326} y={155} size={6} className="fill-muted-foreground/70">when a line is selected</Lab>
+   712→
+   713→      {/* BG options row — no-color + the six real swatches + opacity slider */}
+   714→      <path d="M24 166 H336" strokeWidth={1} className="stroke-border" />
+   715→      {/* no color: transparent swatch with diagonal slash */}
+   716→      <rect x={30} y={172} width={10} height={10} rx={2} strokeWidth={1} className="fill-background stroke-border" />
+   717→      <path d="M30 182 L40 172" strokeWidth={1} className="stroke-border" />
+   718→      {swatches.map((s, i) => (
+   719→        <rect
+   720→          key={s.name}
+   721→          x={46 + i * 15}
+   722→          y={172}
+   723→          width={10}
+   724→          height={10}
+   725→          rx={2}
+   726→          strokeWidth={1}
+   727→          style={{ fill: s.css }}
+   728→          className="stroke-border"
+   729→        />
+   730→      ))}
+   731→      <Lab x={112} y={181} anchor="start" size={6.5}>six swatches</Lab>
+   732→      {/* opacity slider */}
+   733→      <text x={196} y={181} fontSize={6.5} className="fill-muted-foreground">Opacity</text>
+   734→      <path d="M228 177 H296" strokeWidth={1.4} strokeLinecap="round" className="stroke-border" />
+   735→      <circle cx={288} cy={177} r={3.2} className="fill-teal-500" />
+   736→      <text x={304} y={181} anchor="start" fontSize={6.5} className="fill-muted-foreground">100%</text>
+   737→      <Lab x={180} y={194} size={6.5}>BG panel open — every panel works on the selection</Lab>
+   738→    </Frame>
+   739→  )
+   740→}
+   741→
+   742→function StyleConnectionsFig() {
+   743→  // Real edge panel controls: solid/dashed, the six swatches, 1–5px width, Animate On/Off.
+   744→  return (
+   745→    <Frame label="The Edge panel controls — style, color swatches, width and animate — with three sample connections: solid, dashed animated and thick red">
+   746→      <defs>
+   747→        <ArrowHead id="af-sc-muted" tone="muted" />
+   748→        <ArrowHead id="af-sc-teal" />
+   749→        <ArrowHead id="af-sc-red" tone="rose" />
+   750→      </defs>
+   751→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   752→
+   753→      {/* Edge panel replica (top) */}
+   754→      <rect x={30} y={14} width={300} height={26} rx={8} strokeWidth={1.5} className={panelCls} />
+   755→      <text x={42} y={30} fontSize={6.5} className="fill-muted-foreground">Style</text>
+   756→      <rect x={64} y={21} width={26} height={12} rx={3} strokeWidth={1} className="fill-teal-500/15 stroke-teal-500" />
+   757→      <text x={77} y={29.5} fontSize={6} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">solid</text>
+   758→      <rect x={94} y={21} width={30} height={12} rx={3} strokeWidth={1} className="fill-background stroke-border" />
+   759→      <text x={109} y={29.5} fontSize={6} textAnchor="middle" className="fill-foreground/70">dashed</text>
+   760→      <text x={136} y={30} fontSize={6.5} className="fill-muted-foreground">Color</text>
+   761→      {["#000000", "#ffffff", "#10b981", "#ef4444", "#a855f7", "#f59e0b"].map((c, i) => (
+   762→        <circle key={c} cx={166 + i * 11} cy={27} r={3.4} strokeWidth={0.8} style={{ fill: c }} className="stroke-border" />
+   763→      ))}
+   764→      <text x={238} y={30} fontSize={6.5} className="fill-muted-foreground">Width</text>
+   765→      <rect x={260} y={21} width={22} height={12} rx={3} strokeWidth={1} className="fill-background stroke-border" />
+   766→      <text x={271} y={29.5} fontSize={6} textAnchor="middle" className="fill-foreground/70">1–5px</text>
+   767→      <text x={290} y={30} fontSize={6.5} className="fill-muted-foreground">Animate</text>
+   768→      <rect x={314} y={21} width={12} height={12} rx={3} strokeWidth={1} className="fill-teal-500/15 stroke-teal-500" />
+   769→
+   770→      {/* row 1 — solid */}
+   771→      <rect x={22} y={62} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+   772→      <rect x={294} y={62} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+   773→      <path d="M66 76 H290" fill="none" strokeWidth={2} className="stroke-foreground" markerEnd="url(#af-sc-muted)" />
+   774→      <Lab x={180} y={64}>Solid — plain direct link</Lab>
+   775→
+   776→      {/* row 2 — dashed + animate */}
+   777→      <rect x={22} y={104} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+   778→      <rect x={294} y={104} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+   779→      <path d="M66 118 H290" fill="none" strokeWidth={2} strokeDasharray="6 5" className="stroke-teal-500" markerEnd="url(#af-sc-teal)" />
+   780→      <path d="M148 114 l5 4 -5 4 M160 114 l5 4 -5 4" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-400/70" fill="none" />
+   781→      <Lab x={180} y={106}>Dashed + Animate — data is flowing</Lab>
+   782→
+   783→      {/* row 3 — thick colored */}
+   784→      <rect x={22} y={148} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+   785→      <rect x={294} y={148} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+   786→      <path d="M66 162 H290" fill="none" strokeWidth={4} className="stroke-rose-500" markerEnd="url(#af-sc-red)" />
+   787→      <Lab x={180} y={150}>Width &amp; color — show importance</Lab>
+   788→    </Frame>
+   789→  )
+   790→}
+   791→
+   792→function EditFig() {
+   793→  return (
+   794→    <Frame label="A dashed selection box around two elements with teal smart guides and move arrows; keyboard hints for copy and paste">
+   795→      <defs>
+   796→        <ArrowHead id="af-ed-muted" tone="muted" />
+   797→      </defs>
+   798→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   799→      {/* smart guides behind everything */}
+   800→      <path d="M150 26 V172 M78 70 H282" strokeDasharray="2 4" strokeWidth={1} className="stroke-teal-500/50" />
+   801→      {/* marquee + nodes */}
+   802→      <rect x={96} y={40} width={158} height={100} rx={4} strokeWidth={1.5} strokeDasharray="5 4" className="fill-teal-500/5 stroke-teal-500" />
+   803→      <Box x={108} y={52} w={84} h={36} label="Users" />
+   804→      <Box x={126} y={98} w={88} h={34} label="Orders" />
+   805→      <Cursor x={96} y={40} />
+   806→      {/* move arrows */}
+   807→      <path d="M248 90 H276" fill="none" strokeWidth={1.5} className="stroke-muted-foreground" markerStart="url(#af-ed-muted)" markerEnd="url(#af-ed-muted)" />
+   808→      {/* keyboard hint chips (annotations, not UI) */}
+   809→      <rect x={262} y={40} width={44} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+   810→      <text x={284} y={49.8} fontSize={6.5} textAnchor="middle" className="fill-foreground/75">Ctrl + C</text>
+   811→      <rect x={262} y={60} width={44} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+   812→      <text x={284} y={69.8} fontSize={6.5} textAnchor="middle" className="fill-foreground/75">Ctrl + V</text>
+   813→      <Lab x={284} y={86} size={6.5}>copies keep</Lab>
+   814→      <Lab x={284} y={95} size={6.5}>connections</Lab>
+   815→      <Lab x={180} y={190} size={7}>Teal smart guides keep things aligned</Lab>
+   816→    </Frame>
+   817→  )
+   818→}
+   819→
+   820→function ViewFig() {
+   821→  return (
+   822→    <Frame label="The real view controls: fullscreen brackets with the Maximize button, Hand panning with pan arrows, the Zoom in / Zoom out / Fit view rail buttons, and the plain, grid, dots background cycle">
+   823→      <defs>
+   824→        <ArrowHead id="af-vw-muted" tone="muted" />
+   825→      </defs>
+   826→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   827→      {/* fullscreen corner brackets + real button */}
+   828→      <path d="M14 22 V14 H22 M338 14 H346 V22 M14 178 V186 H22 M346 178 V186 H338" strokeWidth={2} strokeLinecap="round" className="stroke-teal-500" fill="none" />
+   829→      <Tile x={40} y={16} icon={Maximize2} />
+   830→      <Lab x={53} y={44} size={7}>Fullscreen</Lab>
+   831→
+   832→      {/* hand panning */}
+   833→      <path d="M150 95 H214" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
+   834→      <path d="M182 64 V126" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
+   835→      <Tile x={175} y={88} size={16} icon={Hand} />
+   836→      <Lab x={182} y={142} size={7}>Hand — drag to pan</Lab>
+   837→
+   838→      {/* zoom / fit rail buttons (real icons) */}
+   839→      <Tile x={302} y={64} icon={ZoomIn} />
+   840→      <Tile x={302} y={84} icon={ZoomOut} />
+   841→      <Tile x={302} y={104} icon={Scan} />
+   842→      <Lab x={296} y={68} anchor="end" size={6.5}>Zoom in</Lab>
+   843→      <Lab x={296} y={88} anchor="end" size={6.5}>Zoom out</Lab>
+   844→      <Lab x={296} y={108} anchor="end" size={6.5}>Fit view</Lab>
+   845→      <Lab x={322} y={126} anchor="middle" size={6.5}>also scroll / pinch</Lab>
+   846→
+   847→      {/* background cycle — the real three variants with their real icons */}
+   848→      <Lab x={64} y={162} size={7}>Background cycles:</Lab>
+   849→      <Tile x={40} y={168} icon={Square} />
+   850→      <Lab x={47} y={194} size={6.5}>Plain</Lab>
+   851→      <path d="M60 175 H72" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
+   852→      <Tile x={78} y={168} icon={Grid3x3} />
+   853→      <Lab x={85} y={194} size={6.5}>Grid</Lab>
+   854→      <path d="M98 175 H110" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
+   855→      <Tile x={116} y={168} icon={Grip} />
+   856→      <Lab x={123} y={194} size={6.5}>Dots</Lab>
+   857→    </Frame>
+   858→  )
+   859→}
+   860→
+   861→function LockFig() {
+   862→  return (
+   863→    <Frame label="A locked board: dimmed elements, a padlock badge in the middle, a tapped element with a teal highlight ring, and the lock button showing its Locked badge">
+   864→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   865→      {/* dimmed nodes + edge */}
+   866→      <path d="M148 71 C170 71 182 90 212 91" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-muted-foreground/60" opacity={0.6} />
+   867→      <Box x={60} y={52} w={88} h={38} label="Frontend" className="opacity-60" />
+   868→      <Box x={212} y={72} w={92} h={38} label="API" className="opacity-60" />
+   869→      {/* tapped highlight ring */}
+   870→      <rect x={206} y={66} width={104} height={50} rx={8} fill="none" strokeWidth={1.5} strokeDasharray="4 4" className="stroke-teal-500/60" />
+   871→      {/* lock badge */}
+   872→      <circle cx={180} cy={96} r={22} fill="none" strokeWidth={1.2} strokeDasharray="3 4" className="stroke-teal-500/50" />
+   873→      <circle cx={180} cy={96} r={13} strokeWidth={2} className="fill-card stroke-teal-500" />
+   874→      <path d="M177.5 96 V93.4 A2.6 2.6 0 0 1 182.7 93.4 V96" strokeWidth={1.6} className="stroke-teal-500" fill="none" />
+   875→      <rect x={175.5} y={96} width={9} height={7} rx={1.5} className="fill-teal-500" />
+   876→      {/* view-only pill */}
+   877→      <rect x={286} y={16} width={58} height={17} rx={8.5} strokeWidth={1.2} className="fill-teal-500/10 stroke-teal-500" />
+   878→      <text x={315} y={27.5} fontSize={7.5} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">View-only</text>
+   879→      {/* lock button (locked state: teal border, closed lock) + real Locked badge */}
+   880→      <Tile x={18} y={160} size={16} icon={Lock} active />
+   881→      <rect x={40} y={160} width={46} height={16} rx={4} strokeWidth={1.1} className="fill-teal-500/10 stroke-teal-500" />
+   882→      <text x={63} y={171} fontSize={7} fontWeight={600} letterSpacing={1} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">LOCKED</text>
+   883→      <Lab x={63} y={188} size={6.5}>click again to unlock</Lab>
+   884→    </Frame>
+   885→  )
+   886→}
+   887→
+   888→function ImportExportFig() {
+   889→  return (
+   890→    <Frame
+   891→      height={210}
+   892→      label="The real Import and Export dialogs side by side: Import picks a .json file or pastes JSON; Export has a file name field and PNG, SVG and JSON format cards"
+   893→    >
+   894→      <rect x={5} y={5} width={350} height={200} rx={10} strokeWidth={1.5} className={canvasCls} />
+   895→
+   896→      {/* Import dialog */}
+   897→      <rect x={18} y={18} width={150} height={174} rx={10} strokeWidth={1.5} className={panelCls} />
+   898→      <text x={30} y={33} fontSize={8} fontWeight={600} className="fill-foreground">Import diagram</text>
+   899→      {/* dropzone */}
+   900→      <rect x={30} y={42} width={126} height={42} rx={6} strokeWidth={1.2} strokeDasharray="4 3" className="fill-background stroke-border" />
+   901→      <Upload x={87} y={48} width={12} height={12} aria-hidden className="text-muted-foreground" />
+   902→      <text x={93} y={70} fontSize={6} textAnchor="middle" className="fill-foreground/75">Choose a .json file</text>
+   903→      <text x={93} y={79} fontSize={5.4} textAnchor="middle" className="fill-muted-foreground">or paste the JSON below</text>
+   904→      {/* paste area */}
+   905→      <rect x={30} y={92} width={126} height={40} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+   906→      <text x={36} y={106} fontSize={6} fontFamily="monospace" className="fill-muted-foreground">{"{ \"nodes\": […],"}</text>
+   907→      <text x={36} y={116} fontSize={6} fontFamily="monospace" className="fill-muted-foreground">{"  \"edges\": […] }"}</text>
+   908→      {/* buttons */}
+   909→      <rect x={30} y={144} width={46} height={16} rx={5} strokeWidth={1.1} className="fill-background stroke-border" />
+   910→      <text x={53} y={155} fontSize={6.5} textAnchor="middle" className="fill-foreground/80">Cancel</text>
+   911→      <rect x={80} y={144} width={52} height={16} rx={5} className="fill-teal-500" />
+   912→      <text x={106} y={155} fontSize={6.5} fontWeight={600} textAnchor="middle" className="fill-background">Import</text>
+   913→      <Lab x={93} y={178} size={6.5}>rebuilds the whole board — undo still works</Lab>
+   914→
+   915→      {/* Export dialog */}
+   916→      <rect x={192} y={18} width={150} height={174} rx={10} strokeWidth={1.5} className={panelCls} />
+   917→      <text x={204} y={33} fontSize={8} fontWeight={600} className="fill-foreground">Export diagram</text>
+   918→      {/* file name */}
+   919→      <text x={204} y={47} fontSize={6} className="fill-muted-foreground">File name</text>
+   920→      <rect x={204} y={51} width={126} height={13} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+   921→      <text x={210} y={60.5} fontSize={6.2} className="fill-foreground/80">diagram</text>
+   922→      {/* format cards — real three, real icons */}
+   923→      <text x={204} y={78} fontSize={6} className="fill-muted-foreground">Format</text>
+   924→      {[
+   925→        { icon: ImageIcon, label: "PNG", hint: "Raster image", x: 204, active: true },
+   926→        { icon: FileCode, label: "SVG", hint: "Vector image", x: 248, active: false },
+   927→        { icon: Braces, label: "JSON", hint: "Editable project", x: 292, active: false },
+   928→      ].map((f) => (
+   929→        <g key={f.label}>
+   930→          <rect
+   931→            x={f.x}
+   932→            y={83}
+   933→            width={38}
+   934→            height={36}
+   935→            rx={5}
+   936→            strokeWidth={1.1}
+   937→            className={f.active ? "fill-teal-500/10 stroke-teal-500" : "fill-background stroke-border"}
+   938→          />
+   939→          <f.icon
+   940→            x={f.x + 14}
+   941→            y={87}
+   942→            width={10}
+   943→            height={10}
+   944→            aria-hidden
+   945→            className={f.active ? "text-teal-600 dark:text-teal-300" : "text-muted-foreground"}
+   946→          />
+   947→          <text
+   948→            x={f.x + 19}
+   949→            y={106}
+   950→            fontSize={6}
+   951→            fontWeight={600}
+   952→            textAnchor="middle"
+   953→            className={f.active ? "fill-teal-600 dark:fill-teal-300" : "fill-foreground/80"}
+   954→          >
+   955→            {f.label}
+   956→          </text>
+   957→          <text x={f.x + 19} y={113} fontSize={4.6} textAnchor="middle" className="fill-muted-foreground">
+   958→            {f.hint}
+   959→          </text>
+   960→        </g>
+   961→      ))}
+   962→      {/* export button */}
+   963→      <rect x={204} y={144} width={72} height={16} rx={5} className="fill-teal-500" />
+   964→      <text x={240} y={155} fontSize={6.5} fontWeight={600} textAnchor="middle" className="fill-background">Export PNG</text>
+   965→      <Lab x={267} y={178} size={6.5}>PNG · SVG · re-openable JSON project</Lab>
+   966→    </Frame>
+   967→  )
+   968→}
+   969→
+   970→/* ---------------- dispatcher ---------------- */
+   971→
+   972→export function GuideFigure({ id, className }: { id: GuideFigureId; className?: string }) {
+   973→  const fig = (() => {
+   974→    switch (id) {
+   975→      case "welcome":
+   976→        return <WelcomeFig />
+   977→      case "workspace":
+   978→        return <WorkspaceFig />
+   979→      case "quick-menu":
+   980→        return <QuickMenuFig />
+   981→      case "add-elements":
+   982→        return <AddElementsFig />
+   983→      case "icons":
+   984→        return <IconsFig />
+   985→      case "connect":
+   986→        return <ConnectFig />
+   987→      case "style-elements":
+   988→        return <StyleElementsFig />
+   989→      case "style-connections":
+   990→        return <StyleConnectionsFig />
+   991→      case "edit":
+   992→        return <EditFig />
+   993→      case "view":
+   994→        return <ViewFig />
+   995→      case "lock":
+   996→        return <LockFig />
+   997→      case "import-export":
+   998→        return <ImportExportFig />
+   999→    }
+  1000→  })()
+  1001→  return <div className={cn("[&_svg]:h-auto [&_svg]:w-full", className)}>{fig}</div>
+  1002→}
+  1003→

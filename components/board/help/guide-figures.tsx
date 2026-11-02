@@ -6,11 +6,60 @@
  * UI using theme tokens (card / border / muted-foreground) plus teal accents,
  * so the same drawing reads correctly in light AND dark mode.
  *
+ * The tool tiles embed the REAL lucide-react icon components the board
+ * renders (nested <svg> inside the figure), so each figure shows exactly the
+ * same glyphs as the panel it describes — same icon, same order, same active
+ * state.
+ *
  * Figures are referenced from guide-content.ts via the `figure` block kind
  * and rendered by GuideFigure below.
  */
 
 import * as React from "react"
+import {
+  AppWindow,
+  Boxes,
+  Braces,
+  Circle,
+  CircleHelp,
+  Cloud,
+  Database,
+  Download,
+  FileCode,
+  FolderPlus as BorderAll,
+  GitBranch,
+  Globe,
+  Grip,
+  Grid3x3,
+  Hand,
+  Image as ImageIcon,
+  Layers,
+  Lock,
+  LockOpen,
+  Maximize2,
+  Minus,
+  Moon,
+  MousePointer2,
+  PaintBucket,
+  Plus,
+  RotateCw,
+  Scan,
+  Server,
+  Shapes,
+  Square,
+  Sun,
+  Table2,
+  Tag,
+  Terminal,
+  Trash2,
+  Type,
+  Undo2,
+  Redo2,
+  Upload,
+  ZoomIn,
+  ZoomOut,
+  type LucideIcon,
+} from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { GuideFigureId } from "./guide-content"
@@ -20,10 +69,23 @@ import type { GuideFigureId } from "./guide-content"
 const panelCls = "fill-card stroke-border"
 const canvasCls = "fill-background stroke-border"
 
-/** Rounded 360×200 canvas every figure draws on. */
-function Frame({ label, children }: { label: string; children: React.ReactNode }) {
+/** Rounded canvas every figure draws on (default 360×200). */
+function Frame({
+  label,
+  children,
+  height = 200,
+}: {
+  label: string
+  children: React.ReactNode
+  height?: number
+}) {
   return (
-    <svg viewBox="0 0 360 200" role="img" aria-label={label} className="block h-auto w-full">
+    <svg
+      viewBox={`0 0 360 ${height}`}
+      role="img"
+      aria-label={label}
+      className="block h-auto w-full"
+    >
       {children}
     </svg>
   )
@@ -144,11 +206,162 @@ function Cursor({ x, y }: { x: number; y: number }) {
   )
 }
 
+/**
+ * A rounded UI button tile with the REAL lucide icon inside (nested svg),
+ * exactly the glyph the board renders for that control. `active` reproduces
+ * the teal highlight the UI uses for the selected tool / panel.
+ */
+function Tile({
+  x,
+  y,
+  size = 14,
+  icon,
+  active = false,
+  tileClassName,
+  iconClassName,
+}: {
+  x: number
+  y: number
+  size?: number
+  icon: LucideIcon
+  active?: boolean
+  tileClassName?: string
+  iconClassName?: string
+}) {
+  const iconSize = size * 0.78
+  const Icon = icon
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={size}
+        height={size}
+        rx={size * 0.26}
+        strokeWidth={1.2}
+        className={cn(
+          active ? "fill-teal-500/15 stroke-teal-500" : "fill-card stroke-border",
+          tileClassName,
+        )}
+      />
+      <Icon
+        x={x + (size - iconSize) / 2}
+        y={y + (size - iconSize) / 2}
+        width={iconSize}
+        height={iconSize}
+        aria-hidden
+        className={cn(
+          active ? "text-teal-600 dark:text-teal-300" : "text-foreground/75",
+          iconClassName,
+        )}
+      />
+    </g>
+  )
+}
+
+/**
+ * Bottom-bar pill button showing icon + tiny caption, mirroring the real
+ * style-bar buttons ("Shapes", "BG", "Border", …).
+ */
+function BarBtn({
+  x,
+  y,
+  w = 34,
+  h = 18,
+  icon,
+  label,
+  textGlyph,
+  active = false,
+}: {
+  x: number
+  y: number
+  w?: number
+  h?: number
+  icon?: LucideIcon
+  label?: string
+  /** Renders a text glyph (e.g. "T", "Aa") instead of an icon. */
+  textGlyph?: string
+  active?: boolean
+}) {
+  const Icon = icon
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx={4}
+        strokeWidth={1.1}
+        className={cn(active ? "fill-teal-500/15 stroke-teal-500" : "fill-background stroke-border")}
+      />
+      {Icon && label && (
+        <>
+          <Icon
+            x={x + 3.5}
+            y={y + (h - 9) / 2}
+            width={9}
+            height={9}
+            aria-hidden
+            className="text-teal-600 dark:text-teal-400"
+          />
+          <text x={x + 14} y={y + h / 2 + 2.4} fontSize={6.2} className="fill-foreground/80">
+            {label}
+          </text>
+        </>
+      )}
+      {textGlyph && (
+        <text
+          x={x + w / 2}
+          y={y + h / 2 + 3.2}
+          fontSize={9}
+          fontWeight={700}
+          textAnchor="middle"
+          className="fill-foreground/80"
+        >
+          {textGlyph}
+        </text>
+      )}
+    </g>
+  )
+}
+
+/* ---------------- the real rail / clusters (shared) ---------------- */
+
+/** Left tool rail buttons, exact order & icons of the real UI. */
+const RAIL_TOOLS: { icon: LucideIcon; label: string }[] = [
+  { icon: Plus, label: "Add Icon" },
+  { icon: MousePointer2, label: "Select" },
+  { icon: Hand, label: "Hand" },
+  { icon: Square, label: "Rectangle" },
+  { icon: Circle, label: "Ellipse" },
+  { icon: Minus, label: "Line" },
+  { icon: Tag, label: "Tag" },
+  { icon: Type, label: "Text" },
+  { icon: Table2, label: "Table" },
+  { icon: FileCode, label: "Code" },
+  { icon: ZoomIn, label: "Zoom in" },
+  { icon: ZoomOut, label: "Zoom out" },
+  { icon: Scan, label: "Fit view" },
+  { icon: Undo2, label: "Undo" },
+  { icon: Redo2, label: "Redo" },
+]
+
+/** Theme toggle renders Sun in light mode and Moon in dark mode (as the real toggler does). */
+function ThemeGlyph({ x, y, size }: { x: number; y: number; size: number }) {
+  return (
+    <g aria-hidden>
+      <Sun x={x} y={y} width={size} height={size} className="text-foreground/75 dark:hidden" />
+      <Moon x={x} y={y} width={size} height={size} className="hidden text-foreground/75 dark:block" />
+    </g>
+  )
+}
+
 /* ---------------- figures ---------------- */
 
 function WelcomeFig() {
   return (
-    <Frame label="A small architecture diagram: Frontend and API boxes connected to a Database ellipse">
+    <Frame label="A small architecture diagram: Frontend and API boxes connected to a Database ellipse, with a prod tag">
       <defs>
         <ArrowHead id="af-w-teal" />
         <ArrowHead id="af-w-muted" tone="muted" />
@@ -162,6 +375,9 @@ function WelcomeFig() {
       <Box x={216} y={48} w={92} h={42} label="API" />
       <ellipse cx={180} cy={146} rx={52} ry={24} strokeWidth={1.5} className={panelCls} />
       <text x={180} y={149} fontSize={8.5} textAnchor="middle" className="fill-foreground/80">Database</text>
+      {/* tag pill — the real Tag element */}
+      <rect x={56} y={30} width={30} height={12} rx={6} strokeWidth={1.1} className="fill-amber-500/15 stroke-amber-500" />
+      <text x={71} y={38.5} fontSize={6.5} textAnchor="middle" className="fill-amber-600 dark:fill-amber-400">prod</text>
       <Grips x={52} y={48} w={92} h={42} />
       {/* sparkle accents + add badge */}
       <path d="M322 30 l2.4 7.4 7.4 2.4 -7.4 2.4 -2.4 7.4 -2.4 -7.4 -7.4 -2.4 7.4 -2.4 Z" className="fill-teal-500/40" />
@@ -174,201 +390,267 @@ function WelcomeFig() {
 
 function WorkspaceFig() {
   return (
-    <Frame label="The Atom Flow workspace: left tool rail, canvas with two connected nodes, bottom style bar, corner controls and the lock button">
-      <defs>
-        <ArrowHead id="af-ws-teal" />
-      </defs>
-      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
-      {/* left tool rail */}
-      <rect x={11} y={11} width={28} height={150} rx={6} strokeWidth={1.5} className={panelCls} />
-      {[20, 44, 68, 92, 116, 140].map((ty, i) => (
-        <rect
-          key={ty}
-          x={18}
-          y={ty}
-          width={14}
-          height={14}
-          rx={3}
-          strokeWidth={1.2}
-          className={i === 0 ? "fill-teal-500/15 stroke-teal-500" : panelCls}
+    <Frame
+      height={280}
+      label="The Atom Flow workspace: the real left tool rail with its fifteen buttons, canvas with two connected nodes, bottom style bar, corner controls and the lock button"
+    >
+      <rect x={5} y={5} width={350} height={270} rx={10} strokeWidth={1.5} className={canvasCls} />
+
+      {/* left tool rail — the real 15 buttons in order */}
+      <rect x={10} y={10} width={26} height={216} rx={6} strokeWidth={1.5} className={panelCls} />
+      {RAIL_TOOLS.map((t, i) => (
+        <Tile
+          key={t.label}
+          x={16.5}
+          y={13 + i * 14}
+          size={13}
+          icon={t.icon}
+          active={i === 1 /* Select is the default tool */}
         />
       ))}
-      {/* rail glyphs */}
-      <path d="M25 23.5 V30.5 M21.5 27 H28.5" strokeWidth={1.5} strokeLinecap="round" className="stroke-teal-500" />
-      <rect x={21.5} y={47.5} width={7} height={5} rx={1} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <circle cx={25} cy={75} r={3.6} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <text x={25} y={98.5} fontSize={8} fontWeight={600} textAnchor="middle" className="fill-muted-foreground/70">T</text>
-      <circle cx={23.8} cy={121.8} r={3} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <path d="M26 124.5 L28.6 127.1" strokeWidth={1.2} strokeLinecap="round" className="stroke-muted-foreground/70" />
-      <path d="M29.5 147 H20.5 M23 144.5 L20.5 147 L23 149.5" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      {/* top-left cluster: theme / background / fullscreen */}
-      <rect x={52} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <circle cx={59} cy={21} r={2.5} strokeWidth={1.1} className="stroke-muted-foreground/70" fill="none" />
-      <rect x={72} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <path d="M74.5 19.5 H83.5 M74.5 23 H83.5 M78 16.5 V26" strokeWidth={1} className="stroke-muted-foreground/70" />
-      <rect x={92} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      {/* top-right cluster: clear / import / export / help */}
-      <rect x={252} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <path d="M255 17 H263 M256 18.5 H262 V23.5 H256 Z" strokeWidth={1.1} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <rect x={272} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <path d="M279 17.5 V22 M276.5 20 L279 22.5 L281.5 20 M275 24.5 H283" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <rect x={292} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <path d="M299 23 V18.5 M296.5 21 L299 18.5 L301.5 21 M295 24.5 H303" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <rect x={312} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className="fill-teal-500/15 stroke-teal-500" />
-      <text x={319} y={24.5} fontSize={8} fontWeight={600} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">?</text>
-      {/* labels with leader ticks */}
-      <path d="M59 29.5 V36" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
-      <Lab x={52} y={42} anchor="start">Theme &amp; view</Lab>
-      <path d="M319 29.5 V36" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
-      <Lab x={326} y={42} anchor="end">Clear · Import · Export · Help</Lab>
-      {/* canvas nodes */}
-      <path d="M216 106 C234 106 232 140 250 140" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ws-teal)" />
-      <Box x={140} y={88} w={76} h={36} label="Frontend" />
-      <Box x={250} y={122} w={72} h={36} label="API" />
-      {/* bottom style bar */}
-      <rect x={120} y={168} width={150} height={20} rx={6} strokeWidth={1.5} className={panelCls} />
-      <rect x={128} y={173} width={10} height={10} rx={2} className="fill-teal-500" />
-      <rect x={142} y={173} width={10} height={10} rx={2} className="fill-rose-500" />
-      <rect x={156} y={173} width={10} height={10} rx={2} className="fill-amber-500" />
-      <rect x={170} y={173} width={10} height={10} rx={2} className="fill-emerald-500" />
-      <path d="M190 172 V184" className="stroke-border" />
-      <Lab x={232} y={181}>Style bar</Lab>
-      {/* lock button */}
-      <rect x={14} y={170} width={22} height={22} rx={5} strokeWidth={1.5} className={panelCls} />
-      <rect x={20.5} y={179} width={9} height={7} rx={1.5} strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
-      <path d="M22.5 179 V176.5 A2.5 2.5 0 0 1 27.5 176.5 V179" strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
-      <Lab x={42} y={184} anchor="start">Lock</Lab>
+
+      {/* top-left cluster: fullscreen / theme / background (real order) */}
+      <Tile x={46} y={13} icon={Maximize2} />
+      {/* theme tile — sun in light mode, moon in dark mode, like the real toggler */}
+      <rect x={64} y={13} width={14} height={14} rx={3.6} strokeWidth={1.2} className="fill-card stroke-border" />
+      <ThemeGlyph x={66.5} y={15.5} size={9} />
+      {/* background tile — shows the Plain variant icon (Square) */}
+      <Tile x={82} y={13} icon={Square} />
+      <Lab x={46} y={36} anchor="start" size={6.5}>Fullscreen · Theme · Background</Lab>
+
+      {/* top-right cluster: clear / import / export / help (real order) */}
+      <Tile x={248} y={13} icon={Trash2} />
+      <Tile x={268} y={13} icon={Upload} />
+      <Tile x={288} y={13} icon={Download} />
+      <Tile x={308} y={13} icon={CircleHelp} active />
+      <Lab x={322} y={36} anchor="end" size={6.5}>Clear · Import · Export · Help</Lab>
+
+      {/* canvas nodes + smart edge */}
+      <path d="M166 138 C 188 138 188 176 210 176" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" />
+      <Box x={90} y={120} w={76} h={36} label="Frontend" />
+      <Box x={210} y={158} w={72} h={36} label="API" />
+      <Grips x={90} y={120} w={76} h={36} />
+
+      {/* bottom style bar — the real six panels */}
+      <rect x={60} y={238} width={240} height={26} rx={8} strokeWidth={1.5} className={panelCls} />
+      <BarBtn x={66} y={241} icon={Shapes} label="Shapes" />
+      <BarBtn x={102} y={241} icon={PaintBucket} label="BG" />
+      <BarBtn x={138} y={241} icon={BorderAll} label="Border" />
+      <BarBtn x={174} y={241} textGlyph="T" />
+      <BarBtn x={210} y={241} textGlyph="Aa" />
+      <BarBtn x={246} y={241} icon={RotateCw} label="Rotate" />
+      <Lab x={180} y={273} size={6.5}>Style bar</Lab>
+
+      {/* lock button — bottom-left, below the rail */}
+      <Tile x={16} y={244} size={14} icon={LockOpen} />
+      <Lab x={23} y={273} anchor="middle" size={6.5}>Lock board</Lab>
     </Frame>
   )
 }
 
 function QuickMenuFig() {
+  // Real radial menu: 6 items, 60° apart, starting at the top, radius 92 →
+  // drawn here at radius 54. Order: Add shape, Select, Hand, Fit view,
+  // Lock board, Fullscreen. Active tool (Select) glows teal.
+  const cx = 180
+  const cy = 102
+  const r = 54
+  const items: { icon: LucideIcon; label: string; lx: number; ly: number; anchor: "start" | "middle" | "end"; active?: boolean }[] = [
+    { icon: Plus, label: "Add shape", lx: cx, ly: cy - r - 16, anchor: "middle" },
+    { icon: MousePointer2, label: "Select", lx: cx + r + 16, ly: cy - r / 2 + 3, anchor: "start", active: true },
+    { icon: Hand, label: "Hand", lx: cx + r + 16, ly: cy + r / 2 + 3, anchor: "start" },
+    { icon: Scan, label: "Fit view", lx: cx, ly: cy + r + 22, anchor: "middle" },
+    { icon: Lock, label: "Lock board", lx: cx - r - 16, ly: cy + r / 2 + 3, anchor: "end" },
+    { icon: Maximize2, label: "Fullscreen", lx: cx - r - 16, ly: cy - r / 2 + 3, anchor: "end" },
+  ]
   return (
-    <Frame label="The round radial quick menu with six actions fanned around a close hub, opened right at the tap point">
+    <Frame label="The radial quick menu with the real six actions — Add shape, Select, Hand, Fit view, Lock board and Fullscreen — fanned around a close hub">
       <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
-      {/* faint background nodes */}
-      <Box x={24} y={28} w={64} h={30} className="opacity-50" />
-      <Box x={284} y={140} w={56} h={30} className="opacity-50" />
-      {/* orbit + ripple around the tap point */}
-      <circle cx={176} cy={102} r={54} fill="none" strokeDasharray="4 4" className="stroke-muted-foreground/40" />
-      <circle cx={176} cy={102} r={26} fill="none" strokeDasharray="3 3" className="stroke-teal-500/40" />
-      {/* items */}
-      <circle cx={176} cy={48} r={11} strokeWidth={1.5} className={panelCls} />
-      <path d="M176 43 V53 M171 48 H181" strokeWidth={1.5} strokeLinecap="round" className="stroke-foreground/80" />
-      <circle cx={223} cy={75} r={11} strokeWidth={1.5} className="fill-teal-500/10 stroke-teal-500" />
-      <path d="M220.8 70.3 V78.9 L223.1 76.7 L224.5 79.9 L226.3 79.1 L224.9 75.9 H228.2 Z" className="fill-teal-500" />
-      <circle cx={223} cy={129} r={11} strokeWidth={1.5} className={panelCls} />
-      <rect x={219.5} y={125} width={8} height={7.5} rx={2.5} strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
-      <path d="M221.2 125 V122.5 M223.5 125 V121.8 M225.8 125 V122.5" strokeWidth={1.3} strokeLinecap="round" className="stroke-foreground/80" />
-      <circle cx={176} cy={156} r={11} strokeWidth={1.5} className={panelCls} />
-      <path d="M170.5 155.5 V152.5 H173.5 M178.5 152.5 H181.5 V155.5 M181.5 156.5 V159.5 H178.5 M173.5 159.5 H170.5 V156.5" strokeWidth={1.3} strokeLinejoin="round" className="stroke-foreground/80" fill="none" />
-      <circle cx={129} cy={129} r={11} strokeWidth={1.5} className={panelCls} />
-      <rect x={125} y={129} width={8} height={6.5} rx={1.5} strokeWidth={1.3} className="stroke-foreground/80" fill="none" />
-      <path d="M127 129 V126.8 A2.2 2.2 0 0 1 131.4 126.8 V129" strokeWidth={1.3} className="stroke-foreground/80" fill="none" />
-      <circle cx={129} cy={75} r={11} strokeWidth={1.5} className={panelCls} />
-      <path d="M126.5 77.5 L131.5 72.5 M131.5 75.5 V72.5 H128.5 M126.5 74.5 V77.5 H129.5" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" className="stroke-foreground/80" fill="none" />
-      {/* hub = close */}
-      <circle cx={176} cy={102} r={15} strokeWidth={1.5} className={panelCls} />
-      <path d="M171.5 97.5 L180.5 106.5 M180.5 97.5 L171.5 106.5" strokeWidth={1.6} strokeLinecap="round" className="stroke-muted-foreground" />
-      <Lab x={176} y={31}>Add shape</Lab>
-      <Lab x={176} y={181}>Fit view</Lab>
-      <Lab x={244} y={75} anchor="start" size={7}>active tool glows</Lab>
+      {/* dimmed board behind (the menu opens over a dark backdrop) */}
+      <rect x={5} y={5} width={350} height={190} rx={10} className="fill-black/40" />
+      <Box x={24} y={24} w={64} h={30} className="opacity-40" />
+      <Box x={284} y={146} w={56} h={30} className="opacity-40" />
+      {/* rotating dashed orbit + teal ripple (real radii scaled) */}
+      <circle cx={cx} cy={cy} r={r} fill="none" strokeDasharray="4 4" className="stroke-foreground/25" />
+      <circle cx={cx} cy={cy} r={r} fill="none" className="stroke-teal-500/30" />
+      {/* items at -90° + i·60°, clockwise from the top */}
+      {items.map((it, i) => {
+        const angle = ((-90 + i * 60) * Math.PI) / 180
+        const ix = cx + Math.cos(angle) * r
+        const iy = cy + Math.sin(angle) * r
+        return (
+          <g key={it.label}>
+            {it.active && <circle cx={ix} cy={iy} r={14} className="fill-teal-500/20" />}
+            <circle cx={ix} cy={iy} r={11} strokeWidth={1.5} className={cn("fill-popover stroke-border", it.active && "stroke-teal-500")} />
+            <it.icon
+              x={ix - 6}
+              y={iy - 6}
+              width={12}
+              height={12}
+              aria-hidden
+              className={cn(it.active ? "text-teal-600 dark:text-teal-300" : "text-foreground/85")}
+            />
+            <Lab x={it.lx} y={it.ly} anchor={it.anchor} size={7} className="fill-foreground/90">
+              {it.label}
+            </Lab>
+          </g>
+        )
+      })}
+      {/* hub = close (real: ✕ in a popover circle) */}
+      <circle cx={cx} cy={cy} r={13} strokeWidth={1.5} className={panelCls} />
+      <path d={`M${cx - 4} ${cy - 4} L${cx + 4} ${cy + 4} M${cx + 4} ${cy - 4} L${cx - 4} ${cy + 4}`} strokeWidth={1.6} strokeLinecap="round" className="stroke-muted-foreground" />
+      <Lab x={cx} y={186} size={7}>Tap the dark backdrop or the ✕ hub to close</Lab>
     </Frame>
   )
 }
 
 function AddElementsFig() {
   return (
-    <Frame label="The tool rail with shape tiles on the left, an arrow leading to a new ghost rectangle appearing on the canvas">
+    <Frame label="Click a tool in the rail — Rectangle shown active with a click ripple — and the element is added at once at the center of your view, already selected; every tool adds with a single click, no drawing needed">
       <defs>
         <ArrowHead id="af-ae-teal" />
       </defs>
       <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
-      <Lab x={46} y={16}>Tools</Lab>
-      {/* palette */}
-      <rect x={12} y={20} width={68} height={152} rx={8} strokeWidth={1.5} className={panelCls} />
-      {[
-        [20, 30],
-        [50, 30],
-        [20, 62],
-        [50, 62],
-        [20, 94],
-        [50, 94],
-        [20, 126],
-        [50, 126],
-      ].map(([tx, ty], i) => (
-        <rect
-          key={i}
-          x={tx}
-          y={ty}
-          width={24}
-          height={24}
-          rx={4}
-          strokeWidth={1.2}
-          className={i === 0 ? "fill-teal-500/15 stroke-teal-500" : "fill-background/60 stroke-border"}
-        />
+
+      {/* left tool rail — first 10 buttons, Rectangle active */}
+      <rect x={10} y={10} width={26} height={150} rx={6} strokeWidth={1.5} className={panelCls} />
+      {RAIL_TOOLS.slice(0, 10).map((t, i) => (
+        <Tile key={t.label} x={16.5} y={14 + i * 14} size={13} icon={t.icon} active={i === 3 /* Rectangle */} />
       ))}
-      {/* palette glyphs */}
-      <rect x={25} y={36} width={14} height={11} rx={2} strokeWidth={1.3} className="stroke-teal-500" fill="none" />
-      <circle cx={62} cy={42} r={6.5} strokeWidth={1.3} className="stroke-muted-foreground/70" fill="none" />
-      <path d="M26 80 L38 68" strokeWidth={1.3} strokeLinecap="round" className="stroke-muted-foreground/70" />
-      <rect x={55} y={70} width={14} height={9} rx={4.5} strokeWidth={1.3} className="stroke-muted-foreground/70" fill="none" />
-      <text x={32} y={101} fontSize={10} fontWeight={600} textAnchor="middle" className="fill-muted-foreground/70">T</text>
-      <rect x={54} y={99} width={16} height={13} rx={1.5} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <path d="M54 104.5 H70 M54 110 H70 M59.5 99 V112 M64.5 99 V112" strokeWidth={1} className="stroke-muted-foreground/70" />
-      <path d="M29 133.5 L24.5 138 L29 142.5 M35 133.5 L39.5 138 L35 142.5 M33.4 131.5 L30.6 144.5" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <rect x={54} y={131} width={16} height={13} rx={2} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <path d="M56 141 l4 -4 3 3 3.5 -4.5 3.5 5.5" strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <circle cx={66} cy={134.5} r={1.4} className="fill-amber-400" />
-      {/* canvas + drag-to-draw crosshair */}
-      <rect x={92} y={20} width={256} height={152} rx={8} strokeWidth={1.5} className={canvasCls} />
-      <path d="M120 60 H130 M125 55 V65" strokeWidth={1.2} strokeLinecap="round" className="stroke-muted-foreground/60" />
-      <circle cx={125} cy={60} r={3} fill="none" strokeWidth={1.2} className="stroke-muted-foreground/60" />
-      <Lab x={138} y={58} anchor="start" size={7}>Drag to draw</Lab>
-      {/* arrow from palette to ghost node */}
-      <path d="M46 42 C 90 42 130 58 176 80" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ae-teal)" />
-      {/* ghost node appearing */}
-      <rect x={180} y={84} width={86} height={42} rx={6} strokeWidth={1.5} strokeDasharray="4 3" className="fill-teal-500/10 stroke-teal-500" />
-      <circle cx={266} cy={84} r={8} className="fill-teal-500" />
-      <path d="M266 80 V88 M262 84 H270" strokeWidth={1.8} strokeLinecap="round" className="stroke-background" />
+      <Lab x={42} y={20} anchor="start" size={7}>Left tool rail</Lab>
+
+      {/* click ripple on the active Rectangle tile + cursor = "click once" */}
+      <circle cx={23} cy={62.5} r={9.5} fill="none" strokeDasharray="3 3" strokeWidth={1.2} className="stroke-teal-500/70" />
+      <Cursor x={23} y={62.5} />
+      <Lab x={44} y={72} anchor="start" size={7}>Click a tool once</Lab>
+
+      {/* arrow from the rail to the new element */}
+      <path d="M46 42 C 90 42 120 62 148 80" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ae-teal)" />
+
+      {/* new rectangle landing at the view center — selection grips show it is already selected */}
+      <rect x={152} y={84} width={86} height={42} rx={6} strokeWidth={1.5} strokeDasharray="4 3" className="fill-teal-500/10 stroke-teal-500" />
+      <Grips x={152} y={84} w={86} h={42} />
+      <Lab x={195} y={140} size={7}>Added at the center of your view,</Lab>
+      <Lab x={195} y={149} size={7}>already selected — drag it into place</Lab>
+
+      {/* the other click-to-add tools: Line, Tag, Text, Table, Code behave the same */}
+      <Tile x={228} y={158} size={13} icon={Minus} />
+      <Tile x={246} y={158} size={13} icon={Tag} />
+      <Tile x={264} y={158} size={13} icon={Type} />
+      <Tile x={282} y={158} size={13} icon={Table2} />
+      <Tile x={300} y={158} size={13} icon={FileCode} />
+      <Lab x={271} y={182} size={7}>Line · Tag · Text · Table · Code —</Lab>
+      <Lab x={271} y={191} size={7}>all added with one click too</Lab>
     </Frame>
   )
 }
 
 function IconsFig() {
+  // Grid icons — a representative slice of the real library categories.
+  const gridRow1 = [Database, Cloud, Globe, Server, Terminal]
+  const gridRow2 = [Boxes, GitBranch, Layers, Braces, Shapes]
   return (
-    <Frame label="An icon frame card with resize grips and a size badge, next to the three icon style options">
-      <defs>
-        <ArrowHead id="af-ic-muted" tone="muted" />
-      </defs>
-      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
-      {/* resize ladder */}
-      <rect x={34} y={90} width={22} height={22} rx={3} strokeWidth={1.3} className={panelCls} />
-      <path d="M58 99 H63" strokeWidth={1.3} className="stroke-muted-foreground/60" markerEnd="url(#af-ic-muted)" />
-      <rect x={66} y={84} width={30} height={30} rx={3} strokeWidth={1.3} className={panelCls} />
-      <Lab x={60} y={128} size={7}>Resize</Lab>
-      {/* icon frame card */}
-      <Lab x={172} y={30}>Icon frame — an app-window card</Lab>
-      <rect x={110} y={36} width={124} height={116} rx={8} strokeWidth={1.5} className={panelCls} />
-      <path d="M110 58 H234" strokeWidth={1.2} className="stroke-border" />
-      <circle cx={119} cy={47} r={1.8} className="fill-muted-foreground/70" />
-      <circle cx={127} cy={47} r={1.8} className="fill-muted-foreground/70" />
-      <circle cx={135} cy={47} r={1.8} className="fill-muted-foreground/70" />
-      <rect x={146} y={74} width={52} height={40} rx={4} strokeWidth={1.2} className="fill-background stroke-border" />
-      <path d="M152 108 l11 -11 7 7 8 -9 11 13" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-500" fill="none" />
-      <circle cx={186} cy={82} r={3.5} className="fill-amber-400" />
-      <Grips x={110} y={36} w={124} h={116} />
-      {/* size badge */}
-      <rect x={146} y={160} width={52} height={16} rx={8} strokeWidth={1.2} className="fill-teal-500/10 stroke-teal-500" />
-      <text x={172} y={170.5} fontSize={7} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">160 × 160</text>
-      {/* style chips */}
-      <Lab x={300} y={48}>Style</Lab>
-      <rect x={252} y={56} width={96} height={16} rx={8} strokeWidth={1.2} className={panelCls} />
-      <text x={300} y={66.5} fontSize={7.5} textAnchor="middle" className="fill-foreground/70">Icon only</text>
-      <rect x={252} y={80} width={96} height={16} rx={8} strokeWidth={1.2} className={panelCls} />
-      <text x={300} y={90.5} fontSize={7.5} textAnchor="middle" className="fill-foreground/70">Icon + text</text>
-      <rect x={252} y={104} width={96} height={16} rx={8} strokeWidth={1.2} className="fill-teal-500/10 stroke-teal-500" />
-      <text x={300} y={114.5} fontSize={7.5} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">Icon frame</text>
+    <Frame
+      height={220}
+      label="The Add Icon dialog: search field, category chips, an icon grid, style options with their real icons, and a live preview of the Icon frame card"
+    >
+      <rect x={5} y={5} width={350} height={210} rx={10} strokeWidth={1.5} className={canvasCls} />
+
+      {/* dialog card */}
+      <rect x={18} y={14} width={186} height={192} rx={10} strokeWidth={1.5} className={panelCls} />
+      <text x={30} y={29} fontSize={8.5} fontWeight={600} className="fill-foreground">Add Icon</text>
+
+      {/* search */}
+      <rect x={30} y={36} width={162} height={13} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+      <circle cx={38.5} cy={42.5} r={2.6} fill="none" strokeWidth={1.1} className="stroke-muted-foreground" />
+      <path d="M40.5 44.5 L43 47" strokeWidth={1.1} strokeLinecap="round" className="stroke-muted-foreground" />
+      <text x={48} y={45} fontSize={6.2} className="fill-muted-foreground">Search 1,900+ icons…</text>
+
+      {/* category chips — real categories */}
+      {[
+        { t: "system", x: 30, active: true },
+        { t: "aws", x: 66, active: false },
+        { t: "database", x: 96, active: false },
+        { t: "dev", x: 136, active: false },
+        { t: "os", x: 160, active: false },
+      ].map((c) => (
+        <g key={c.t}>
+          <rect
+            x={c.x}
+            y={56}
+            width={c.t.length * 3.6 + 10}
+            height={11}
+            rx={5.5}
+            strokeWidth={1}
+            className={c.active ? "fill-teal-500/15 stroke-teal-500" : "fill-background stroke-border"}
+          />
+          <text
+            x={c.x + (c.t.length * 3.6 + 10) / 2}
+            y={63.8}
+            fontSize={6}
+            textAnchor="middle"
+            className={c.active ? "fill-teal-600 dark:fill-teal-300" : "fill-muted-foreground"}
+          >
+            {c.t}
+          </text>
+        </g>
+      ))}
+
+      {/* icon grid 5×2 */}
+      {[gridRow1, gridRow2].map((row, r) =>
+        row.map((Icon, i) => (
+          <g key={`${r}-${i}`}>
+            <rect
+              x={30 + i * 33}
+              y={74 + r * 28}
+              width={24}
+              height={24}
+              rx={4}
+              strokeWidth={1.1}
+              className={r === 0 && i === 0 ? "fill-teal-500/15 stroke-teal-500" : "fill-background stroke-border"}
+            />
+            <Icon
+              x={30 + i * 33 + 5}
+              y={74 + r * 28 + 5}
+              width={14}
+              height={14}
+              aria-hidden
+              className={r === 0 && i === 0 ? "text-teal-600 dark:text-teal-300" : "text-foreground/70"}
+            />
+          </g>
+        )),
+      )}
+
+      {/* style options — the real three, with the icons the dialog uses */}
+      <text x={30} y={142} fontSize={6.2} className="fill-muted-foreground">Style</text>
+      <rect x={30} y={146} width={50} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+      <ImageIcon x={34} y={149.5} width={7} height={7} aria-hidden className="text-muted-foreground" />
+      <text x={44} y={155.5} fontSize={5.8} className="fill-foreground/80">Icon only</text>
+      <rect x={84} y={146} width={54} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+      <Type x={88} y={149.5} width={7} height={7} aria-hidden className="text-muted-foreground" />
+      <text x={98} y={155.5} fontSize={5.8} className="fill-foreground/80">Icon + text</text>
+      <rect x={142} y={146} width={50} height={14} rx={4} strokeWidth={1.1} className="fill-teal-500/15 stroke-teal-500" />
+      <AppWindow x={146} y={149.5} width={7} height={7} aria-hidden className="text-teal-600 dark:text-teal-300" />
+      <text x={156} y={155.5} fontSize={5.8} className="fill-teal-600 dark:fill-teal-300">Icon frame</text>
+
+      {/* add button */}
+      <rect x={30} y={170} width={162} height={16} rx={5} className="fill-teal-500" />
+      <text x={111} y={181} fontSize={7.5} fontWeight={600} textAnchor="middle" className="fill-background">Add to board</text>
+
+      {/* live preview — the real Icon frame: title top-left, icon top-right */}
+      <Lab x={296} y={26} size={7}>Live preview</Lab>
+      <rect x={244} y={34} width={104} height={78} rx={6} strokeWidth={1.5} className={panelCls} />
+      <path d="M244 50 H348" strokeWidth={1.1} className="stroke-border" />
+      <text x={250} y={45.5} fontSize={6.5} className="fill-foreground/85">Database</text>
+      <Database x={320} y={56} width={22} height={22} aria-hidden className="text-foreground/70" />
+      <Grips x={244} y={34} w={104} h={78} />
+      {/* real frame size badge */}
+      <rect x={266} y={122} width={60} height={14} rx={7} strokeWidth={1.1} className="fill-teal-500/10 stroke-teal-500" />
+      <text x={296} y={131.8} fontSize={7} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">160 × 120</text>
+      <Lab x={296} y={150} size={6.5}>Icon frame — app-window card</Lab>
+      <Lab x={296} y={160} size={6.5}>Icon only &amp; Icon + text are 96 × 96</Lab>
+      <Lab x={296} y={178} size={6.5}>Resize later by dragging the</Lab>
+      <Lab x={296} y={187} size={6.5}>corner handles</Lab>
     </Frame>
   )
 }
@@ -400,86 +682,117 @@ function ConnectFig() {
 }
 
 function StyleElementsFig() {
+  // The real swatch palette used by BG / Border / Edge / Text color panels.
+  const swatches = [
+    { name: "Black", css: "#000000" },
+    { name: "White", css: "#ffffff" },
+    { name: "Green", css: "#10b981" },
+    { name: "Red", css: "#ef4444" },
+    { name: "Purple", css: "#a855f7" },
+    { name: "Yellow", css: "#f59e0b" },
+  ]
   return (
-    <Frame label="A selected node with grips above the bottom style bar showing shape swaps, color swatches, border styles, text size, typography and rotation">
+    <Frame label="A selected node with grips above the real bottom style bar — Shapes, BG, Border, T, Aa and Rotate buttons — with the BG panel open showing the six color swatches and the opacity slider">
       <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
       {/* selected node */}
-      <rect x={24} y={44} width={130} height={66} rx={6} strokeWidth={1.5} className="fill-teal-500/10 stroke-teal-500" />
-      <text x={89} y={80} fontSize={9} textAnchor="middle" className="fill-foreground/85">API gateway</text>
-      <Grips x={24} y={44} w={130} h={66} />
-      <path d="M89 112 V140" strokeDasharray="2 3" className="stroke-muted-foreground/40" />
-      {/* style bar */}
-      <rect x={18} y={144} width={324} height={42} rx={8} strokeWidth={1.5} className={panelCls} />
-      <path d="M94 150 V180 M150 150 V180 M210 150 V180 M246 150 V180 M286 150 V180" className="stroke-border" />
-      {/* shapes */}
-      <rect x={26} y={160.5} width={10} height={8} rx={2} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <ellipse cx={44} cy={164.5} rx={5} ry={4.5} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <path d="M57 159.5 L62 169 H52 Z" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <path d="M70 158.5 L75 164.5 L70 170.5 L65 164.5 Z" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <path d="M83 158.5 l4.5 2.6 v5.8 l-4.5 2.6 l-4.5 -2.6 v-5.8 Z" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <Lab x={56} y={181} size={6.5}>Shapes</Lab>
-      {/* BG swatches */}
-      <rect x={100} y={158} width={9} height={9} rx={2} className="fill-teal-500" />
-      <rect x={110} y={158} width={9} height={9} rx={2} className="fill-rose-500" />
-      <rect x={120} y={158} width={9} height={9} rx={2} className="fill-amber-500" />
-      <rect x={130} y={158} width={9} height={9} rx={2} className="fill-emerald-500" />
-      <rect x={140} y={158} width={9} height={9} rx={2} strokeWidth={1} className="fill-background stroke-border" />
-      <path d="M140 167 L149 158" strokeWidth={1} className="stroke-border" />
-      <Lab x={124} y={181} size={6.5}>BG</Lab>
-      {/* border samples */}
-      <path d="M158 162 H184" strokeWidth={2} className="stroke-foreground" />
-      <path d="M158 173 H184" strokeWidth={2} strokeDasharray="4 3" className="stroke-foreground" />
-      <Lab x={172} y={181} size={6.5}>Border</Lab>
-      {/* T + slider */}
-      <text x={222} y={172} fontSize={13} fontWeight={700} textAnchor="middle" className="fill-foreground/80">T</text>
-      <path d="M229 167 H241" strokeWidth={1.2} className="stroke-border" />
-      <circle cx={235} cy={167} r={2.5} className="fill-teal-500" />
-      <Lab x={228} y={181} size={6.5}>T</Lab>
-      {/* Aa */}
-      <text x={258} y={172} fontSize={11} fontWeight={700} textAnchor="middle" className="fill-foreground/80">Aa</text>
-      <circle cx={272} cy={168} r={3} className="fill-rose-500" />
-      <path d="M268 176 H278 M268 179.5 H274" strokeWidth={1.2} className="stroke-muted-foreground/70" />
-      <Lab x={266} y={181} size={6.5}>Aa</Lab>
-      {/* rotate */}
-      <path d="M294 166 H334" strokeWidth={1.2} className="stroke-border" />
-      <circle cx={314} cy={166} r={3.5} className="fill-teal-500" />
-      <text x={314} y={181} fontSize={6.5} textAnchor="middle" className="fill-muted-foreground">45°</text>
+      <rect x={24} y={40} width={130} height={60} rx={6} strokeWidth={1.5} className="fill-teal-500/10 stroke-teal-500" />
+      <text x={89} y={73} fontSize={9} textAnchor="middle" className="fill-foreground/85">API gateway</text>
+      <Grips x={24} y={40} w={130} h={60} />
+      <path d="M89 102 V124" strokeDasharray="2 3" className="stroke-muted-foreground/40" />
+
+      {/* style bar — primary row with the real buttons */}
+      <rect x={14} y={126} width={332} height={60} rx={10} strokeWidth={1.5} className={panelCls} />
+      <BarBtn x={24} y={134} w={48} icon={Shapes} label="Shapes" active />
+      <BarBtn x={76} y={134} w={42} icon={PaintBucket} label="BG" />
+      <BarBtn x={122} y={134} w={48} icon={BorderAll} label="Border" />
+      <BarBtn x={174} y={134} w={26} textGlyph="T" />
+      <BarBtn x={204} y={134} w={30} textGlyph="Aa" />
+      <BarBtn x={238} y={134} w={50} icon={RotateCw} label="Rotate" />
+      <Lab x={326} y={146} size={6} className="fill-muted-foreground/70">Edge panel appears</Lab>
+      <Lab x={326} y={155} size={6} className="fill-muted-foreground/70">when a line is selected</Lab>
+
+      {/* BG options row — no-color + the six real swatches + opacity slider */}
+      <path d="M24 166 H336" strokeWidth={1} className="stroke-border" />
+      {/* no color: transparent swatch with diagonal slash */}
+      <rect x={30} y={172} width={10} height={10} rx={2} strokeWidth={1} className="fill-background stroke-border" />
+      <path d="M30 182 L40 172" strokeWidth={1} className="stroke-border" />
+      {swatches.map((s, i) => (
+        <rect
+          key={s.name}
+          x={46 + i * 15}
+          y={172}
+          width={10}
+          height={10}
+          rx={2}
+          strokeWidth={1}
+          style={{ fill: s.css }}
+          className="stroke-border"
+        />
+      ))}
+      <Lab x={112} y={181} anchor="start" size={6.5}>six swatches</Lab>
+      {/* opacity slider */}
+      <text x={196} y={181} fontSize={6.5} className="fill-muted-foreground">Opacity</text>
+      <path d="M228 177 H296" strokeWidth={1.4} strokeLinecap="round" className="stroke-border" />
+      <circle cx={288} cy={177} r={3.2} className="fill-teal-500" />
+      <text x={304} y={181} anchor="start" fontSize={6.5} className="fill-muted-foreground">100%</text>
+      <Lab x={180} y={194} size={6.5}>BG panel open — every panel works on the selection</Lab>
     </Frame>
   )
 }
 
 function StyleConnectionsFig() {
+  // Real edge panel controls: solid/dashed, the six swatches, 1–5px width, Animate On/Off.
   return (
-    <Frame label="Three connection samples between node stubs: solid, dashed and animated, and a thick colored line">
+    <Frame label="The Edge panel controls — style, color swatches, width and animate — with three sample connections: solid, dashed animated and thick red">
       <defs>
         <ArrowHead id="af-sc-muted" tone="muted" />
         <ArrowHead id="af-sc-teal" />
-        <ArrowHead id="af-sc-rose" tone="rose" />
+        <ArrowHead id="af-sc-red" tone="rose" />
       </defs>
       <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+
+      {/* Edge panel replica (top) */}
+      <rect x={30} y={14} width={300} height={26} rx={8} strokeWidth={1.5} className={panelCls} />
+      <text x={42} y={30} fontSize={6.5} className="fill-muted-foreground">Style</text>
+      <rect x={64} y={21} width={26} height={12} rx={3} strokeWidth={1} className="fill-teal-500/15 stroke-teal-500" />
+      <text x={77} y={29.5} fontSize={6} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">solid</text>
+      <rect x={94} y={21} width={30} height={12} rx={3} strokeWidth={1} className="fill-background stroke-border" />
+      <text x={109} y={29.5} fontSize={6} textAnchor="middle" className="fill-foreground/70">dashed</text>
+      <text x={136} y={30} fontSize={6.5} className="fill-muted-foreground">Color</text>
+      {["#000000", "#ffffff", "#10b981", "#ef4444", "#a855f7", "#f59e0b"].map((c, i) => (
+        <circle key={c} cx={166 + i * 11} cy={27} r={3.4} strokeWidth={0.8} style={{ fill: c }} className="stroke-border" />
+      ))}
+      <text x={238} y={30} fontSize={6.5} className="fill-muted-foreground">Width</text>
+      <rect x={260} y={21} width={22} height={12} rx={3} strokeWidth={1} className="fill-background stroke-border" />
+      <text x={271} y={29.5} fontSize={6} textAnchor="middle" className="fill-foreground/70">1–5px</text>
+      <text x={290} y={30} fontSize={6.5} className="fill-muted-foreground">Animate</text>
+      <rect x={314} y={21} width={12} height={12} rx={3} strokeWidth={1} className="fill-teal-500/15 stroke-teal-500" />
+
       {/* row 1 — solid */}
-      <rect x={22} y={28} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
-      <rect x={294} y={28} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
-      <path d="M66 44 H290" fill="none" strokeWidth={2} className="stroke-foreground" markerEnd="url(#af-sc-muted)" />
-      <Lab x={180} y={30}>Solid — plain direct link</Lab>
+      <rect x={22} y={62} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+      <rect x={294} y={62} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+      <path d="M66 76 H290" fill="none" strokeWidth={2} className="stroke-foreground" markerEnd="url(#af-sc-muted)" />
+      <Lab x={180} y={64}>Solid — plain direct link</Lab>
+
       {/* row 2 — dashed + animate */}
-      <rect x={22} y={84} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
-      <rect x={294} y={84} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
-      <path d="M66 100 H290" fill="none" strokeWidth={2} strokeDasharray="6 5" className="stroke-teal-500" markerEnd="url(#af-sc-teal)" />
-      <path d="M148 96 l5 4 -5 4 M160 96 l5 4 -5 4" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-400/70" fill="none" />
-      <Lab x={180} y={86}>Dashed + Animate — data is flowing</Lab>
+      <rect x={22} y={104} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+      <rect x={294} y={104} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+      <path d="M66 118 H290" fill="none" strokeWidth={2} strokeDasharray="6 5" className="stroke-teal-500" markerEnd="url(#af-sc-teal)" />
+      <path d="M148 114 l5 4 -5 4 M160 114 l5 4 -5 4" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-400/70" fill="none" />
+      <Lab x={180} y={106}>Dashed + Animate — data is flowing</Lab>
+
       {/* row 3 — thick colored */}
-      <rect x={22} y={140} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
-      <rect x={294} y={140} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
-      <path d="M66 156 H290" fill="none" strokeWidth={4} className="stroke-rose-500" markerEnd="url(#af-sc-rose)" />
-      <Lab x={180} y={142}>Width &amp; color — show importance</Lab>
+      <rect x={22} y={148} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+      <rect x={294} y={148} width={44} height={28} rx={5} strokeWidth={1.5} className={panelCls} />
+      <path d="M66 162 H290" fill="none" strokeWidth={4} className="stroke-rose-500" markerEnd="url(#af-sc-red)" />
+      <Lab x={180} y={150}>Width &amp; color — show importance</Lab>
     </Frame>
   )
 }
 
 function EditFig() {
   return (
-    <Frame label="A dashed selection box around two elements with teal smart guides, a move arrow and duplicate and delete buttons">
+    <Frame label="A dashed selection box around two elements with teal smart guides and move arrows; keyboard hints for copy and paste">
       <defs>
         <ArrowHead id="af-ed-muted" tone="muted" />
       </defs>
@@ -493,12 +806,13 @@ function EditFig() {
       <Cursor x={96} y={40} />
       {/* move arrows */}
       <path d="M248 90 H276" fill="none" strokeWidth={1.5} className="stroke-muted-foreground" markerStart="url(#af-ed-muted)" markerEnd="url(#af-ed-muted)" />
-      {/* action chips */}
-      <circle cx={272} cy={52} r={9} strokeWidth={1.3} className={panelCls} />
-      <rect x={267.8} y={48.2} width={6} height={6} rx={1} strokeWidth={1.1} className="stroke-muted-foreground/80" fill="none" />
-      <rect x={270.4} y={50.8} width={6} height={6} rx={1} strokeWidth={1.1} className="fill-card stroke-muted-foreground/80" />
-      <circle cx={272} cy={76} r={9} strokeWidth={1.3} className={panelCls} />
-      <path d="M268.5 72.5 H275.5 M269.5 74 H274.5 V80 H269.5 Z" strokeWidth={1.1} strokeLinejoin="round" className="stroke-muted-foreground/80" fill="none" />
+      {/* keyboard hint chips (annotations, not UI) */}
+      <rect x={262} y={40} width={44} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+      <text x={284} y={49.8} fontSize={6.5} textAnchor="middle" className="fill-foreground/75">Ctrl + C</text>
+      <rect x={262} y={60} width={44} height={14} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+      <text x={284} y={69.8} fontSize={6.5} textAnchor="middle" className="fill-foreground/75">Ctrl + V</text>
+      <Lab x={284} y={86} size={6.5}>copies keep</Lab>
+      <Lab x={284} y={95} size={6.5}>connections</Lab>
       <Lab x={180} y={190} size={7}>Teal smart guides keep things aligned</Lab>
     </Frame>
   )
@@ -506,46 +820,48 @@ function EditFig() {
 
 function ViewFig() {
   return (
-    <Frame label="Fullscreen corner brackets, a hand tool with pan arrows, a zoom pill, a fit view button and background pattern swatches">
+    <Frame label="The real view controls: fullscreen brackets with the Maximize button, Hand panning with pan arrows, the Zoom in / Zoom out / Fit view rail buttons, and the plain, grid, dots background cycle">
       <defs>
         <ArrowHead id="af-vw-muted" tone="muted" />
       </defs>
       <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
-      {/* fullscreen corner brackets */}
+      {/* fullscreen corner brackets + real button */}
       <path d="M14 22 V14 H22 M338 14 H346 V22 M14 178 V186 H22 M346 178 V186 H338" strokeWidth={2} strokeLinecap="round" className="stroke-teal-500" fill="none" />
-      {/* pan cross with hand */}
-      <path d="M160 91 H220" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
-      <path d="M190 62 V118" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
-      <rect x={183} y={84} width={14} height={13} rx={4} strokeWidth={1.4} className="fill-card stroke-foreground/80" />
-      <path d="M186.5 84 V80.5 M190.5 84 V79.5 M194.5 84 V81 M183 90 l-4 2.5" strokeWidth={1.3} strokeLinecap="round" className="stroke-foreground/80" fill="none" />
-      {/* zoom pill */}
-      <rect x={24} y={148} width={112} height={28} rx={14} strokeWidth={1.5} className={panelCls} />
-      <text x={44} y={166} fontSize={12} textAnchor="middle" className="fill-foreground/80">−</text>
-      <path d="M60 154 V170 M100 154 V170" className="stroke-border" />
-      <text x={80} y={165.5} fontSize={9} textAnchor="middle" className="fill-foreground/80">100%</text>
-      <text x={117} y={166} fontSize={12} textAnchor="middle" className="fill-foreground/80">+</text>
-      <Lab x={80} y={142}>Zoom</Lab>
-      {/* fit view */}
-      <rect x={24} y={112} width={28} height={28} rx={6} strokeWidth={1.5} className={panelCls} />
-      <path d="M31 121.5 V118.5 H34 M42 118.5 H45 V121.5 M45 130.5 V133.5 H42 M34 133.5 H31 V130.5" strokeWidth={1.3} strokeLinejoin="round" className="stroke-foreground/80" fill="none" />
-      <Lab x={58} y={127} anchor="start">Fit view</Lab>
-      {/* background swatches */}
-      <rect x={294} y={26} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <rect x={314} y={26} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <path d="M316.5 31.5 H325.5 M316.5 35.5 H325.5 M319 29 V38 M323.5 29 V38" strokeWidth={0.9} className="stroke-muted-foreground/70" />
-      <rect x={334} y={26} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
-      <circle cx={338.5} cy={30.5} r={1} className="fill-muted-foreground/70" />
-      <circle cx={343.5} cy={30.5} r={1} className="fill-muted-foreground/70" />
-      <circle cx={338.5} cy={35.5} r={1} className="fill-muted-foreground/70" />
-      <circle cx={343.5} cy={35.5} r={1} className="fill-muted-foreground/70" />
-      <Lab x={321} y={54}>Background</Lab>
+      <Tile x={40} y={16} icon={Maximize2} />
+      <Lab x={53} y={44} size={7}>Fullscreen</Lab>
+
+      {/* hand panning */}
+      <path d="M150 95 H214" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
+      <path d="M182 64 V126" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
+      <Tile x={175} y={88} size={16} icon={Hand} />
+      <Lab x={182} y={142} size={7}>Hand — drag to pan</Lab>
+
+      {/* zoom / fit rail buttons (real icons) */}
+      <Tile x={302} y={64} icon={ZoomIn} />
+      <Tile x={302} y={84} icon={ZoomOut} />
+      <Tile x={302} y={104} icon={Scan} />
+      <Lab x={296} y={68} anchor="end" size={6.5}>Zoom in</Lab>
+      <Lab x={296} y={88} anchor="end" size={6.5}>Zoom out</Lab>
+      <Lab x={296} y={108} anchor="end" size={6.5}>Fit view</Lab>
+      <Lab x={322} y={126} anchor="middle" size={6.5}>also scroll / pinch</Lab>
+
+      {/* background cycle — the real three variants with their real icons */}
+      <Lab x={64} y={162} size={7}>Background cycles:</Lab>
+      <Tile x={40} y={168} icon={Square} />
+      <Lab x={47} y={194} size={6.5}>Plain</Lab>
+      <path d="M60 175 H72" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
+      <Tile x={78} y={168} icon={Grid3x3} />
+      <Lab x={85} y={194} size={6.5}>Grid</Lab>
+      <path d="M98 175 H110" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
+      <Tile x={116} y={168} icon={Grip} />
+      <Lab x={123} y={194} size={6.5}>Dots</Lab>
     </Frame>
   )
 }
 
 function LockFig() {
   return (
-    <Frame label="A locked board: dimmed elements, a padlock badge in the middle, a tapped element with a teal highlight ring and the lock button with a cursor">
+    <Frame label="A locked board: dimmed elements, a padlock badge in the middle, a tapped element with a teal highlight ring, and the lock button showing its Locked badge">
       <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
       {/* dimmed nodes + edge */}
       <path d="M148 71 C170 71 182 90 212 91" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-muted-foreground/60" opacity={0.6} />
@@ -561,52 +877,93 @@ function LockFig() {
       {/* view-only pill */}
       <rect x={286} y={16} width={58} height={17} rx={8.5} strokeWidth={1.2} className="fill-teal-500/10 stroke-teal-500" />
       <text x={315} y={27.5} fontSize={7.5} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">View-only</text>
-      {/* lock button + click */}
-      <rect x={18} y={160} width={22} height={22} rx={5} strokeWidth={1.5} className={panelCls} />
-      <rect x={23.5} y={171} width={9} height={7} rx={1.5} strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
-      <path d="M25.5 171 V168.4 A2.6 2.6 0 0 1 30.7 168.4 V169.6" strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
-      <Cursor x={48} y={168} />
-      <path d="M54 162 l2 -2 M56 168 h3 M54 174 l2 2" strokeWidth={1.4} strokeLinecap="round" className="stroke-teal-500" />
-      <Lab x={29} y={192} size={7}>Lock</Lab>
+      {/* lock button (locked state: teal border, closed lock) + real Locked badge */}
+      <Tile x={18} y={160} size={16} icon={Lock} active />
+      <rect x={40} y={160} width={46} height={16} rx={4} strokeWidth={1.1} className="fill-teal-500/10 stroke-teal-500" />
+      <text x={63} y={171} fontSize={7} fontWeight={600} letterSpacing={1} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">LOCKED</text>
+      <Lab x={63} y={188} size={6.5}>click again to unlock</Lab>
     </Frame>
   )
 }
 
 function ImportExportFig() {
   return (
-    <Frame label="A JSON project file flowing into the board and PNG and SVG image files flowing out">
-      <defs>
-        <ArrowHead id="af-ie-teal" />
-      </defs>
-      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
-      {/* JSON card */}
-      <rect x={18} y={56} width={84} height={88} rx={8} strokeWidth={1.5} className={panelCls} />
-      <path d="M88 56 L102 70 H88 Z" strokeWidth={1.2} strokeLinejoin="round" className="fill-muted stroke-border" />
-      <text x={56} y={104} fontSize={18} textAnchor="middle" className="fill-muted-foreground/80 font-mono">{"{ }"}</text>
-      <Lab x={60} y={132} size={7}>project.json</Lab>
-      {/* board mini */}
-      <rect x={138} y={72} width={84} height={56} rx={8} strokeWidth={1.5} className={canvasCls} />
-      <rect x={146} y={84} width={26} height={16} rx={3} strokeWidth={1.2} className="fill-teal-500/15 stroke-teal-500" />
-      <rect x={188} y={96} width={26} height={16} rx={3} strokeWidth={1.2} className={panelCls} />
-      <path d="M172 92 C180 92 180 104 188 104" fill="none" strokeWidth={1.5} strokeDasharray="3 3" className="stroke-teal-500" />
-      {/* PNG card */}
-      <rect x={258} y={42} width={84} height={48} rx={8} strokeWidth={1.5} className={panelCls} />
-      <rect x={266} y={52} width={20} height={16} rx={2} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
-      <path d="M268 65 l6 -6 4 4 5 -6 6 8" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
-      <circle cx={281} cy={55.5} r={1.6} className="fill-amber-400" />
-      <Lab x={300} y={82}>PNG image</Lab>
-      {/* SVG card */}
-      <rect x={258} y={106} width={84} height={48} rx={8} strokeWidth={1.5} className={panelCls} />
-      <path d="M266 138 C270 122 280 122 286 134" fill="none" strokeWidth={1.5} className="stroke-teal-500" />
-      <rect x={264} y={136} width={4} height={4} className="fill-teal-500" />
-      <rect x={284} y={132} width={4} height={4} className="fill-teal-500" />
-      <Lab x={300} y={146}>SVG vector</Lab>
-      {/* flow arrows */}
-      <path d="M102 100 C116 100 122 100 136 100" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ie-teal)" />
-      <Lab x={119} y={90} size={7}>Import</Lab>
-      <path d="M222 86 C240 86 242 66 256 66" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ie-teal)" />
-      <path d="M222 114 C240 114 242 130 256 130" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ie-teal)" />
-      <Lab x={241} y={103} size={7}>Export</Lab>
+    <Frame
+      height={210}
+      label="The real Import and Export dialogs side by side: Import picks a .json file or pastes JSON; Export has a file name field and PNG, SVG and JSON format cards"
+    >
+      <rect x={5} y={5} width={350} height={200} rx={10} strokeWidth={1.5} className={canvasCls} />
+
+      {/* Import dialog */}
+      <rect x={18} y={18} width={150} height={174} rx={10} strokeWidth={1.5} className={panelCls} />
+      <text x={30} y={33} fontSize={8} fontWeight={600} className="fill-foreground">Import diagram</text>
+      {/* dropzone */}
+      <rect x={30} y={42} width={126} height={42} rx={6} strokeWidth={1.2} strokeDasharray="4 3" className="fill-background stroke-border" />
+      <Upload x={87} y={48} width={12} height={12} aria-hidden className="text-muted-foreground" />
+      <text x={93} y={70} fontSize={6} textAnchor="middle" className="fill-foreground/75">Choose a .json file</text>
+      <text x={93} y={79} fontSize={5.4} textAnchor="middle" className="fill-muted-foreground">or paste the JSON below</text>
+      {/* paste area */}
+      <rect x={30} y={92} width={126} height={40} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+      <text x={36} y={106} fontSize={6} fontFamily="monospace" className="fill-muted-foreground">{"{ \"nodes\": […],"}</text>
+      <text x={36} y={116} fontSize={6} fontFamily="monospace" className="fill-muted-foreground">{"  \"edges\": […] }"}</text>
+      {/* buttons */}
+      <rect x={30} y={144} width={46} height={16} rx={5} strokeWidth={1.1} className="fill-background stroke-border" />
+      <text x={53} y={155} fontSize={6.5} textAnchor="middle" className="fill-foreground/80">Cancel</text>
+      <rect x={80} y={144} width={52} height={16} rx={5} className="fill-teal-500" />
+      <text x={106} y={155} fontSize={6.5} fontWeight={600} textAnchor="middle" className="fill-background">Import</text>
+      <Lab x={93} y={178} size={6.5}>rebuilds the whole board — undo still works</Lab>
+
+      {/* Export dialog */}
+      <rect x={192} y={18} width={150} height={174} rx={10} strokeWidth={1.5} className={panelCls} />
+      <text x={204} y={33} fontSize={8} fontWeight={600} className="fill-foreground">Export diagram</text>
+      {/* file name */}
+      <text x={204} y={47} fontSize={6} className="fill-muted-foreground">File name</text>
+      <rect x={204} y={51} width={126} height={13} rx={4} strokeWidth={1.1} className="fill-background stroke-border" />
+      <text x={210} y={60.5} fontSize={6.2} className="fill-foreground/80">diagram</text>
+      {/* format cards — real three, real icons */}
+      <text x={204} y={78} fontSize={6} className="fill-muted-foreground">Format</text>
+      {[
+        { icon: ImageIcon, label: "PNG", hint: "Raster image", x: 204, active: true },
+        { icon: FileCode, label: "SVG", hint: "Vector image", x: 248, active: false },
+        { icon: Braces, label: "JSON", hint: "Editable project", x: 292, active: false },
+      ].map((f) => (
+        <g key={f.label}>
+          <rect
+            x={f.x}
+            y={83}
+            width={38}
+            height={36}
+            rx={5}
+            strokeWidth={1.1}
+            className={f.active ? "fill-teal-500/10 stroke-teal-500" : "fill-background stroke-border"}
+          />
+          <f.icon
+            x={f.x + 14}
+            y={87}
+            width={10}
+            height={10}
+            aria-hidden
+            className={f.active ? "text-teal-600 dark:text-teal-300" : "text-muted-foreground"}
+          />
+          <text
+            x={f.x + 19}
+            y={106}
+            fontSize={6}
+            fontWeight={600}
+            textAnchor="middle"
+            className={f.active ? "fill-teal-600 dark:fill-teal-300" : "fill-foreground/80"}
+          >
+            {f.label}
+          </text>
+          <text x={f.x + 19} y={113} fontSize={4.6} textAnchor="middle" className="fill-muted-foreground">
+            {f.hint}
+          </text>
+        </g>
+      ))}
+      {/* export button */}
+      <rect x={204} y={144} width={72} height={16} rx={5} className="fill-teal-500" />
+      <text x={240} y={155} fontSize={6.5} fontWeight={600} textAnchor="middle" className="fill-background">Export PNG</text>
+      <Lab x={267} y={178} size={6.5}>PNG · SVG · re-openable JSON project</Lab>
     </Frame>
   )
 }

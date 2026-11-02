@@ -1,0 +1,647 @@
+     1→"use client"
+     2→
+     3→/**
+     4→ * Hand-drawn SVG illustrations for the user guide — "screens" drawn as
+     5→ * vectors, never real screenshots. Every figure mirrors the actual Atom Flow
+     6→ * UI using theme tokens (card / border / muted-foreground) plus teal accents,
+     7→ * so the same drawing reads correctly in light AND dark mode.
+     8→ *
+     9→ * Figures are referenced from guide-content.ts via the `figure` block kind
+    10→ * and rendered by GuideFigure below.
+    11→ */
+    12→
+    13→import * as React from "react"
+    14→
+    15→import { cn } from "@/lib/utils"
+    16→import type { GuideFigureId } from "./guide-content"
+    17→
+    18→/* ---------------- shared building blocks ---------------- */
+    19→
+    20→const panelCls = "fill-card stroke-border"
+    21→const canvasCls = "fill-background stroke-border"
+    22→
+    23→/** Rounded 360×200 canvas every figure draws on. */
+    24→function Frame({ label, children }: { label: string; children: React.ReactNode }) {
+    25→  return (
+    26→    <svg viewBox="0 0 360 200" role="img" aria-label={label} className="block h-auto w-full">
+    27→      {children}
+    28→    </svg>
+    29→  )
+    30→}
+    31→
+    32→/** Teal / muted / rose arrowhead marker — must live inside <defs> with a unique id. */
+    33→function ArrowHead({ id, tone = "teal" }: { id: string; tone?: "teal" | "muted" | "rose" }) {
+    34→  const fill =
+    35→    tone === "muted"
+    36→      ? "fill-muted-foreground/60"
+    37→      : tone === "rose"
+    38→        ? "fill-rose-500"
+    39→        : "fill-teal-500"
+    40→  return (
+    41→    <marker
+    42→      id={id}
+    43→      viewBox="0 0 8 8"
+    44→      refX={7}
+    45→      refY={4}
+    46→      markerWidth={6.5}
+    47→      markerHeight={6.5}
+    48→      orient="auto-start-reverse"
+    49→    >
+    50→      <path d="M0 0L8 4L0 8Z" className={fill} />
+    51→    </marker>
+    52→  )
+    53→}
+    54→
+    55→/** A UI node box with optional centered label. */
+    56→function Box({
+    57→  x,
+    58→  y,
+    59→  w,
+    60→  h,
+    61→  label,
+    62→  rx = 6,
+    63→  className,
+    64→}: {
+    65→  x: number
+    66→  y: number
+    67→  w: number
+    68→  h: number
+    69→  label?: string
+    70→  rx?: number
+    71→  className?: string
+    72→}) {
+    73→  return (
+    74→    <g>
+    75→      <rect x={x} y={y} width={w} height={h} rx={rx} strokeWidth={1.5} className={cn(panelCls, className)} />
+    76→      {label !== undefined && (
+    77→        <text x={x + w / 2} y={y + h / 2 + 3} fontSize={8.5} textAnchor="middle" className="fill-foreground/80">
+    78→          {label}
+    79→        </text>
+    80→      )}
+    81→    </g>
+    82→  )
+    83→}
+    84→
+    85→/** Teal selection grips on the four corners of a box. */
+    86→function Grips({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+    87→  const s = 5
+    88→  const pts: Array<[number, number]> = [
+    89→    [x - s / 2, y - s / 2],
+    90→    [x + w - s / 2, y - s / 2],
+    91→    [x - s / 2, y + h - s / 2],
+    92→    [x + w - s / 2, y + h - s / 2],
+    93→  ]
+    94→  return (
+    95→    <g>
+    96→      {pts.map(([gx, gy], i) => (
+    97→        <rect
+    98→          key={i}
+    99→          x={gx}
+   100→          y={gy}
+   101→          width={s}
+   102→          height={s}
+   103→          rx={1}
+   104→          strokeWidth={1.2}
+   105→          className="fill-background stroke-teal-500"
+   106→        />
+   107→      ))}
+   108→    </g>
+   109→  )
+   110→}
+   111→
+   112→/** Small in-figure annotation label. */
+   113→function Lab({
+   114→  x,
+   115→  y,
+   116→  children,
+   117→  anchor = "middle",
+   118→  size = 7.5,
+   119→  className,
+   120→}: {
+   121→  x: number
+   122→  y: number
+   123→  children: React.ReactNode
+   124→  anchor?: "start" | "middle" | "end"
+   125→  size?: number
+   126→  className?: string
+   127→}) {
+   128→  return (
+   129→    <text x={x} y={y} fontSize={size} textAnchor={anchor} className={cn("fill-muted-foreground", className)}>
+   130→      {children}
+   131→    </text>
+   132→  )
+   133→}
+   134→
+   135→/** Mouse pointer arrow. */
+   136→function Cursor({ x, y }: { x: number; y: number }) {
+   137→  return (
+   138→    <path
+   139→      d={`M${x} ${y} l0 12 l3 -2.9 l1.9 4.4 l2.4 -1 l-1.9 -4.4 l4.1 0 Z`}
+   140→      strokeWidth={1.2}
+   141→      strokeLinejoin="round"
+   142→      className="fill-foreground stroke-background"
+   143→    />
+   144→  )
+   145→}
+   146→
+   147→/* ---------------- figures ---------------- */
+   148→
+   149→function WelcomeFig() {
+   150→  return (
+   151→    <Frame label="A small architecture diagram: Frontend and API boxes connected to a Database ellipse">
+   152→      <defs>
+   153→        <ArrowHead id="af-w-teal" />
+   154→        <ArrowHead id="af-w-muted" tone="muted" />
+   155→      </defs>
+   156→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   157→      {/* edges first so nodes render on top */}
+   158→      <path d="M144 69 H212" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-w-teal)" />
+   159→      <path d="M98 90 C98 120 122 138 132 142" fill="none" strokeWidth={2} className="stroke-muted-foreground/60" markerEnd="url(#af-w-muted)" />
+   160→      <path d="M262 90 C262 118 240 136 230 141" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-w-teal)" />
+   161→      <Box x={52} y={48} w={92} h={42} label="Frontend" />
+   162→      <Box x={216} y={48} w={92} h={42} label="API" />
+   163→      <ellipse cx={180} cy={146} rx={52} ry={24} strokeWidth={1.5} className={panelCls} />
+   164→      <text x={180} y={149} fontSize={8.5} textAnchor="middle" className="fill-foreground/80">Database</text>
+   165→      <Grips x={52} y={48} w={92} h={42} />
+   166→      {/* sparkle accents + add badge */}
+   167→      <path d="M322 30 l2.4 7.4 7.4 2.4 -7.4 2.4 -2.4 7.4 -2.4 -7.4 -7.4 -2.4 7.4 -2.4 Z" className="fill-teal-500/40" />
+   168→      <path d="M300 58 l1.7 5.2 5.2 1.7 -5.2 1.7 -1.7 5.2 -1.7 -5.2 -5.2 -1.7 5.2 -1.7 Z" className="fill-teal-500/25" />
+   169→      <circle cx={308} cy={48} r={8} className="fill-teal-500" />
+   170→      <path d="M308 44.5 V51.5 M304.5 48 H311.5" strokeWidth={1.8} strokeLinecap="round" className="stroke-background" />
+   171→    </Frame>
+   172→  )
+   173→}
+   174→
+   175→function WorkspaceFig() {
+   176→  return (
+   177→    <Frame label="The Atom Flow workspace: left tool rail, canvas with two connected nodes, bottom style bar, corner controls and the lock button">
+   178→      <defs>
+   179→        <ArrowHead id="af-ws-teal" />
+   180→      </defs>
+   181→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   182→      {/* left tool rail */}
+   183→      <rect x={11} y={11} width={28} height={150} rx={6} strokeWidth={1.5} className={panelCls} />
+   184→      {[20, 44, 68, 92, 116, 140].map((ty, i) => (
+   185→        <rect
+   186→          key={ty}
+   187→          x={18}
+   188→          y={ty}
+   189→          width={14}
+   190→          height={14}
+   191→          rx={3}
+   192→          strokeWidth={1.2}
+   193→          className={i === 0 ? "fill-teal-500/15 stroke-teal-500" : panelCls}
+   194→        />
+   195→      ))}
+   196→      {/* rail glyphs */}
+   197→      <path d="M25 23.5 V30.5 M21.5 27 H28.5" strokeWidth={1.5} strokeLinecap="round" className="stroke-teal-500" />
+   198→      <rect x={21.5} y={47.5} width={7} height={5} rx={1} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   199→      <circle cx={25} cy={75} r={3.6} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   200→      <text x={25} y={98.5} fontSize={8} fontWeight={600} textAnchor="middle" className="fill-muted-foreground/70">T</text>
+   201→      <circle cx={23.8} cy={121.8} r={3} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   202→      <path d="M26 124.5 L28.6 127.1" strokeWidth={1.2} strokeLinecap="round" className="stroke-muted-foreground/70" />
+   203→      <path d="M29.5 147 H20.5 M23 144.5 L20.5 147 L23 149.5" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   204→      {/* top-left cluster: theme / background / fullscreen */}
+   205→      <rect x={52} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   206→      <circle cx={59} cy={21} r={2.5} strokeWidth={1.1} className="stroke-muted-foreground/70" fill="none" />
+   207→      <rect x={72} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   208→      <path d="M74.5 19.5 H83.5 M74.5 23 H83.5 M78 16.5 V26" strokeWidth={1} className="stroke-muted-foreground/70" />
+   209→      <rect x={92} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   210→      {/* top-right cluster: clear / import / export / help */}
+   211→      <rect x={252} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   212→      <path d="M255 17 H263 M256 18.5 H262 V23.5 H256 Z" strokeWidth={1.1} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   213→      <rect x={272} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   214→      <path d="M279 17.5 V22 M276.5 20 L279 22.5 L281.5 20 M275 24.5 H283" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   215→      <rect x={292} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   216→      <path d="M299 23 V18.5 M296.5 21 L299 18.5 L301.5 21 M295 24.5 H303" strokeWidth={1.1} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   217→      <rect x={312} y={14} width={14} height={14} rx={3} strokeWidth={1.2} className="fill-teal-500/15 stroke-teal-500" />
+   218→      <text x={319} y={24.5} fontSize={8} fontWeight={600} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">?</text>
+   219→      {/* labels with leader ticks */}
+   220→      <path d="M59 29.5 V36" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
+   221→      <Lab x={52} y={42} anchor="start">Theme &amp; view</Lab>
+   222→      <path d="M319 29.5 V36" strokeDasharray="2 2" className="stroke-muted-foreground/40" />
+   223→      <Lab x={326} y={42} anchor="end">Clear · Import · Export · Help</Lab>
+   224→      {/* canvas nodes */}
+   225→      <path d="M216 106 C234 106 232 140 250 140" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ws-teal)" />
+   226→      <Box x={140} y={88} w={76} h={36} label="Frontend" />
+   227→      <Box x={250} y={122} w={72} h={36} label="API" />
+   228→      {/* bottom style bar */}
+   229→      <rect x={120} y={168} width={150} height={20} rx={6} strokeWidth={1.5} className={panelCls} />
+   230→      <rect x={128} y={173} width={10} height={10} rx={2} className="fill-teal-500" />
+   231→      <rect x={142} y={173} width={10} height={10} rx={2} className="fill-rose-500" />
+   232→      <rect x={156} y={173} width={10} height={10} rx={2} className="fill-amber-500" />
+   233→      <rect x={170} y={173} width={10} height={10} rx={2} className="fill-emerald-500" />
+   234→      <path d="M190 172 V184" className="stroke-border" />
+   235→      <Lab x={232} y={181}>Style bar</Lab>
+   236→      {/* lock button */}
+   237→      <rect x={14} y={170} width={22} height={22} rx={5} strokeWidth={1.5} className={panelCls} />
+   238→      <rect x={20.5} y={179} width={9} height={7} rx={1.5} strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
+   239→      <path d="M22.5 179 V176.5 A2.5 2.5 0 0 1 27.5 176.5 V179" strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
+   240→      <Lab x={42} y={184} anchor="start">Lock</Lab>
+   241→    </Frame>
+   242→  )
+   243→}
+   244→
+   245→function QuickMenuFig() {
+   246→  return (
+   247→    <Frame label="The round radial quick menu with six actions fanned around a close hub, opened right at the tap point">
+   248→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   249→      {/* faint background nodes */}
+   250→      <Box x={24} y={28} w={64} h={30} className="opacity-50" />
+   251→      <Box x={284} y={140} w={56} h={30} className="opacity-50" />
+   252→      {/* orbit + ripple around the tap point */}
+   253→      <circle cx={176} cy={102} r={54} fill="none" strokeDasharray="4 4" className="stroke-muted-foreground/40" />
+   254→      <circle cx={176} cy={102} r={26} fill="none" strokeDasharray="3 3" className="stroke-teal-500/40" />
+   255→      {/* items */}
+   256→      <circle cx={176} cy={48} r={11} strokeWidth={1.5} className={panelCls} />
+   257→      <path d="M176 43 V53 M171 48 H181" strokeWidth={1.5} strokeLinecap="round" className="stroke-foreground/80" />
+   258→      <circle cx={223} cy={75} r={11} strokeWidth={1.5} className="fill-teal-500/10 stroke-teal-500" />
+   259→      <path d="M220.8 70.3 V78.9 L223.1 76.7 L224.5 79.9 L226.3 79.1 L224.9 75.9 H228.2 Z" className="fill-teal-500" />
+   260→      <circle cx={223} cy={129} r={11} strokeWidth={1.5} className={panelCls} />
+   261→      <rect x={219.5} y={125} width={8} height={7.5} rx={2.5} strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
+   262→      <path d="M221.2 125 V122.5 M223.5 125 V121.8 M225.8 125 V122.5" strokeWidth={1.3} strokeLinecap="round" className="stroke-foreground/80" />
+   263→      <circle cx={176} cy={156} r={11} strokeWidth={1.5} className={panelCls} />
+   264→      <path d="M170.5 155.5 V152.5 H173.5 M178.5 152.5 H181.5 V155.5 M181.5 156.5 V159.5 H178.5 M173.5 159.5 H170.5 V156.5" strokeWidth={1.3} strokeLinejoin="round" className="stroke-foreground/80" fill="none" />
+   265→      <circle cx={129} cy={129} r={11} strokeWidth={1.5} className={panelCls} />
+   266→      <rect x={125} y={129} width={8} height={6.5} rx={1.5} strokeWidth={1.3} className="stroke-foreground/80" fill="none" />
+   267→      <path d="M127 129 V126.8 A2.2 2.2 0 0 1 131.4 126.8 V129" strokeWidth={1.3} className="stroke-foreground/80" fill="none" />
+   268→      <circle cx={129} cy={75} r={11} strokeWidth={1.5} className={panelCls} />
+   269→      <path d="M126.5 77.5 L131.5 72.5 M131.5 75.5 V72.5 H128.5 M126.5 74.5 V77.5 H129.5" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" className="stroke-foreground/80" fill="none" />
+   270→      {/* hub = close */}
+   271→      <circle cx={176} cy={102} r={15} strokeWidth={1.5} className={panelCls} />
+   272→      <path d="M171.5 97.5 L180.5 106.5 M180.5 97.5 L171.5 106.5" strokeWidth={1.6} strokeLinecap="round" className="stroke-muted-foreground" />
+   273→      <Lab x={176} y={31}>Add shape</Lab>
+   274→      <Lab x={176} y={181}>Fit view</Lab>
+   275→      <Lab x={244} y={75} anchor="start" size={7}>active tool glows</Lab>
+   276→    </Frame>
+   277→  )
+   278→}
+   279→
+   280→function AddElementsFig() {
+   281→  return (
+   282→    <Frame label="The tool rail with shape tiles on the left, an arrow leading to a new ghost rectangle appearing on the canvas">
+   283→      <defs>
+   284→        <ArrowHead id="af-ae-teal" />
+   285→      </defs>
+   286→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   287→      <Lab x={46} y={16}>Tools</Lab>
+   288→      {/* palette */}
+   289→      <rect x={12} y={20} width={68} height={152} rx={8} strokeWidth={1.5} className={panelCls} />
+   290→      {[
+   291→        [20, 30],
+   292→        [50, 30],
+   293→        [20, 62],
+   294→        [50, 62],
+   295→        [20, 94],
+   296→        [50, 94],
+   297→        [20, 126],
+   298→        [50, 126],
+   299→      ].map(([tx, ty], i) => (
+   300→        <rect
+   301→          key={i}
+   302→          x={tx}
+   303→          y={ty}
+   304→          width={24}
+   305→          height={24}
+   306→          rx={4}
+   307→          strokeWidth={1.2}
+   308→          className={i === 0 ? "fill-teal-500/15 stroke-teal-500" : "fill-background/60 stroke-border"}
+   309→        />
+   310→      ))}
+   311→      {/* palette glyphs */}
+   312→      <rect x={25} y={36} width={14} height={11} rx={2} strokeWidth={1.3} className="stroke-teal-500" fill="none" />
+   313→      <circle cx={62} cy={42} r={6.5} strokeWidth={1.3} className="stroke-muted-foreground/70" fill="none" />
+   314→      <path d="M26 80 L38 68" strokeWidth={1.3} strokeLinecap="round" className="stroke-muted-foreground/70" />
+   315→      <rect x={55} y={70} width={14} height={9} rx={4.5} strokeWidth={1.3} className="stroke-muted-foreground/70" fill="none" />
+   316→      <text x={32} y={101} fontSize={10} fontWeight={600} textAnchor="middle" className="fill-muted-foreground/70">T</text>
+   317→      <rect x={54} y={99} width={16} height={13} rx={1.5} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   318→      <path d="M54 104.5 H70 M54 110 H70 M59.5 99 V112 M64.5 99 V112" strokeWidth={1} className="stroke-muted-foreground/70" />
+   319→      <path d="M29 133.5 L24.5 138 L29 142.5 M35 133.5 L39.5 138 L35 142.5 M33.4 131.5 L30.6 144.5" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   320→      <rect x={54} y={131} width={16} height={13} rx={2} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   321→      <path d="M56 141 l4 -4 3 3 3.5 -4.5 3.5 5.5" strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   322→      <circle cx={66} cy={134.5} r={1.4} className="fill-amber-400" />
+   323→      {/* canvas + drag-to-draw crosshair */}
+   324→      <rect x={92} y={20} width={256} height={152} rx={8} strokeWidth={1.5} className={canvasCls} />
+   325→      <path d="M120 60 H130 M125 55 V65" strokeWidth={1.2} strokeLinecap="round" className="stroke-muted-foreground/60" />
+   326→      <circle cx={125} cy={60} r={3} fill="none" strokeWidth={1.2} className="stroke-muted-foreground/60" />
+   327→      <Lab x={138} y={58} anchor="start" size={7}>Drag to draw</Lab>
+   328→      {/* arrow from palette to ghost node */}
+   329→      <path d="M46 42 C 90 42 130 58 176 80" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ae-teal)" />
+   330→      {/* ghost node appearing */}
+   331→      <rect x={180} y={84} width={86} height={42} rx={6} strokeWidth={1.5} strokeDasharray="4 3" className="fill-teal-500/10 stroke-teal-500" />
+   332→      <circle cx={266} cy={84} r={8} className="fill-teal-500" />
+   333→      <path d="M266 80 V88 M262 84 H270" strokeWidth={1.8} strokeLinecap="round" className="stroke-background" />
+   334→    </Frame>
+   335→  )
+   336→}
+   337→
+   338→function IconsFig() {
+   339→  return (
+   340→    <Frame label="An icon frame card with resize grips and a size badge, next to the three icon style options">
+   341→      <defs>
+   342→        <ArrowHead id="af-ic-muted" tone="muted" />
+   343→      </defs>
+   344→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   345→      {/* resize ladder */}
+   346→      <rect x={34} y={90} width={22} height={22} rx={3} strokeWidth={1.3} className={panelCls} />
+   347→      <path d="M58 99 H63" strokeWidth={1.3} className="stroke-muted-foreground/60" markerEnd="url(#af-ic-muted)" />
+   348→      <rect x={66} y={84} width={30} height={30} rx={3} strokeWidth={1.3} className={panelCls} />
+   349→      <Lab x={60} y={128} size={7}>Resize</Lab>
+   350→      {/* icon frame card */}
+   351→      <Lab x={172} y={30}>Icon frame — an app-window card</Lab>
+   352→      <rect x={110} y={36} width={124} height={116} rx={8} strokeWidth={1.5} className={panelCls} />
+   353→      <path d="M110 58 H234" strokeWidth={1.2} className="stroke-border" />
+   354→      <circle cx={119} cy={47} r={1.8} className="fill-muted-foreground/70" />
+   355→      <circle cx={127} cy={47} r={1.8} className="fill-muted-foreground/70" />
+   356→      <circle cx={135} cy={47} r={1.8} className="fill-muted-foreground/70" />
+   357→      <rect x={146} y={74} width={52} height={40} rx={4} strokeWidth={1.2} className="fill-background stroke-border" />
+   358→      <path d="M152 108 l11 -11 7 7 8 -9 11 13" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-500" fill="none" />
+   359→      <circle cx={186} cy={82} r={3.5} className="fill-amber-400" />
+   360→      <Grips x={110} y={36} w={124} h={116} />
+   361→      {/* size badge */}
+   362→      <rect x={146} y={160} width={52} height={16} rx={8} strokeWidth={1.2} className="fill-teal-500/10 stroke-teal-500" />
+   363→      <text x={172} y={170.5} fontSize={7} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">160 × 160</text>
+   364→      {/* style chips */}
+   365→      <Lab x={300} y={48}>Style</Lab>
+   366→      <rect x={252} y={56} width={96} height={16} rx={8} strokeWidth={1.2} className={panelCls} />
+   367→      <text x={300} y={66.5} fontSize={7.5} textAnchor="middle" className="fill-foreground/70">Icon only</text>
+   368→      <rect x={252} y={80} width={96} height={16} rx={8} strokeWidth={1.2} className={panelCls} />
+   369→      <text x={300} y={90.5} fontSize={7.5} textAnchor="middle" className="fill-foreground/70">Icon + text</text>
+   370→      <rect x={252} y={104} width={96} height={16} rx={8} strokeWidth={1.2} className="fill-teal-500/10 stroke-teal-500" />
+   371→      <text x={300} y={114.5} fontSize={7.5} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">Icon frame</text>
+   372→    </Frame>
+   373→  )
+   374→}
+   375→
+   376→function ConnectFig() {
+   377→  return (
+   378→    <Frame label="A dashed connection line being dragged from a round handle on Frontend, bending around an obstacle box into Database">
+   379→      <defs>
+   380→        <ArrowHead id="af-cn-teal" />
+   381→      </defs>
+   382→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   383→      {/* obstacle */}
+   384→      <rect x={158} y={66} width={48} height={30} rx={4} strokeWidth={1.2} strokeDasharray="3 3" className="fill-muted/60 stroke-border" />
+   385→      <Lab x={182} y={84} size={6.5}>obstacle</Lab>
+   386→      {/* smart route under the obstacle */}
+   387→      <path d="M127 94 C 150 94 152 128 182 128 C 212 128 214 108 242 108" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-cn-teal)" />
+   388→      <Box x={30} y={72} w={92} h={44} label="Frontend" />
+   389→      <Box x={242} y={86} w={88} h={44} label="Database" />
+   390→      {/* handles */}
+   391→      <circle cx={122} cy={84} r={2.6} className="fill-muted-foreground/60" />
+   392→      <circle cx={122} cy={104} r={2.6} className="fill-muted-foreground/60" />
+   393→      <circle cx={122} cy={94} r={9} fill="none" strokeWidth={1.2} className="stroke-teal-500/40" />
+   394→      <circle cx={122} cy={94} r={4.5} className="fill-teal-500" />
+   395→      <Cursor x={132} y={99} />
+   396→      <Lab x={146} y={90} anchor="start">Drag</Lab>
+   397→      <Lab x={242} y={78} anchor="start" size={7}>release here</Lab>
+   398→    </Frame>
+   399→  )
+   400→}
+   401→
+   402→function StyleElementsFig() {
+   403→  return (
+   404→    <Frame label="A selected node with grips above the bottom style bar showing shape swaps, color swatches, border styles, text size, typography and rotation">
+   405→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   406→      {/* selected node */}
+   407→      <rect x={24} y={44} width={130} height={66} rx={6} strokeWidth={1.5} className="fill-teal-500/10 stroke-teal-500" />
+   408→      <text x={89} y={80} fontSize={9} textAnchor="middle" className="fill-foreground/85">API gateway</text>
+   409→      <Grips x={24} y={44} w={130} h={66} />
+   410→      <path d="M89 112 V140" strokeDasharray="2 3" className="stroke-muted-foreground/40" />
+   411→      {/* style bar */}
+   412→      <rect x={18} y={144} width={324} height={42} rx={8} strokeWidth={1.5} className={panelCls} />
+   413→      <path d="M94 150 V180 M150 150 V180 M210 150 V180 M246 150 V180 M286 150 V180" className="stroke-border" />
+   414→      {/* shapes */}
+   415→      <rect x={26} y={160.5} width={10} height={8} rx={2} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   416→      <ellipse cx={44} cy={164.5} rx={5} ry={4.5} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   417→      <path d="M57 159.5 L62 169 H52 Z" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   418→      <path d="M70 158.5 L75 164.5 L70 170.5 L65 164.5 Z" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   419→      <path d="M83 158.5 l4.5 2.6 v5.8 l-4.5 2.6 l-4.5 -2.6 v-5.8 Z" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   420→      <Lab x={56} y={181} size={6.5}>Shapes</Lab>
+   421→      {/* BG swatches */}
+   422→      <rect x={100} y={158} width={9} height={9} rx={2} className="fill-teal-500" />
+   423→      <rect x={110} y={158} width={9} height={9} rx={2} className="fill-rose-500" />
+   424→      <rect x={120} y={158} width={9} height={9} rx={2} className="fill-amber-500" />
+   425→      <rect x={130} y={158} width={9} height={9} rx={2} className="fill-emerald-500" />
+   426→      <rect x={140} y={158} width={9} height={9} rx={2} strokeWidth={1} className="fill-background stroke-border" />
+   427→      <path d="M140 167 L149 158" strokeWidth={1} className="stroke-border" />
+   428→      <Lab x={124} y={181} size={6.5}>BG</Lab>
+   429→      {/* border samples */}
+   430→      <path d="M158 162 H184" strokeWidth={2} className="stroke-foreground" />
+   431→      <path d="M158 173 H184" strokeWidth={2} strokeDasharray="4 3" className="stroke-foreground" />
+   432→      <Lab x={172} y={181} size={6.5}>Border</Lab>
+   433→      {/* T + slider */}
+   434→      <text x={222} y={172} fontSize={13} fontWeight={700} textAnchor="middle" className="fill-foreground/80">T</text>
+   435→      <path d="M229 167 H241" strokeWidth={1.2} className="stroke-border" />
+   436→      <circle cx={235} cy={167} r={2.5} className="fill-teal-500" />
+   437→      <Lab x={228} y={181} size={6.5}>T</Lab>
+   438→      {/* Aa */}
+   439→      <text x={258} y={172} fontSize={11} fontWeight={700} textAnchor="middle" className="fill-foreground/80">Aa</text>
+   440→      <circle cx={272} cy={168} r={3} className="fill-rose-500" />
+   441→      <path d="M268 176 H278 M268 179.5 H274" strokeWidth={1.2} className="stroke-muted-foreground/70" />
+   442→      <Lab x={266} y={181} size={6.5}>Aa</Lab>
+   443→      {/* rotate */}
+   444→      <path d="M294 166 H334" strokeWidth={1.2} className="stroke-border" />
+   445→      <circle cx={314} cy={166} r={3.5} className="fill-teal-500" />
+   446→      <text x={314} y={181} fontSize={6.5} textAnchor="middle" className="fill-muted-foreground">45°</text>
+   447→    </Frame>
+   448→  )
+   449→}
+   450→
+   451→function StyleConnectionsFig() {
+   452→  return (
+   453→    <Frame label="Three connection samples between node stubs: solid, dashed and animated, and a thick colored line">
+   454→      <defs>
+   455→        <ArrowHead id="af-sc-muted" tone="muted" />
+   456→        <ArrowHead id="af-sc-teal" />
+   457→        <ArrowHead id="af-sc-rose" tone="rose" />
+   458→      </defs>
+   459→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   460→      {/* row 1 — solid */}
+   461→      <rect x={22} y={28} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
+   462→      <rect x={294} y={28} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
+   463→      <path d="M66 44 H290" fill="none" strokeWidth={2} className="stroke-foreground" markerEnd="url(#af-sc-muted)" />
+   464→      <Lab x={180} y={30}>Solid — plain direct link</Lab>
+   465→      {/* row 2 — dashed + animate */}
+   466→      <rect x={22} y={84} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
+   467→      <rect x={294} y={84} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
+   468→      <path d="M66 100 H290" fill="none" strokeWidth={2} strokeDasharray="6 5" className="stroke-teal-500" markerEnd="url(#af-sc-teal)" />
+   469→      <path d="M148 96 l5 4 -5 4 M160 96 l5 4 -5 4" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="stroke-teal-400/70" fill="none" />
+   470→      <Lab x={180} y={86}>Dashed + Animate — data is flowing</Lab>
+   471→      {/* row 3 — thick colored */}
+   472→      <rect x={22} y={140} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
+   473→      <rect x={294} y={140} width={44} height={32} rx={5} strokeWidth={1.5} className={panelCls} />
+   474→      <path d="M66 156 H290" fill="none" strokeWidth={4} className="stroke-rose-500" markerEnd="url(#af-sc-rose)" />
+   475→      <Lab x={180} y={142}>Width &amp; color — show importance</Lab>
+   476→    </Frame>
+   477→  )
+   478→}
+   479→
+   480→function EditFig() {
+   481→  return (
+   482→    <Frame label="A dashed selection box around two elements with teal smart guides, a move arrow and duplicate and delete buttons">
+   483→      <defs>
+   484→        <ArrowHead id="af-ed-muted" tone="muted" />
+   485→      </defs>
+   486→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   487→      {/* smart guides behind everything */}
+   488→      <path d="M150 26 V172 M78 70 H282" strokeDasharray="2 4" strokeWidth={1} className="stroke-teal-500/50" />
+   489→      {/* marquee + nodes */}
+   490→      <rect x={96} y={40} width={158} height={100} rx={4} strokeWidth={1.5} strokeDasharray="5 4" className="fill-teal-500/5 stroke-teal-500" />
+   491→      <Box x={108} y={52} w={84} h={36} label="Users" />
+   492→      <Box x={126} y={98} w={88} h={34} label="Orders" />
+   493→      <Cursor x={96} y={40} />
+   494→      {/* move arrows */}
+   495→      <path d="M248 90 H276" fill="none" strokeWidth={1.5} className="stroke-muted-foreground" markerStart="url(#af-ed-muted)" markerEnd="url(#af-ed-muted)" />
+   496→      {/* action chips */}
+   497→      <circle cx={272} cy={52} r={9} strokeWidth={1.3} className={panelCls} />
+   498→      <rect x={267.8} y={48.2} width={6} height={6} rx={1} strokeWidth={1.1} className="stroke-muted-foreground/80" fill="none" />
+   499→      <rect x={270.4} y={50.8} width={6} height={6} rx={1} strokeWidth={1.1} className="fill-card stroke-muted-foreground/80" />
+   500→      <circle cx={272} cy={76} r={9} strokeWidth={1.3} className={panelCls} />
+   501→      <path d="M268.5 72.5 H275.5 M269.5 74 H274.5 V80 H269.5 Z" strokeWidth={1.1} strokeLinejoin="round" className="stroke-muted-foreground/80" fill="none" />
+   502→      <Lab x={180} y={190} size={7}>Teal smart guides keep things aligned</Lab>
+   503→    </Frame>
+   504→  )
+   505→}
+   506→
+   507→function ViewFig() {
+   508→  return (
+   509→    <Frame label="Fullscreen corner brackets, a hand tool with pan arrows, a zoom pill, a fit view button and background pattern swatches">
+   510→      <defs>
+   511→        <ArrowHead id="af-vw-muted" tone="muted" />
+   512→      </defs>
+   513→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   514→      {/* fullscreen corner brackets */}
+   515→      <path d="M14 22 V14 H22 M338 14 H346 V22 M14 178 V186 H22 M346 178 V186 H338" strokeWidth={2} strokeLinecap="round" className="stroke-teal-500" fill="none" />
+   516→      {/* pan cross with hand */}
+   517→      <path d="M160 91 H220" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
+   518→      <path d="M190 62 V118" fill="none" strokeWidth={1.5} className="stroke-muted-foreground/50" markerStart="url(#af-vw-muted)" markerEnd="url(#af-vw-muted)" />
+   519→      <rect x={183} y={84} width={14} height={13} rx={4} strokeWidth={1.4} className="fill-card stroke-foreground/80" />
+   520→      <path d="M186.5 84 V80.5 M190.5 84 V79.5 M194.5 84 V81 M183 90 l-4 2.5" strokeWidth={1.3} strokeLinecap="round" className="stroke-foreground/80" fill="none" />
+   521→      {/* zoom pill */}
+   522→      <rect x={24} y={148} width={112} height={28} rx={14} strokeWidth={1.5} className={panelCls} />
+   523→      <text x={44} y={166} fontSize={12} textAnchor="middle" className="fill-foreground/80">−</text>
+   524→      <path d="M60 154 V170 M100 154 V170" className="stroke-border" />
+   525→      <text x={80} y={165.5} fontSize={9} textAnchor="middle" className="fill-foreground/80">100%</text>
+   526→      <text x={117} y={166} fontSize={12} textAnchor="middle" className="fill-foreground/80">+</text>
+   527→      <Lab x={80} y={142}>Zoom</Lab>
+   528→      {/* fit view */}
+   529→      <rect x={24} y={112} width={28} height={28} rx={6} strokeWidth={1.5} className={panelCls} />
+   530→      <path d="M31 121.5 V118.5 H34 M42 118.5 H45 V121.5 M45 130.5 V133.5 H42 M34 133.5 H31 V130.5" strokeWidth={1.3} strokeLinejoin="round" className="stroke-foreground/80" fill="none" />
+   531→      <Lab x={58} y={127} anchor="start">Fit view</Lab>
+   532→      {/* background swatches */}
+   533→      <rect x={294} y={26} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   534→      <rect x={314} y={26} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   535→      <path d="M316.5 31.5 H325.5 M316.5 35.5 H325.5 M319 29 V38 M323.5 29 V38" strokeWidth={0.9} className="stroke-muted-foreground/70" />
+   536→      <rect x={334} y={26} width={14} height={14} rx={3} strokeWidth={1.2} className={panelCls} />
+   537→      <circle cx={338.5} cy={30.5} r={1} className="fill-muted-foreground/70" />
+   538→      <circle cx={343.5} cy={30.5} r={1} className="fill-muted-foreground/70" />
+   539→      <circle cx={338.5} cy={35.5} r={1} className="fill-muted-foreground/70" />
+   540→      <circle cx={343.5} cy={35.5} r={1} className="fill-muted-foreground/70" />
+   541→      <Lab x={321} y={54}>Background</Lab>
+   542→    </Frame>
+   543→  )
+   544→}
+   545→
+   546→function LockFig() {
+   547→  return (
+   548→    <Frame label="A locked board: dimmed elements, a padlock badge in the middle, a tapped element with a teal highlight ring and the lock button with a cursor">
+   549→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   550→      {/* dimmed nodes + edge */}
+   551→      <path d="M148 71 C170 71 182 90 212 91" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-muted-foreground/60" opacity={0.6} />
+   552→      <Box x={60} y={52} w={88} h={38} label="Frontend" className="opacity-60" />
+   553→      <Box x={212} y={72} w={92} h={38} label="API" className="opacity-60" />
+   554→      {/* tapped highlight ring */}
+   555→      <rect x={206} y={66} width={104} height={50} rx={8} fill="none" strokeWidth={1.5} strokeDasharray="4 4" className="stroke-teal-500/60" />
+   556→      {/* lock badge */}
+   557→      <circle cx={180} cy={96} r={22} fill="none" strokeWidth={1.2} strokeDasharray="3 4" className="stroke-teal-500/50" />
+   558→      <circle cx={180} cy={96} r={13} strokeWidth={2} className="fill-card stroke-teal-500" />
+   559→      <path d="M177.5 96 V93.4 A2.6 2.6 0 0 1 182.7 93.4 V96" strokeWidth={1.6} className="stroke-teal-500" fill="none" />
+   560→      <rect x={175.5} y={96} width={9} height={7} rx={1.5} className="fill-teal-500" />
+   561→      {/* view-only pill */}
+   562→      <rect x={286} y={16} width={58} height={17} rx={8.5} strokeWidth={1.2} className="fill-teal-500/10 stroke-teal-500" />
+   563→      <text x={315} y={27.5} fontSize={7.5} textAnchor="middle" className="fill-teal-600 dark:fill-teal-300">View-only</text>
+   564→      {/* lock button + click */}
+   565→      <rect x={18} y={160} width={22} height={22} rx={5} strokeWidth={1.5} className={panelCls} />
+   566→      <rect x={23.5} y={171} width={9} height={7} rx={1.5} strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
+   567→      <path d="M25.5 171 V168.4 A2.6 2.6 0 0 1 30.7 168.4 V169.6" strokeWidth={1.4} className="stroke-foreground/80" fill="none" />
+   568→      <Cursor x={48} y={168} />
+   569→      <path d="M54 162 l2 -2 M56 168 h3 M54 174 l2 2" strokeWidth={1.4} strokeLinecap="round" className="stroke-teal-500" />
+   570→      <Lab x={29} y={192} size={7}>Lock</Lab>
+   571→    </Frame>
+   572→  )
+   573→}
+   574→
+   575→function ImportExportFig() {
+   576→  return (
+   577→    <Frame label="A JSON project file flowing into the board and PNG and SVG image files flowing out">
+   578→      <defs>
+   579→        <ArrowHead id="af-ie-teal" />
+   580→      </defs>
+   581→      <rect x={5} y={5} width={350} height={190} rx={10} strokeWidth={1.5} className={canvasCls} />
+   582→      {/* JSON card */}
+   583→      <rect x={18} y={56} width={84} height={88} rx={8} strokeWidth={1.5} className={panelCls} />
+   584→      <path d="M88 56 L102 70 H88 Z" strokeWidth={1.2} strokeLinejoin="round" className="fill-muted stroke-border" />
+   585→      <text x={56} y={104} fontSize={18} textAnchor="middle" className="fill-muted-foreground/80 font-mono">{"{ }"}</text>
+   586→      <Lab x={60} y={132} size={7}>project.json</Lab>
+   587→      {/* board mini */}
+   588→      <rect x={138} y={72} width={84} height={56} rx={8} strokeWidth={1.5} className={canvasCls} />
+   589→      <rect x={146} y={84} width={26} height={16} rx={3} strokeWidth={1.2} className="fill-teal-500/15 stroke-teal-500" />
+   590→      <rect x={188} y={96} width={26} height={16} rx={3} strokeWidth={1.2} className={panelCls} />
+   591→      <path d="M172 92 C180 92 180 104 188 104" fill="none" strokeWidth={1.5} strokeDasharray="3 3" className="stroke-teal-500" />
+   592→      {/* PNG card */}
+   593→      <rect x={258} y={42} width={84} height={48} rx={8} strokeWidth={1.5} className={panelCls} />
+   594→      <rect x={266} y={52} width={20} height={16} rx={2} strokeWidth={1.2} className="stroke-muted-foreground/70" fill="none" />
+   595→      <path d="M268 65 l6 -6 4 4 5 -6 6 8" strokeWidth={1.2} strokeLinejoin="round" className="stroke-muted-foreground/70" fill="none" />
+   596→      <circle cx={281} cy={55.5} r={1.6} className="fill-amber-400" />
+   597→      <Lab x={300} y={82}>PNG image</Lab>
+   598→      {/* SVG card */}
+   599→      <rect x={258} y={106} width={84} height={48} rx={8} strokeWidth={1.5} className={panelCls} />
+   600→      <path d="M266 138 C270 122 280 122 286 134" fill="none" strokeWidth={1.5} className="stroke-teal-500" />
+   601→      <rect x={264} y={136} width={4} height={4} className="fill-teal-500" />
+   602→      <rect x={284} y={132} width={4} height={4} className="fill-teal-500" />
+   603→      <Lab x={300} y={146}>SVG vector</Lab>
+   604→      {/* flow arrows */}
+   605→      <path d="M102 100 C116 100 122 100 136 100" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ie-teal)" />
+   606→      <Lab x={119} y={90} size={7}>Import</Lab>
+   607→      <path d="M222 86 C240 86 242 66 256 66" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ie-teal)" />
+   608→      <path d="M222 114 C240 114 242 130 256 130" fill="none" strokeWidth={2} strokeDasharray="5 4" className="stroke-teal-500" markerEnd="url(#af-ie-teal)" />
+   609→      <Lab x={241} y={103} size={7}>Export</Lab>
+   610→    </Frame>
+   611→  )
+   612→}
+   613→
+   614→/* ---------------- dispatcher ---------------- */
+   615→
+   616→export function GuideFigure({ id, className }: { id: GuideFigureId; className?: string }) {
+   617→  const fig = (() => {
+   618→    switch (id) {
+   619→      case "welcome":
+   620→        return <WelcomeFig />
+   621→      case "workspace":
+   622→        return <WorkspaceFig />
+   623→      case "quick-menu":
+   624→        return <QuickMenuFig />
+   625→      case "add-elements":
+   626→        return <AddElementsFig />
+   627→      case "icons":
+   628→        return <IconsFig />
+   629→      case "connect":
+   630→        return <ConnectFig />
+   631→      case "style-elements":
+   632→        return <StyleElementsFig />
+   633→      case "style-connections":
+   634→        return <StyleConnectionsFig />
+   635→      case "edit":
+   636→        return <EditFig />
+   637→      case "view":
+   638→        return <ViewFig />
+   639→      case "lock":
+   640→        return <LockFig />
+   641→      case "import-export":
+   642→        return <ImportExportFig />
+   643→    }
+   644→  })()
+   645→  return <div className={cn("[&_svg]:h-auto [&_svg]:w-full", className)}>{fig}</div>
+   646→}
+   647→
