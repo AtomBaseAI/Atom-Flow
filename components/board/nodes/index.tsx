@@ -167,6 +167,39 @@ function LucideGlyph({ name, className, style }: { name: string; className?: str
   return <Comp className={className} style={style} aria-hidden />
 }
 
+/** Shared icon renderer for icon nodes — supports /vectors/*.svg and lucide:* sources. */
+function IconGlyph({
+  iconSrc,
+  color,
+  fillClass,
+}: {
+  iconSrc: string
+  color?: string
+  fillClass?: string
+}) {
+  if (!iconSrc) {
+    return <div className="text-xs text-neutral-400">No icon</div>
+  }
+  if (iconSrc.startsWith(LUCIDE_PREFIX)) {
+    return (
+      <LucideGlyph
+        name={iconSrc.slice(LUCIDE_PREFIX.length)}
+        className={fillClass ?? "h-[90%] w-[90%]"}
+        style={{ color: color ?? "var(--af-node-border)" }}
+      />
+    )
+  }
+  return (
+    <img
+      src={iconSrc || "/placeholder.svg"}
+      alt="icon"
+      className={fillClass ? `${fillClass} object-contain` : "object-contain"}
+      style={fillClass ? undefined : { height: "90%", width: "90%" }}
+      draggable={false}
+    />
+  )
+}
+
 export const RectangleNode = memo(function RectangleNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
   const [isEditing, setIsEditing] = useState(false)
   const fill = resolvedFill(data)
@@ -384,6 +417,8 @@ export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps
   const fill = resolvedFill(data)
   const borderColor = data.borderColor || "var(--af-node-border)"
   const iconSrc = data.iconSrc || ""
+  // "plain" = bare icon (no bottom label strip); legacy/undefined = labeled
+  const plain = data.iconVariant === "plain"
 
   return (
     <div className="group relative h-full w-full p-[3px]">
@@ -406,34 +441,154 @@ export const IconNode = memo(function IconNode({ id, data, selected }: NodeProps
           boxSizing: "border-box",
         }}
       >
-        <div className="flex-1 basis-[75%] min-h-0 flex items-center justify-center p-1">
-          {iconSrc ? (
-            iconSrc.startsWith(LUCIDE_PREFIX) ? (
-              <LucideGlyph
-                name={iconSrc.slice(LUCIDE_PREFIX.length)}
-                className="h-[90%] w-[90%]"
-                style={{ color: borderColor }}
+        {plain ? (
+          <div className="flex h-full min-h-0 w-full items-center justify-center p-1">
+            <IconGlyph iconSrc={iconSrc} color={borderColor} fillClass="h-[90%] w-[90%]" />
+          </div>
+        ) : (
+          <>
+            <div className="min-h-0 flex-1 basis-[75%] flex items-center justify-center p-1">
+              <IconGlyph iconSrc={iconSrc} color={borderColor} fillClass="h-[90%] w-[90%]" />
+            </div>
+
+            <div className="relative flex-none basis-[25%] min-h-[32px] border-t border-[rgba(0,0,0,0.08)]">
+              <EditableLabel id={id} data={data} align={data.align ?? "center"} onEditingChange={setIsEditing} />
+            </div>
+          </>
+        )}
+      </div>
+      {/* Handles live OUTSIDE the overflow-hidden body — inside they get
+          clipped and the connection drag never reaches them. */}
+      <Handles visible={!!selected && !isEditing} />
+    </div>
+  )
+})
+
+/**
+ * App-window style icon frame (default 80×60): title at the top-left,
+ * icon in the top-right corner, resizable and connectable like any shape.
+ * Double-click the title to rename it.
+ */
+export const IconFrameNode = memo(function IconFrameNode({
+  id,
+  data,
+  selected,
+}: NodeProps<Node<ShapeData & { iconSrc?: string }>>) {
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const rf = useReactFlow()
+  const borderColor = data.borderColor || "var(--af-node-border)"
+  const iconSrc = data.iconSrc || ""
+  // Corner icon is a square at least 2× the title font size (default title 8px → 16×16 icon)
+  const frameIconSize = Math.max(16, (data.fontSize ?? 8) * 2)
+
+  // Window body uses the theme card color unless the user picked a fill
+  const userFill = data.fill && data.fill !== "transparent" ? data.fill : undefined
+  const bg = userFill ? withAlpha(userFill, data.fillOpacity) : "var(--af-frame-bg)"
+
+  useEffect(() => {
+    if (editing) {
+      // Snapshot pre-edit state once so the title change is undoable
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:commit"))
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
+  }, [editing])
+
+  const commit = useCallback(
+    (val: string) => {
+      rf.setNodes((nds: any[]) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, label: val } } : n)))
+      setEditing(false)
+    },
+    [id, rf],
+  )
+
+  return (
+    <div className="group relative h-full w-full p-[3px]">
+      <NodeResizer
+        isVisible={selected && !editing}
+        color="#22d3ee"
+        minWidth={60}
+        minHeight={40}
+        lineStyle={{ strokeWidth: 1 }}
+      />
+      <div
+        className="relative flex h-full w-full flex-col overflow-hidden rounded-[4px]"
+        style={{
+          transform: `rotate(${data.rotation ?? 0}deg)`,
+          transformOrigin: "center",
+          background: bg,
+          borderColor,
+          borderStyle: data.borderStyle || "solid",
+          borderWidth: data.borderWidth ?? 1,
+          boxSizing: "border-box",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.10)",
+        }}
+      >
+        {/* Title bar — title top-left, icon top-right */}
+        <div className="flex flex-none items-center justify-between gap-1 border-b border-black/10 px-1 py-0.5 dark:border-white/15">
+          <div
+            className="min-w-0 flex-1"
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              setEditing(true)
+            }}
+          >
+            {editing ? (
+              <input
+                ref={inputRef}
+                defaultValue={data.label || ""}
+                onBlur={(e) => {
+                  e.stopPropagation()
+                  commit(e.target.value)
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation()
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    commit((e.target as HTMLInputElement).value)
+                  }
+                  if (e.key === "Escape") {
+                    e.preventDefault()
+                    setEditing(false)
+                  }
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-full rounded-sm px-0.5 outline-none"
+                style={{
+                  background: "var(--af-edit-bg)",
+                  color: data.fontColor || "var(--af-node-text)",
+                  fontWeight: data.fontWeight ?? 600,
+                  fontSize: (data.fontSize ?? 8) + "px",
+                }}
+                spellCheck={false}
+                aria-label="Edit frame title"
               />
             ) : (
-              <img
-                src={iconSrc || "/placeholder.svg"}
-                alt="icon"
-                className="max-h-full max-w-full object-contain"
-                style={{ height: "90%", width: "90%" }}
-                draggable={false}
-              />
-            )
-          ) : (
-            <div className="text-xs text-neutral-400">No icon</div>
-          )}
+              <span
+                className="block w-full truncate leading-[1.2]"
+                style={{
+                  color: data.fontColor || "var(--af-node-text)",
+                  fontWeight: data.fontWeight ?? 600,
+                  fontSize: (data.fontSize ?? 8) + "px",
+                  textAlign: "left",
+                }}
+              >
+                {data.label || ""}
+              </span>
+            )}
+          </div>
+          <div className="flex-none" aria-hidden style={{ width: frameIconSize, height: frameIconSize }}>
+            {iconSrc ? <IconGlyph iconSrc={iconSrc} color={borderColor} fillClass="h-full w-full" /> : null}
+          </div>
         </div>
 
-        <div className="relative flex-none basis-[25%] min-h-[32px] border-t border-[rgba(0,0,0,0.08)]">
-          <EditableLabel id={id} data={data} align={data.align ?? "center"} onEditingChange={setIsEditing} />
-        </div>
-
-        <Handles visible={!!selected && !isEditing} />
+        {/* Window body */}
+        <div className="min-h-0 flex-1" />
       </div>
+      {/* Handles live OUTSIDE the overflow-hidden body — inside they get
+          clipped and the connection drag never reaches them. */}
+      <Handles visible={!!selected && !editing} />
     </div>
   )
 })

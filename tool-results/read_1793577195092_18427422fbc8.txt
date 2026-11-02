@@ -1,0 +1,660 @@
+     1→"use client"
+     2→
+     3→import React from "react"
+     4→import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+     5→import {
+     6→  MousePointer2,
+     7→  Square,
+     8→  Circle,
+     9→  Type,
+    10→  Hand,
+    11→  ZoomIn,
+    12→  ZoomOut,
+    13→  Scan,
+    14→  Undo2,
+    15→  Redo2,
+    16→  TagIcon,
+    17→  Plus,
+    18→  Minus,
+    19→  Loader2,
+    20→} from "lucide-react"
+    21→import {
+    22→  Dialog,
+    23→  DialogContent,
+    24→  DialogDescription,
+    25→  DialogFooter,
+    26→  DialogHeader,
+    27→  DialogTitle,
+    28→} from "@/components/ui/dialog"
+    29→import { AWS_GROUPS, ICON_CATEGORIES, ICONS } from "@/lib/icons-manifest"
+    30→import { loadLucideRegistry, type LucideEntry, type LucideRegistry } from "@/lib/lucide-icon-registry"
+    31→import { DockIn } from "./dock-in"
+    32→import { cn } from "@/lib/utils"
+    33→
+    34→type Props = {
+    35→  active: "select" | "rect" | "ellipse" | "text" | "hand"
+    36→  onChangeTool: (t: Props["active"]) => void
+    37→  onQuickAdd?: (t: "rect" | "ellipse" | "text" | "line") => void
+    38→  onZoomIn?: () => void
+    39→  onZoomOut?: () => void
+    40→  onFitView?: () => void
+    41→  onOpenExport?: () => void // add export trigger
+    42→  onAddIcon?: (opts: { src: string; label: string }) => void
+    43→  onAddTag?: () => void // allow adding tag nodes
+    44→  /** Splash handover — when false every control stays hidden */
+    45→  booted?: boolean
+    46→  /** Offset into the global dock-in sequence so the rail follows the header controls */
+    47→  bootIndexBase?: number
+    48→}
+    49→
+    50→function ToolBtn({
+    51→  active,
+    52→  onClick,
+    53→  label,
+    54→  children,
+    55→}: {
+    56→  active?: boolean
+    57→  onClick?: () => void
+    58→  label: string
+    59→  children: React.ReactNode
+    60→}) {
+    61→  return (
+    62→    <Tooltip>
+    63→      <TooltipTrigger asChild>
+    64→        <button
+    65→          aria-label={label}
+    66→          onClick={onClick}
+    67→          className={cn(
+    68→            "flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-foreground",
+    69→            "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500",
+    70→            active && "border-teal-500 text-teal-600 dark:text-white",
+    71→          )}
+    72→        >
+    73→          {children}
+    74→        </button>
+    75→      </TooltipTrigger>
+    76→      <TooltipContent side="right" align="center" sideOffset={6}>
+    77→        {label}
+    78→      </TooltipContent>
+    79→    </Tooltip>
+    80→  )
+    81→}
+    82→
+    83→function LucideTile({
+    84→  entry,
+    85→  selected,
+    86→  onSelect,
+    87→}: {
+    88→  entry: LucideEntry
+    89→  selected: boolean
+    90→  onSelect: () => void
+    91→}) {
+    92→  const IconComp = entry.comp
+    93→  return (
+    94→    <button
+    95→      onClick={onSelect}
+    96→      className={cn(
+    97→        "flex aspect-square items-center justify-center rounded border p-1.5 transition-colors",
+    98→        selected
+    99→          ? "border-teal-600 bg-teal-500/10 text-teal-700 dark:text-white ring-1 ring-teal-600"
+   100→          : "border-border bg-muted text-foreground hover:bg-accent",
+   101→      )}
+   102→      title={entry.name + (entry.experimental ? " (experimental)" : "")}
+   103→      aria-pressed={selected}
+   104→      aria-label={`Select ${entry.name} icon`}
+   105→    >
+   106→      <IconComp className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+   107→    </button>
+   108→  )
+   109→}
+   110→
+   111→export default function LeftToolbar({
+   112→  active,
+   113→  onChangeTool,
+   114→  onQuickAdd,
+   115→  onZoomIn,
+   116→  onZoomOut,
+   117→  onFitView,
+   118→  onOpenExport,
+   119→  onAddIcon,
+   120→  onAddTag,
+   121→  booted = true,
+   122→  bootIndexBase = 0,
+   123→}: Props) {
+   124→  const [iconOpen, setIconOpen] = React.useState(false)
+   125→  const [category, setCategory] = React.useState<(typeof ICON_CATEGORIES)[number]>("all")
+   126→  const [search, setSearch] = React.useState("")
+   127→  const [selected, setSelected] = React.useState<{ cat: string; name: string } | null>(null)
+   128→  const [bottomText, setBottomText] = React.useState("")
+   129→
+   130→  // Lucide "system" group state
+   131→  const [systemSub, setSystemSub] = React.useState<string>("all")
+   132→  // AWS sub-category state (service groups inside the aws category)
+   133→  const [awsSub, setAwsSub] = React.useState<string>("all")
+   134→  const [lucideReg, setLucideReg] = React.useState<LucideRegistry | null>(null)
+   135→  const [regLoading, setRegLoading] = React.useState(false)
+   136→  const regRequestedRef = React.useRef(false)
+   137→
+   138→  const ensureRegistry = React.useCallback(() => {
+   139→    if (regRequestedRef.current) return
+   140→    regRequestedRef.current = true
+   141→    setRegLoading(true)
+   142→    loadLucideRegistry()
+   143→      .then((reg) => setLucideReg(reg))
+   144→      .catch(() => {})
+   145→      .finally(() => setRegLoading(false))
+   146→  }, [])
+   147→
+   148→  React.useEffect(() => {
+   149→    if (iconOpen && category === "system") ensureRegistry()
+   150→  }, [iconOpen, category, ensureRegistry])
+   151→
+   152→  const allItems = React.useMemo(() => {
+   153→    const entries = Object.entries(ICONS).flatMap(([cat, arr]) => arr.map((name) => ({ cat, name })))
+   154→    return entries
+   155→  }, [])
+   156→  const items = React.useMemo(() => {
+   157→    let list = category === "all" ? allItems : allItems.filter((i) => i.cat === category)
+   158→    if (search.trim()) {
+   159→      const q = search.toLowerCase()
+   160→      list = list.filter((i) => i.name.toLowerCase().includes(q))
+   161→    }
+   162→    return list
+   163→  }, [allItems, category, search])
+   164→
+   165→  const isSystem = category === "system"
+   166→  const isAws = category === "aws"
+   167→
+   168→  // AWS service groups, filtered by sub-category chip + search
+   169→  const awsGroups = React.useMemo(() => {
+   170→    const q = search.trim().toLowerCase()
+   171→    return AWS_GROUPS.map((g) => ({
+   172→      slug: g.slug,
+   173→      title: g.title,
+   174→      entries: q ? g.icons.filter((n) => n.toLowerCase().includes(q)) : g.icons,
+   175→    })).filter((g) => (awsSub === "all" || g.slug === awsSub) && g.entries.length > 0)
+   176→  }, [awsSub, search])
+   177→  const awsTotal = React.useMemo(
+   178→    () => AWS_GROUPS.reduce((acc, g) => acc + g.icons.length, 0),
+   179→    [],
+   180→  )
+   181→
+   182→  const systemGroups = React.useMemo(() => {
+   183→    if (!lucideReg) return []
+   184→    const q = search.trim().toLowerCase()
+   185→    if (!q) {
+   186→      if (systemSub === "all") return lucideReg.groups
+   187→      return lucideReg.groups.filter((g) => g.slug === systemSub)
+   188→    }
+   189→    // Searching inside the system group spans every sub-group
+   190→    return lucideReg.groups
+   191→      .map((g) => ({
+   192→        ...g,
+   193→        entries: g.entries.filter(
+   194→          (e) =>
+   195→            e.name.includes(q) ||
+   196→            e.tags.some((t) => t.toLowerCase().includes(q)) ||
+   197→            e.aliases.some((a) => a.toLowerCase().includes(q)),
+   198→        ),
+   199→      }))
+   200→      .filter((g) => g.entries.length > 0)
+   201→  }, [lucideReg, systemSub, search])
+   202→
+   203→  const selectedLucide = selected?.cat === "system" ? (lucideReg?.byName.get(selected.name) ?? null) : null
+   204→  const selectedSrc = selected
+   205→    ? selected.cat === "system"
+   206→      ? `lucide:${selected.name}`
+   207→      : `/vectors/${selected.cat}/${selected.name}.svg`
+   208→    : ""
+   209→
+   210→  return (
+   211→    <TooltipProvider>
+   212→      {" "}
+   213→      {/* Wrap the entire component in TooltipProvider */}
+   214→      <div className="pointer-events-auto absolute bottom-20 left-4 top-14 z-20 flex flex-col">
+   215→        <div className="icon-picker-scroll my-auto flex max-h-full w-10 flex-col items-center gap-1 overflow-y-auto py-1">
+   216→          <DockIn index={bootIndexBase} booted={booted}>
+   217→            <ToolBtn onClick={() => setIconOpen(true)} label="Add Icon">
+   218→              <Plus className="h-4 w-4" />
+   219→            </ToolBtn>
+   220→          </DockIn>
+   221→
+   222→          {/* 1. Selection */}
+   223→          <DockIn index={bootIndexBase + 1} booted={booted}>
+   224→            <ToolBtn active={active === "select"} onClick={() => onChangeTool("select")} label="Select">
+   225→              <MousePointer2 className="h-4 w-4" />
+   226→            </ToolBtn>
+   227→          </DockIn>
+   228→
+   229→          {/* 2. Square */}
+   230→          <DockIn index={bootIndexBase + 2} booted={booted}>
+   231→            <ToolBtn
+   232→              active={active === "rect"}
+   233→              onClick={() => (onQuickAdd ? onQuickAdd("rect") : onChangeTool("rect"))}
+   234→              label="Rectangle"
+   235→            >
+   236→              <Square className="h-4 w-4" />
+   237→            </ToolBtn>
+   238→          </DockIn>
+   239→
+   240→          {/* 3. Ellipse */}
+   241→          <DockIn index={bootIndexBase + 3} booted={booted}>
+   242→            <ToolBtn
+   243→              active={active === "ellipse"}
+   244→              onClick={() => (onQuickAdd ? onQuickAdd("ellipse") : onChangeTool("ellipse"))}
+   245→              label="Ellipse"
+   246→            >
+   247→              <Circle className="h-4 w-4" />
+   248→            </ToolBtn>
+   249→          </DockIn>
+   250→
+   251→          {/* 4. Line */}
+   252→          <DockIn index={bootIndexBase + 4} booted={booted}>
+   253→            <ToolBtn onClick={() => (onQuickAdd ? onQuickAdd("line") : onChangeTool("select"))} label="Line">
+   254→              <Minus className="h-4 w-4" />
+   255→            </ToolBtn>
+   256→          </DockIn>
+   257→
+   258→          {/* spacer */}
+   259→          <div className="h-1" aria-hidden />
+   260→
+   261→          {/* Tag */}
+   262→          <DockIn index={bootIndexBase + 5} booted={booted}>
+   263→            <ToolBtn onClick={onAddTag} label="Tag">
+   264→              <TagIcon className="h-4 w-4" />
+   265→            </ToolBtn>
+   266→          </DockIn>
+   267→
+   268→          {/* 7. Text */}
+   269→          <DockIn index={bootIndexBase + 6} booted={booted}>
+   270→            <ToolBtn
+   271→              active={active === "text"}
+   272→              onClick={() => (onQuickAdd ? onQuickAdd("text") : onChangeTool("text"))}
+   273→              label="Text"
+   274→            >
+   275→              <Type className="h-4 w-4" />
+   276→            </ToolBtn>
+   277→          </DockIn>
+   278→
+   279→          {/* spacer */}
+   280→          <div className="h-1" aria-hidden />
+   281→
+   282→          {/* Hand (pan) */}
+   283→          <DockIn index={bootIndexBase + 7} booted={booted}>
+   284→            <ToolBtn active={active === "hand"} onClick={() => onChangeTool("hand")} label="Hand">
+   285→              <Hand className="h-4 w-4" />
+   286→            </ToolBtn>
+   287→          </DockIn>
+   288→
+   289→          {/* Zoom controls */}
+   290→          <DockIn index={bootIndexBase + 8} booted={booted}>
+   291→            <ToolBtn onClick={onZoomIn} label="Zoom in">
+   292→              <ZoomIn className="h-4 w-4" />
+   293→            </ToolBtn>
+   294→          </DockIn>
+   295→          <DockIn index={bootIndexBase + 9} booted={booted}>
+   296→            <ToolBtn onClick={onZoomOut} label="Zoom out">
+   297→              <ZoomOut className="h-4 w-4" />
+   298→            </ToolBtn>
+   299→          </DockIn>
+   300→          <DockIn index={bootIndexBase + 10} booted={booted}>
+   301→            <ToolBtn onClick={onFitView} label="Fit view">
+   302→              <Scan className="h-4 w-4" />
+   303→            </ToolBtn>
+   304→          </DockIn>
+   305→
+   306→          {/* Undo / Redo */}
+   307→          <DockIn index={bootIndexBase + 11} booted={booted}>
+   308→            <ToolBtn
+   309→              onClick={() => {
+   310→                if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:undo"))
+   311→              }}
+   312→              label="Undo"
+   313→            >
+   314→              <Undo2 className="h-4 w-4" />
+   315→            </ToolBtn>
+   316→          </DockIn>
+   317→          <DockIn index={bootIndexBase + 12} booted={booted}>
+   318→            <ToolBtn
+   319→              onClick={() => {
+   320→                if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:redo"))
+   321→              }}
+   322→              label="Redo"
+   323→            >
+   324→              <Redo2 className="h-4 w-4" />
+   325→            </ToolBtn>
+   326→          </DockIn>
+   327→        </div>
+   328→
+   329→        {/* Dialog replacement */}
+   330→        {iconOpen && (
+   331→          <Dialog open={iconOpen} onOpenChange={setIconOpen}>
+   332→            <DialogContent
+   333→              className={cn(
+   334→                "border-border bg-card text-foreground",
+   335→                // Centering, sizing and viewport-fit fixes
+   336→                "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+   337→                "max-h-[90vh] w-[94vw] max-w-2xl overflow-y-auto md:max-w-4xl", // wider so grid doesn't collapse
+   338→                "p-4 rounded-lg shadow-xl",
+   339→              )}
+   340→            >
+   341→              <DialogHeader>
+   342→                <DialogTitle className="text-foreground text-sm">Add Icon</DialogTitle>
+   343→                <DialogDescription className="sr-only">
+   344→                  Choose an icon, optionally filter by folder, and set bottom text
+   345→                </DialogDescription>
+   346→              </DialogHeader>
+   347→
+   348→              <div className="min-w-0 space-y-3 w-full">
+   349→                {/* Search + category badges */}
+   350→                <div className="space-y-2">
+   351→                  <label className="block text-xs text-muted-foreground" htmlFor="icon-search">
+   352→                    Search icons
+   353→                  </label>
+   354→                  <input
+   355→                    id="icon-search"
+   356→                    value={search}
+   357→                    onChange={(e) => setSearch(e.target.value)}
+   358→                    className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
+   359→                    placeholder={isSystem ? "Search by name or tag (e.g., house, arrow, cloud)" : "Search by name (e.g., aws, angular, ec2)"}
+   360→                  />
+   361→                  <div className="flex flex-wrap items-center gap-2 pt-1">
+   362→                    {ICON_CATEGORIES.map((cat) => (
+   363→                      <button
+   364→                        key={cat}
+   365→                        onClick={() => {
+   366→                          setCategory(cat)
+   367→                          setSelected(null)
+   368→                          setAwsSub("all")
+   369→                        }}
+   370→                        className={cn(
+   371→                          "rounded-full px-3 py-1 text-xs border",
+   372→                          category === cat
+   373→                            ? "border-teal-600 bg-teal-600 text-white"
+   374→                            : "border-border bg-card text-foreground hover:bg-accent",
+   375→                        )}
+   376→                        aria-pressed={category === cat}
+   377→                      >
+   378→                        {cat}
+   379→                      </button>
+   380→                    ))}
+   381→                  </div>
+   382→
+   383→                  {/* System sub-groups (lucide categories) */}
+   384→                  {isSystem && lucideReg && (
+   385→                    <div className="max-h-20 overflow-y-auto rounded-md border border-border bg-background p-1.5">
+   386→                      <div className="flex flex-wrap items-center gap-1.5">
+   387→                        <button
+   388→                          onClick={() => setSystemSub("all")}
+   389→                          className={cn(
+   390→                            "rounded-full border px-2 py-0.5 text-[10px]",
+   391→                            systemSub === "all"
+   392→                              ? "border-teal-600 bg-teal-600 text-white"
+   393→                              : "border-border bg-card text-muted-foreground hover:bg-accent",
+   394→                          )}
+   395→                          aria-pressed={systemSub === "all"}
+   396→                        >
+   397→                          all ({lucideReg.total})
+   398→                        </button>
+   399→                        {lucideReg.groups.map((g) => (
+   400→                          <button
+   401→                            key={g.slug}
+   402→                            onClick={() => setSystemSub(g.slug)}
+   403→                            className={cn(
+   404→                              "rounded-full border px-2 py-0.5 text-[10px]",
+   405→                              systemSub === g.slug
+   406→                                ? "border-teal-600 bg-teal-600 text-white"
+   407→                                : "border-border bg-card text-muted-foreground hover:bg-accent",
+   408→                            )}
+   409→                            aria-pressed={systemSub === g.slug}
+   410→                          >
+   411→                            {g.title.toLowerCase()} ({g.entries.length})
+   412→                          </button>
+   413→                        ))}
+   414→                      </div>
+   415→                    </div>
+   416→                  )}
+   417→                  {/* AWS sub-categories (service groups) */}
+   418→                  {isAws && (
+   419→                    <div className="max-h-20 overflow-y-auto rounded-md border border-border bg-background p-1.5">
+   420→                      <div className="flex flex-wrap items-center gap-1.5">
+   421→                        <button
+   422→                          onClick={() => setAwsSub("all")}
+   423→                          className={cn(
+   424→                            "rounded-full border px-2 py-0.5 text-[10px]",
+   425→                            awsSub === "all"
+   426→                              ? "border-teal-600 bg-teal-600 text-white"
+   427→                              : "border-border bg-card text-muted-foreground hover:bg-accent",
+   428→                          )}
+   429→                          aria-pressed={awsSub === "all"}
+   430→                        >
+   431→                          all ({awsTotal})
+   432→                        </button>
+   433→                        {AWS_GROUPS.map((g) => (
+   434→                          <button
+   435→                            key={g.slug}
+   436→                            onClick={() => setAwsSub(g.slug)}
+   437→                            className={cn(
+   438→                              "rounded-full border px-2 py-0.5 text-[10px]",
+   439→                              awsSub === g.slug
+   440→                                ? "border-teal-600 bg-teal-600 text-white"
+   441→                                : "border-border bg-card text-muted-foreground hover:bg-accent",
+   442→                            )}
+   443→                            aria-pressed={awsSub === g.slug}
+   444→                          >
+   445→                            {g.title.toLowerCase()} ({g.icons.length})
+   446→                          </button>
+   447→                        ))}
+   448→                      </div>
+   449→                    </div>
+   450→                  )}
+   451→                </div>
+   452→                <div className="rounded-md border border-border bg-background p-3">
+   453→                  <div className="flex items-center gap-3">
+   454→                    <div className="flex h-16 w-16 items-center justify-center rounded bg-muted">
+   455→                      {selected ? (
+   456→                        selectedLucide ? (
+   457→                          <selectedLucide.comp className="h-10 w-10 text-foreground" aria-hidden />
+   458→                        ) : selected.cat === "system" ? (
+   459→                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
+   460→                        ) : (
+   461→                          <img
+   462→                            src={selectedSrc || "/placeholder.svg"}
+   463→                            alt={`${selected.name} preview`}
+   464→                            className="max-h-14 max-w-14 object-contain"
+   465→                            draggable={false}
+   466→                          />
+   467→                        )
+   468→                      ) : (
+   469→                        <span className="text-xs text-muted-foreground">Preview</span>
+   470→                      )}
+   471→                    </div>
+   472→                    <div className="flex-1 min-w-0">
+   473→                      <div className="truncate text-sm text-foreground">
+   474→                        {selected ? (selectedLucide?.experimental ? `${selected.name} (experimental)` : selected.name) : "No icon selected"}
+   475→                      </div>
+   476→                      <div className="text-xs text-muted-foreground">
+   477→                        {selected ? (selected.cat === "system" ? `system / lucide${selectedLucide ? "" : " (loading)"}` : selected.cat) : "Choose an icon"}
+   478→                      </div>
+   479→                    </div>
+   480→                  </div>
+   481→                </div>
+   482→
+   483→                {/* Results grid - widen and keep stable height */}
+   484→                <div className="max-h-[420px] min-h-[240px] overflow-x-hidden overflow-y-auto rounded-md border border-border bg-background p-2 icon-picker-scroll">
+   485→                  {isSystem ? (
+   486→                    regLoading && !lucideReg ? (
+   487→                      <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+   488→                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+   489→                        Loading system icons…
+   490→                      </div>
+   491→                    ) : !lucideReg ? (
+   492→                      <div className="py-6 text-center text-xs text-muted-foreground">Could not load system icons</div>
+   493→                    ) : systemGroups.length === 0 ? (
+   494→                      <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
+   495→                    ) : (
+   496→                      <div className="space-y-4">
+   497→                        {systemGroups.map((g) => (
+   498→                          <section
+   499→                            key={g.slug}
+   500→                            data-group={g.slug}
+   501→                            style={{
+   502→                              contentVisibility: "auto",
+   503→                              containIntrinsicSize: `auto 832px auto ${Math.ceil(g.entries.length / 10) * 60 + 34}px`,
+   504→                            } as React.CSSProperties}
+   505→                          >
+   506→                            <header className="flex items-center justify-between px-1 pb-1.5">
+   507→                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   508→                                {g.title}
+   509→                              </span>
+   510→                              <span className="text-[10px] text-muted-foreground/70">{g.entries.length}</span>
+   511→                            </header>
+   512→                            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+   513→                              {g.entries.map((e) => (
+   514→                                <LucideTile
+   515→                                  key={`${g.slug}-${e.name}`}
+   516→                                  entry={e}
+   517→                                  selected={selected?.cat === "system" && selected?.name === e.name}
+   518→                                  onSelect={() => setSelected({ cat: "system", name: e.name })}
+   519→                                />
+   520→                              ))}
+   521→                            </div>
+   522→                          </section>
+   523→                        ))}
+   524→                      </div>
+   525→                    )
+   526→                  ) : isAws ? (
+   527→                    awsGroups.length === 0 ? (
+   528→                      <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
+   529→                    ) : (
+   530→                      <div className="space-y-4">
+   531→                        {awsGroups.map((g) => (
+   532→                          <section
+   533→                            key={g.slug}
+   534→                            data-group={g.slug}
+   535→                            style={{
+   536→                              contentVisibility: "auto",
+   537→                              containIntrinsicSize: `auto 832px auto ${Math.ceil(g.entries.length / 10) * 60 + 34}px`,
+   538→                            } as React.CSSProperties}
+   539→                          >
+   540→                            <header className="flex items-center justify-between px-1 pb-1.5">
+   541→                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   542→                                {g.title}
+   543→                              </span>
+   544→                              <span className="text-[10px] text-muted-foreground/70">{g.entries.length}</span>
+   545→                            </header>
+   546→                            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+   547→                              {g.entries.map((name) => {
+   548→                                const isSel = selected?.cat === "aws" && selected?.name === name
+   549→                                return (
+   550→                                  <button
+   551→                                    key={name}
+   552→                                    onClick={() => setSelected({ cat: "aws", name })}
+   553→                                    className={cn(
+   554→                                      "flex aspect-square items-center justify-center rounded border p-1",
+   555→                                      isSel ? "border-teal-600 bg-teal-500/10" : "border-border bg-muted hover:bg-accent",
+   556→                                    )}
+   557→                                    title={name}
+   558→                                    aria-pressed={isSel}
+   559→                                    aria-label={`Select ${name} icon`}
+   560→                                  >
+   561→                                    <img
+   562→                                      src={`/vectors/aws/${name}.svg`}
+   563→                                      alt={name}
+   564→                                      className="max-h-full max-w-full object-contain"
+   565→                                      draggable={false}
+   566→                                      loading="lazy"
+   567→                                      decoding="async"
+   568→                                    />
+   569→                                  </button>
+   570→                                )
+   571→                              })}
+   572→                            </div>
+   573→                          </section>
+   574→                        ))}
+   575→                      </div>
+   576→                    )
+   577→                  ) : items.length === 0 ? (
+   578→                    <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
+   579→                  ) : (
+   580→                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+   581→                      {items.map((it) => {
+   582→                        const src = `/vectors/${it.cat}/${it.name}.svg`
+   583→                        const isSel = selected?.cat === it.cat && selected?.name === it.name
+   584→                        return (
+   585→                          <button
+   586→                            key={`${it.cat}-${it.name}`}
+   587→                            onClick={() => setSelected({ cat: it.cat, name: it.name })}
+   588→                            className={cn(
+   589→                              "flex aspect-square items-center justify-center rounded border p-1",
+   590→                              isSel ? "border-teal-600 bg-teal-500/10" : "border-border bg-muted hover:bg-accent",
+   591→                            )}
+   592→                            title={it.name}
+   593→                            aria-pressed={isSel}
+   594→                          >
+   595→                            <img
+   596→                              src={src || "/placeholder.svg"}
+   597→                              alt={it.name}
+   598→                              className="max-h-full max-w-full object-contain"
+   599→                              draggable={false}
+   600→                              loading="lazy"
+   601→                              decoding="async"
+   602→                            />
+   603→                          </button>
+   604→                        )
+   605→                      })}
+   606→                    </div>
+   607→                  )}
+   608→                </div>
+   609→
+   610→                {/* Bottom text */}
+   611→                <div className="space-y-2">
+   612→                  <label className="block text-xs text-muted-foreground" htmlFor="icon-text">
+   613→                    Bottom text
+   614→                  </label>
+   615→                  <input
+   616→                    id="icon-text"
+   617→                    value={bottomText}
+   618→                    onChange={(e) => setBottomText(e.target.value)}
+   619→                    className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
+   620→                    placeholder="e.g., AWS Lambda"
+   621→                  />
+   622→                </div>
+   623→              </div>
+   624→
+   625→              <DialogFooter className="mt-2">
+   626→                <button
+   627→                  onClick={() => setIconOpen(false)}
+   628→                  className="rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-accent"
+   629→                >
+   630→                  Cancel
+   631→                </button>
+   632→                <button
+   633→                  disabled={!selected}
+   634→                  onClick={() => {
+   635→                    if (!selected) return
+   636→                    onAddIcon?.({ src: selectedSrc, label: bottomText })
+   637→                    setIconOpen(false)
+   638→                    setBottomText("")
+   639→                    setSearch("")
+   640→                    setSelected(null)
+   641→                    setCategory("all")
+   642→                    setSystemSub("all")
+   643→                    setAwsSub("all")
+   644→                  }}
+   645→                  className={cn(
+   646→                    "rounded-md border px-3 py-1.5 text-xs",
+   647→                    selected ? "border-teal-600 bg-teal-600 text-white" : "border-border bg-card text-muted-foreground",
+   648→                  )}
+   649→                >
+   650→                  Add
+   651→                </button>
+   652→              </DialogFooter>
+   653→            </DialogContent>
+   654→          </Dialog>
+   655→        )}
+   656→      </div>
+   657→    </TooltipProvider>
+   658→  )
+   659→}
+   660→

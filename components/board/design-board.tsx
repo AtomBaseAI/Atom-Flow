@@ -27,6 +27,8 @@ import "@xyflow/react/dist/style.css"
 
 import LeftToolbar from "./left-toolbar"
 import BottomToolbar from "./bottom-toolbar"
+import SplashScreen from "./splash-screen"
+import { DockIn } from "./dock-in"
 import {
   HexagonNode,
   DiamondNode,
@@ -35,6 +37,7 @@ import {
   RectangleNode,
   TextNode,
   IconNode,
+  IconFrameNode,
   TagNode,
   LineNode,
 } from "./nodes"
@@ -88,6 +91,8 @@ export type ShapeData = {
   borderStyle?: "solid" | "dashed"
   borderWidth?: number
   iconSrc?: string
+  /** Which icon-node rendering to use ("labeled" = legacy default). */
+  iconVariant?: "plain" | "labeled" | "frame"
   rotation?: number
 }
 
@@ -354,6 +359,7 @@ const nodeTypes: NodeTypes = {
   hexagon: HexagonNode,
   text: TextNode,
   icon: IconNode,
+  iconFrame: IconFrameNode,
   tag: TagNode,
   line: LineNode as any,
 }
@@ -787,6 +793,21 @@ function BoardInner() {
     probes: { id: number; x: number; y: number }[]
     moved: boolean
   } | null>(null)
+
+  // ---- Boot sequence ----
+  // "splash": only the HyperText title is visible (all controls hidden).
+  // "docking": title fades out while every control docks in one by one.
+  // "ready": splash unmounted, board fully interactive.
+  // The board keeps booting underneath the splash, so localStorage state is
+  // restored (or the empty starter board is used) exactly as before.
+  const [bootPhase, setBootPhase] = useState<"splash" | "docking" | "ready">("splash")
+  const booted = bootPhase !== "splash"
+
+  useEffect(() => {
+    if (bootPhase !== "splash") return
+    const t = window.setTimeout(() => setBootPhase("docking"), 5000)
+    return () => window.clearTimeout(t)
+  }, [bootPhase])
 
   const openRadialMenu = useCallback((pt: { x: number; y: number }) => {
     // The radial menu shows mode-appropriate actions in BOTH editing and
@@ -1376,6 +1397,8 @@ function BoardInner() {
       {/* Left tool rail — entirely hidden in view-only mode */}
       {!locked && (
       <LeftToolbar
+        booted={booted}
+        bootIndexBase={6}
         active={tool as "select" | "rect" | "ellipse" | "text" | "hand"}
         onChangeTool={setTool}
         onQuickAdd={quickAdd}
@@ -1388,21 +1411,58 @@ function BoardInner() {
         onAddIcon={(data) => {
           const pos = rf.screenToFlowPosition(getBoardScreenCenter())
           const id = newNodeId()
-          const newNode: Node<ShapeData> = {
-            id,
-            type: "icon" as any,
-            position: pos,
-            data: {
-              label: data.label || "",
-              iconSrc: data.src,
-              fill: "transparent",
-              fontSize: 8,
-              fontWeight: 700,
-              align: "center",
-              borderStyle: "solid",
-              borderWidth: 1,
-            },
-            style: { width: 96, height: 96 },
+          const common = {
+            fill: "transparent",
+            borderStyle: "solid" as const,
+            borderWidth: 1,
+            iconSrc: data.src,
+          }
+          let newNode: Node<ShapeData>
+          if (data.style === "frame") {
+            // App-window style: 160×120, title top-left, 2× icon top-right
+            newNode = {
+              id,
+              type: "iconFrame" as any,
+              position: pos,
+              data: {
+                ...common,
+                label: data.label || "",
+                iconVariant: "frame",
+                fontSize: 8,
+                fontWeight: 600,
+                align: "left",
+              },
+              style: { width: 160, height: 120 },
+            }
+          } else if (data.style === "icon") {
+            // Bare icon only — no label strip
+            newNode = {
+              id,
+              type: "icon" as any,
+              position: pos,
+              data: {
+                ...common,
+                label: "",
+                iconVariant: "plain",
+              },
+              style: { width: 96, height: 96 },
+            }
+          } else {
+            // Icon with bottom text (classic)
+            newNode = {
+              id,
+              type: "icon" as any,
+              position: pos,
+              data: {
+                ...common,
+                label: data.label || "",
+                iconVariant: "labeled",
+                fontSize: 8,
+                fontWeight: 700,
+                align: "center",
+              },
+              style: { width: 96, height: 96 },
+            }
           }
           commitHistory()
           setNodes((nds) => nds.concat(newNode))
@@ -1440,36 +1500,42 @@ function BoardInner() {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
-                aria-label={isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                onClick={toggleFullscreen}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                {isFullscreen || pseudoFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </button>
+              <DockIn index={0} booted={booted}>
+                <button
+                  aria-label={isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                  onClick={toggleFullscreen}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  {isFullscreen || pseudoFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+              </DockIn>
             </TooltipTrigger>
             <TooltipContent side="bottom" align="start" sideOffset={6}>
               {isFullscreen || pseudoFullscreen ? "Exit fullscreen" : "Fullscreen"}
             </TooltipContent>
           </Tooltip>
-          <AnimatedThemeToggler />
+          <DockIn index={1} booted={booted}>
+            <AnimatedThemeToggler />
+          </DockIn>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-label={`Background: ${BG_LABELS[bgVariant]}`}
-                aria-pressed={bgVariant !== "plain"}
-                onClick={cycleBgVariant}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500"
-              >
-                {bgVariant === "plain" ? (
-                  <Square className="h-4 w-4" />
-                ) : bgVariant === "grid" ? (
-                  <Grid3x3 className="h-4 w-4" />
-                ) : (
-                  <Grip className="h-4 w-4" />
-                )}
-              </button>
+              <DockIn index={2} booted={booted}>
+                <button
+                  type="button"
+                  aria-label={`Background: ${BG_LABELS[bgVariant]}`}
+                  aria-pressed={bgVariant !== "plain"}
+                  onClick={cycleBgVariant}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500"
+                >
+                  {bgVariant === "plain" ? (
+                    <Square className="h-4 w-4" />
+                  ) : bgVariant === "grid" ? (
+                    <Grid3x3 className="h-4 w-4" />
+                  ) : (
+                    <Grip className="h-4 w-4" />
+                  )}
+                </button>
+              </DockIn>
             </TooltipTrigger>
             <TooltipContent side="bottom" align="start" sideOffset={6}>
               Background: {BG_LABELS[bgVariant]} — click for{" "}
@@ -1485,17 +1551,19 @@ function BoardInner() {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button
-                aria-label={locked ? "Unlock board" : "Lock board"}
-                aria-pressed={locked}
-                onClick={toggleLocked}
-                className={cn(
-                  "inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card focus:outline-none focus:ring-2 focus:ring-teal-500",
-                  locked ? "border-teal-500 text-teal-600 dark:text-white" : "border-border text-foreground hover:bg-accent",
-                )}
-              >
-                {locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
-              </button>
+              <DockIn index={19} booted={booted}>
+                <button
+                  aria-label={locked ? "Unlock board" : "Lock board"}
+                  aria-pressed={locked}
+                  onClick={toggleLocked}
+                  className={cn(
+                    "inline-flex h-8 w-8 items-center justify-center rounded-md border bg-card focus:outline-none focus:ring-2 focus:ring-teal-500",
+                    locked ? "border-teal-500 text-teal-600 dark:text-white" : "border-border text-foreground hover:bg-accent",
+                  )}
+                >
+                  {locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
+                </button>
+              </DockIn>
             </TooltipTrigger>
             <TooltipContent side="top" align="start" sideOffset={6}>
               {locked ? "Unlock board" : "Lock board (view only)"}
@@ -1512,6 +1580,7 @@ function BoardInner() {
       {/* Top-right actions — editing-only, hidden while locked */}
       {!locked && (
       <div className="pointer-events-auto absolute right-4 top-4 z-20 flex items-center gap-2">
+        <DockIn index={3} booted={booted}>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <button
@@ -1542,7 +1611,9 @@ function BoardInner() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </DockIn>
 
+        <DockIn index={4} booted={booted}>
         <button
           aria-label="Import"
           onClick={() => {
@@ -1555,7 +1626,9 @@ function BoardInner() {
           <Upload className="h-4 w-4" />
           <span className="hidden sm:inline">Import</span>
         </button>
+        </DockIn>
 
+        <DockIn index={5} booted={booted}>
         <button
           aria-label="Export"
           onClick={() => setExportOpen(true)}
@@ -1565,6 +1638,7 @@ function BoardInner() {
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Export</span>
         </button>
+        </DockIn>
       </div>
       )}
 
@@ -1842,6 +1916,14 @@ function BoardInner() {
         items={radialItems}
         onClose={() => setRadialOpen(false)}
       />
+
+      {/* Opening sequence: HyperText title → staggered dock-in of all controls */}
+      {bootPhase !== "ready" && (
+        <SplashScreen
+          leaving={bootPhase === "docking"}
+          onExited={() => setBootPhase("ready")}
+        />
+      )}
     </div>
   )
 }
