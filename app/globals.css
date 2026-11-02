@@ -159,6 +159,20 @@
   }
 }
 
+/* ---- Edge layering: connectors always render ABOVE nodes ----------------
+   In @xyflow/react each edge is its own absolutely-positioned <svg> whose
+   inline z-index (0 by default, ~1000+ for selected/nested endpoints) ties or
+   loses against node wrappers — and the nodes container comes later in the
+   DOM, so on a tie nodes paint over edges and a connector disappears under
+   any element it crosses (e.g. an edge routed across the AWS Cloud frame).
+   Elevate every edge svg above the node layer: node z-index peaks at
+   1000 (SELECTED_NODE_Z) + 10 per root group, so 2000 clears every case.
+   The library's own connection line (1001) and edge hit-corridor keep working
+   because only the visible strokes capture the pointer. */
+.react-flow__edges > svg {
+  z-index: 2000 !important;
+}
+
 /* Edges: the visible connector is 1px, so custom edges draw a wide invisible
    "interaction" corridor. Give affordance: pointer cursor, plus a soft teal
    band that appears over the corridor on hover / selection. */

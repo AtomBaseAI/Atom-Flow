@@ -39,7 +39,7 @@ function fallbackPath(props: EdgeProps): string {
  *     orthogonal route is blocked.
  */
 export default function SmartEdge(props: EdgeProps) {
-  const { id, source, target, style } = props
+  const { id, source, target, style, animated } = props
 
   // Subscribe to the user-facing `nodes` array: React Flow replaces its
   // reference on every position/dimension change (drag, resize, add, remove).
@@ -76,6 +76,15 @@ export default function SmartEdge(props: EdgeProps) {
   // a user-picked stroke color is a literal value and stays across themes.
   const strokeColor = style?.stroke ?? "var(--af-edge)"
   const arrowId = `smart-edge-arrow-${id}`
+
+  // Keep the dash INLINE (never class-based): html-to-image only preserves
+  // inline style attributes for SVG subtrees — its computed-style inlining
+  // stops at every nested <svg> boundary — so a dash coming from React Flow's
+  // `.react-flow__edge.animated path` stylesheet rule silently turns into a
+  // solid line in PNG/SVG exports. The style-panel value ("6 6" / "0") always
+  // wins; `animated` edges fall back to React Flow's own 5px dash pattern so
+  // the board look and the export look match 1:1.
+  const dashArray = style?.strokeDasharray ?? (animated ? "5 5" : undefined)
 
   return (
     <g>
@@ -114,7 +123,7 @@ export default function SmartEdge(props: EdgeProps) {
         d={path}
         fill="none"
         strokeWidth={style?.strokeWidth ?? 1}
-        style={{ ...style, stroke: strokeColor }}
+        style={{ ...style, stroke: strokeColor, strokeDasharray: dashArray }}
         markerStart={undefined}
         markerEnd={`url(#${arrowId})`}
         strokeLinecap="round"

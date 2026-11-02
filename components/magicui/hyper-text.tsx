@@ -90,8 +90,14 @@ export function HyperText({
 }: HyperTextProps) {
   const MotionComponent = motionElements[Component] as HyperTextMotionComponent
 
+  // Start from RANDOM characters, never from the plain text: the scramble
+  // should resolve INTO the final words ("randomize → show"), otherwise the
+  // reader sees the real text first, then it dissolves into noise and
+  // re-forms — the exact backwards sequence the splash must avoid.
   const [displayText, setDisplayText] = useState<string[]>(() =>
-    children.split("")
+    children.split("").map((letter) =>
+      letter === " " ? letter : characterSet[getRandomInt(characterSet.length)]
+    )
   )
   const [isAnimating, setIsAnimating] = useState(false)
   const iterationCount = useRef(0)

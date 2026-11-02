@@ -40,6 +40,8 @@ import {
   IconFrameNode,
   TagNode,
   LineNode,
+  TableNode,
+  CodeNode,
 } from "./nodes"
 import SmartEdge from "./edges/smart-edge"
 import SmartConnectionLine from "./edges/smart-connection-line"
@@ -58,6 +60,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import RadialMenu, { type RadialMenuItem } from "./radial-menu"
+import { decorateExportSvg } from "./export-svg"
 import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler"
 import { useTheme } from "next-themes"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
@@ -93,6 +96,15 @@ export type ShapeData = {
   iconSrc?: string
   /** Which icon-node rendering to use ("labeled" = legacy default). */
   iconVariant?: "plain" | "labeled" | "frame"
+  /** Table element structure: total rows (incl. header) × columns. */
+  tableRows?: number
+  tableCols?: number
+  /** Flat row-major cell texts, length = tableRows * tableCols. */
+  tableCells?: string[]
+  /** Code snippet element source. */
+  code?: string
+  /** Code snippet language badge ("ts" | "py" | … — display only). */
+  codeLang?: string
   rotation?: number
 }
 
@@ -115,6 +127,16 @@ const initialNodes: Node<ShapeData>[] = [
 ]
 
 const initialEdges: Edge[] = []
+
+// Seed code for new code-snippet elements
+const DEFAULT_CODE_SNIPPET = `function handler(event) {
+  const { id, type } = event
+  // route create events
+  if (type === "create") {
+    return notify("created " + id)
+  }
+  return null
+}`
 
 // Unique id for programmatically created nodes — Date.now() alone collides
 // when several elements are created within the same millisecond (e.g. rapid
@@ -362,6 +384,8 @@ const nodeTypes: NodeTypes = {
   iconFrame: IconFrameNode,
   tag: TagNode,
   line: LineNode as any,
+  table: TableNode as any,
+  code: CodeNode as any,
 }
 
 // Accepts a finite number (or numeric string) and returns it, otherwise undefined.
@@ -946,13 +970,12 @@ function BoardInner() {
         ;[srcHandle, tgtHandle] = [tgtHandle, srcHandle]
       }
 
-      const srcNode = src ? rf.getNode(src) : null
-      const srcZ = srcNode?.zIndex ?? 0
-
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("board:commit"))
       }
 
+      // NOTE: edge layering (connectors above nodes) is handled globally by a
+      // CSS rule in globals.css — no per-edge zIndex is needed here.
       setEdges((eds) =>
         addEdge(
           {
@@ -966,14 +989,13 @@ function BoardInner() {
             markerEnd: { type: MarkerType.ArrowClosed, width: 6, height: 6 },
             animated: false,
             data: { style: "solid" as const },
-            zIndex: srcZ,
           },
           eds,
         ),
       )
       connectStartIdRef.current = null
     },
-    [setEdges, rf],
+    [setEdges],
   )
 
   const onConnectStart = useCallback((_evt: any, params: { nodeId?: string | null }) => {
@@ -1257,7 +1279,12 @@ function BoardInner() {
         })
         const res = await fetch(dataUrl)
         const svgText = await res.text()
-        const blob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" })
+        // Re-inject what html-to-image cannot carry over: the animated-dash
+        // rule + keyframes (edges keep flowing in the exported file) and the
+        // --af-edge theme token (strokes/markers keep their color). See
+        // ./export-svg for why these are lost in the first place.
+        const decorated = decorateExportSvg(svgText)
+        const blob = new Blob([decorated], { type: "image/svg+xml;charset=utf-8" })
         const url = URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
@@ -1492,6 +1519,57 @@ function BoardInner() {
           setSelectedNodeId(id)
           setTool("select")
         }}
+        onAddTable={() => {
+          const pos = rf.screenToFlowPosition(getBoardScreenCenter())
+          const id = newNodeId()
+          const cols = 3
+          const rows = 3
+          const cells = ["Column A", "Column B", "Column C", ...Array<string>(cols * (rows - 1)).fill("")]
+          const newNode: Node<ShapeData> = {
+            id,
+            type: "table" as any,
+            position: pos,
+            data: {
+              label: "",
+              fill: "transparent",
+              tableRows: rows,
+              tableCols: cols,
+              tableCells: cells,
+              fontSize: 8,
+              align: "left",
+              borderStyle: "solid",
+              borderWidth: 1,
+            },
+            style: { width: 280, height: 160 },
+          }
+          commitHistory()
+          setNodes((nds) => nds.concat(newNode))
+          setSelectedNodeId(id)
+          setTool("select")
+        }}
+        onAddCode={() => {
+          const pos = rf.screenToFlowPosition(getBoardScreenCenter())
+          const id = newNodeId()
+          const newNode: Node<ShapeData> = {
+            id,
+            type: "code" as any,
+            position: pos,
+            data: {
+              label: "index.ts",
+              code: DEFAULT_CODE_SNIPPET,
+              codeLang: "ts",
+              fill: "transparent",
+              fontSize: 9,
+              borderStyle: "solid",
+              borderWidth: 1,
+            },
+            style: { width: 320, height: 200 },
+          }
+          commitHistory()
+          setNodes((nds) => nds.concat(newNode))
+          setSelectedNodeId(id)
+          setTool("select")
+        }}
       />
       )}
 
@@ -1551,7 +1629,9 @@ function BoardInner() {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <DockIn index={19} booted={booted}>
+              {/* 21 — after the left rail's Redo (20): the lock is the very
+                  last control to dock in, bottom-left corner. */}
+              <DockIn index={21} booted={booted}>
                 <button
                   aria-label={locked ? "Unlock board" : "Lock board"}
                   aria-pressed={locked}

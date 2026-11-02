@@ -19,6 +19,8 @@ import {
   Loader2,
   AppWindow,
   Image as ImageIcon,
+  Table2,
+  FileCode,
 } from "lucide-react"
 import {
   Dialog,
@@ -43,6 +45,8 @@ type Props = {
   onOpenExport?: () => void // add export trigger
   onAddIcon?: (opts: { src: string; label: string; style: "icon" | "labeled" | "frame" }) => void
   onAddTag?: () => void // allow adding tag nodes
+  onAddTable?: () => void // add a table element at the board center
+  onAddCode?: () => void // add a code snippet element at the board center
   /** Splash handover — when false every control stays hidden */
   booted?: boolean
   /** Offset into the global dock-in sequence so the rail follows the header controls */
@@ -221,6 +225,8 @@ export default function LeftToolbar({
   onOpenExport,
   onAddIcon,
   onAddTag,
+  onAddTable,
+  onAddCode,
   booted = true,
   bootIndexBase = 0,
 }: Props) {
@@ -291,10 +297,12 @@ export default function LeftToolbar({
     [],
   )
 
-  // Pick an icon tile; prefill the label with its display name (only if empty)
+  // Pick an icon tile; prefill the label with its display name — but never
+  // stomp a label the user typed themselves (tracked via labelTouchedRef).
+  const labelTouchedRef = React.useRef(false)
   const pickIcon = (next: { cat: string; name: string }, display?: string) => {
     setSelected(next)
-    setBottomText((t) => t || display || "")
+    if (!labelTouchedRef.current) setBottomText(display ?? "")
   }
 
   // Human display name of the current selection ("amazon-s3" → "Amazon S3")
@@ -339,7 +347,13 @@ export default function LeftToolbar({
       <div className="pointer-events-auto absolute bottom-20 left-4 top-14 z-20 flex flex-col">
         <div className="icon-picker-scroll my-auto flex max-h-full w-10 flex-col items-center gap-1 overflow-y-auto py-1">
           <DockIn index={bootIndexBase} booted={booted}>
-            <ToolBtn onClick={() => setIconOpen(true)} label="Add Icon">
+            <ToolBtn
+              onClick={() => {
+                labelTouchedRef.current = false
+                setIconOpen(true)
+              }}
+              label="Add Icon"
+            >
               <Plus className="h-4 w-4" />
             </ToolBtn>
           </DockIn>
@@ -351,8 +365,15 @@ export default function LeftToolbar({
             </ToolBtn>
           </DockIn>
 
-          {/* 2. Square */}
+          {/* 2. Hand (pan) — sits right under Select like the Figma toolbar */}
           <DockIn index={bootIndexBase + 2} booted={booted}>
+            <ToolBtn active={active === "hand"} onClick={() => onChangeTool("hand")} label="Hand">
+              <Hand className="h-4 w-4" />
+            </ToolBtn>
+          </DockIn>
+
+          {/* 3. Square */}
+          <DockIn index={bootIndexBase + 3} booted={booted}>
             <ToolBtn
               active={active === "rect"}
               onClick={() => (onQuickAdd ? onQuickAdd("rect") : onChangeTool("rect"))}
@@ -362,8 +383,8 @@ export default function LeftToolbar({
             </ToolBtn>
           </DockIn>
 
-          {/* 3. Ellipse */}
-          <DockIn index={bootIndexBase + 3} booted={booted}>
+          {/* 4. Ellipse */}
+          <DockIn index={bootIndexBase + 4} booted={booted}>
             <ToolBtn
               active={active === "ellipse"}
               onClick={() => (onQuickAdd ? onQuickAdd("ellipse") : onChangeTool("ellipse"))}
@@ -373,8 +394,8 @@ export default function LeftToolbar({
             </ToolBtn>
           </DockIn>
 
-          {/* 4. Line */}
-          <DockIn index={bootIndexBase + 4} booted={booted}>
+          {/* 5. Line */}
+          <DockIn index={bootIndexBase + 5} booted={booted}>
             <ToolBtn onClick={() => (onQuickAdd ? onQuickAdd("line") : onChangeTool("select"))} label="Line">
               <Minus className="h-4 w-4" />
             </ToolBtn>
@@ -384,14 +405,14 @@ export default function LeftToolbar({
           <div className="h-1" aria-hidden />
 
           {/* Tag */}
-          <DockIn index={bootIndexBase + 5} booted={booted}>
+          <DockIn index={bootIndexBase + 6} booted={booted}>
             <ToolBtn onClick={onAddTag} label="Tag">
               <TagIcon className="h-4 w-4" />
             </ToolBtn>
           </DockIn>
 
           {/* 7. Text */}
-          <DockIn index={bootIndexBase + 6} booted={booted}>
+          <DockIn index={bootIndexBase + 7} booted={booted}>
             <ToolBtn
               active={active === "text"}
               onClick={() => (onQuickAdd ? onQuickAdd("text") : onChangeTool("text"))}
@@ -401,35 +422,42 @@ export default function LeftToolbar({
             </ToolBtn>
           </DockIn>
 
-          {/* spacer */}
-          <div className="h-1" aria-hidden />
-
-          {/* Hand (pan) */}
-          <DockIn index={bootIndexBase + 7} booted={booted}>
-            <ToolBtn active={active === "hand"} onClick={() => onChangeTool("hand")} label="Hand">
-              <Hand className="h-4 w-4" />
+          {/* Table element */}
+          <DockIn index={bootIndexBase + 8} booted={booted}>
+            <ToolBtn onClick={onAddTable} label="Table">
+              <Table2 className="h-4 w-4" />
             </ToolBtn>
           </DockIn>
 
+          {/* Code snippet element */}
+          <DockIn index={bootIndexBase + 9} booted={booted}>
+            <ToolBtn onClick={onAddCode} label="Code snippet">
+              <FileCode className="h-4 w-4" />
+            </ToolBtn>
+          </DockIn>
+
+          {/* spacer */}
+          <div className="h-1" aria-hidden />
+
           {/* Zoom controls */}
-          <DockIn index={bootIndexBase + 8} booted={booted}>
+          <DockIn index={bootIndexBase + 10} booted={booted}>
             <ToolBtn onClick={onZoomIn} label="Zoom in">
               <ZoomIn className="h-4 w-4" />
             </ToolBtn>
           </DockIn>
-          <DockIn index={bootIndexBase + 9} booted={booted}>
+          <DockIn index={bootIndexBase + 11} booted={booted}>
             <ToolBtn onClick={onZoomOut} label="Zoom out">
               <ZoomOut className="h-4 w-4" />
             </ToolBtn>
           </DockIn>
-          <DockIn index={bootIndexBase + 10} booted={booted}>
+          <DockIn index={bootIndexBase + 12} booted={booted}>
             <ToolBtn onClick={onFitView} label="Fit view">
               <Scan className="h-4 w-4" />
             </ToolBtn>
           </DockIn>
 
           {/* Undo / Redo */}
-          <DockIn index={bootIndexBase + 11} booted={booted}>
+          <DockIn index={bootIndexBase + 13} booted={booted}>
             <ToolBtn
               onClick={() => {
                 if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:undo"))
@@ -439,7 +467,7 @@ export default function LeftToolbar({
               <Undo2 className="h-4 w-4" />
             </ToolBtn>
           </DockIn>
-          <DockIn index={bootIndexBase + 12} booted={booted}>
+          <DockIn index={bootIndexBase + 14} booted={booted}>
             <ToolBtn
               onClick={() => {
                 if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:redo"))
@@ -793,7 +821,13 @@ export default function LeftToolbar({
                       <input
                         id="icon-text"
                         value={bottomText}
-                        onChange={(e) => setBottomText(e.target.value)}
+                        onChange={(e) => {
+                          const v = e.target.value
+                          setBottomText(v)
+                          // A non-empty manual edit locks the label; clearing
+                          // releases it so the next pick can prefill again.
+                          labelTouchedRef.current = v.trim().length > 0
+                        }}
                         className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
                         placeholder="e.g., AWS Lambda"
                       />
@@ -822,6 +856,7 @@ export default function LeftToolbar({
                     setSystemSub("all")
                     setAwsSub("all")
                     setIconStyle("labeled")
+                    labelTouchedRef.current = false
                   }}
                   className={cn(
                     "rounded-md border px-3 py-1.5 text-xs",

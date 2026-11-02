@@ -1,11 +1,12 @@
 "use client"
 
-import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { Handle, Position, NodeResizer, useReactFlow } from "@xyflow/react"
+import { Minus, Plus } from "lucide-react"
 import type { Node, NodeProps } from "@xyflow/react"
 import type { ShapeData } from "../design-board"
 import { loadLucideRegistry, type LucideIconComp } from "@/lib/lucide-icon-registry"
-import { withAlpha } from "@/lib/utils"
+import { cn, withAlpha } from "@/lib/utils"
 
 /** Resolved (opacity-applied) background for a shape. "No color" stays transparent. */
 function resolvedFill(data: ShapeData, fallback = "transparent"): string {
@@ -652,6 +653,507 @@ export const LineNode = memo(function LineNode({ data, selected }: NodeProps<Nod
       >
         {/* No Handles for line node */}
       </div>
+    </div>
+  )
+})
+
+/* ------------------------------------------------------------------ */
+/* Table element                                                       */
+/* ------------------------------------------------------------------ */
+
+/** Tiny button used by the table's add/remove row/col strip. */
+function TableCtrlBtn({
+  onClick,
+  label,
+  children,
+  disabled,
+}: {
+  onClick: () => void
+  label: string
+  children: ReactNode
+  disabled?: boolean
+}) {
+  return (
+    <button
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick()
+      }}
+      className="flex h-5 w-5 items-center justify-center rounded-sm text-foreground hover:bg-accent disabled:opacity-30"
+    >
+      {children}
+    </button>
+  )
+}
+
+/**
+ * Spreadsheet-style table element: header row + body cells, every cell
+ * editable in place (double-click), rows/columns addable/removable from the
+ * mini strip shown while the node is selected. Fully resizable & connectable.
+ */
+export const TableNode = memo(function TableNode({ id, data, selected }: NodeProps<Node<ShapeData>>) {
+  const [editingCell, setEditingCell] = useState<number | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const rf = useReactFlow()
+
+  const rows = Math.max(1, Math.min(24, data.tableRows ?? 3))
+  const cols = Math.max(1, Math.min(8, data.tableCols ?? 3))
+  const rawCells = data.tableCells ?? []
+  const cellAt = (r: number, c: number) => rawCells[r * cols + c] ?? ""
+
+  const fill = resolvedFill(data)
+  const borderColor = data.borderColor || "var(--af-node-border)"
+  const cellFontSize = (data.fontSize ?? 8) + "px"
+  const textColor = data.fontColor || "var(--af-node-text)"
+  const align = data.align ?? "left"
+
+  useEffect(() => {
+    if (editingCell !== null) {
+      // Snapshot the pre-edit state once so cell text changes are undoable
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:commit"))
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
+  }, [editingCell])
+
+  const commitCell = useCallback(
+    (idx: number, val: string) => {
+      rf.setNodes((nds: any[]) =>
+        nds.map((n) => {
+          if (n.id !== id) return n
+          // Pad defensively so editing a cell beyond a legacy/short array works
+          const next = (n.data.tableCells ?? []).slice()
+          while (next.length <= idx) next.push("")
+          next[idx] = val
+          return { ...n, data: { ...n.data, tableCells: next } }
+        }),
+      )
+      setEditingCell(null)
+    },
+    [id, rf],
+  )
+
+  /** Structural change helper (add/remove row/col) — undoable via board:commit. */
+  const mutateTable = useCallback(
+    (nextRows: number, nextCols: number, nextCells: string[]) => {
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:commit"))
+      rf.setNodes((nds: any[]) =>
+        nds.map((n) =>
+          n.id === id
+            ? {
+                ...n,
+                data: { ...n.data, tableRows: nextRows, tableCols: nextCols, tableCells: nextCells },
+              }
+            : n,
+        ),
+      )
+      setEditingCell(null)
+    },
+    [id, rf],
+  )
+
+  const addRow = () => mutateTable(rows + 1, cols, [...rawCells.slice(0, rows * cols), ...Array(cols).fill("")])
+  const removeRow = () => {
+    if (rows <= 1) return
+    mutateTable(rows - 1, cols, rawCells.slice(0, (rows - 1) * cols))
+  }
+  const addCol = () =>
+    mutateTable(
+      rows,
+      cols + 1,
+      Array.from({ length: rows }, (_, r) => [
+        ...rawCells.slice(r * cols, r * cols + cols),
+        "",
+      ]).flat(),
+    )
+  const removeCol = () => {
+    if (cols <= 1) return
+    mutateTable(
+      rows,
+      cols - 1,
+      Array.from({ length: rows }, (_, r) => rawCells.slice(r * cols, r * cols + cols - 1)).flat(),
+    )
+  }
+
+  const headerText: CSSProperties = {
+    color: textColor,
+    fontSize: cellFontSize,
+    fontWeight: data.fontWeight ?? 600,
+    textAlign: align as any,
+  }
+  const bodyText: CSSProperties = {
+    color: textColor,
+    fontSize: cellFontSize,
+    fontWeight: data.fontWeight ?? 400,
+    textAlign: align as any,
+  }
+
+  return (
+    <div className="group relative h-full w-full p-[3px]">
+      <NodeResizer
+        isVisible={selected && editingCell === null}
+        color="#22d3ee"
+        minWidth={160}
+        minHeight={96}
+        lineStyle={{ strokeWidth: 1 }}
+      />
+      <div
+        className="relative flex h-full w-full flex-col"
+        style={{
+          transform: `rotate(${data.rotation ?? 0}deg)`,
+          transformOrigin: "center",
+          background: fill,
+          borderColor,
+          borderStyle: data.borderStyle || "solid",
+          borderWidth: data.borderWidth ?? 1,
+          boxSizing: "border-box",
+          borderRadius: 2,
+        }}
+      >
+        <div
+          className="grid min-h-0 flex-1 overflow-hidden rounded-[2px]"
+          style={{
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          }}
+        >
+          {Array.from({ length: rows * cols }, (_, i) => {
+            const r = Math.floor(i / cols)
+            const c = i % cols
+            const isHeader = r === 0
+            const editing = editingCell === i
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "relative flex min-w-0 items-center overflow-hidden px-1.5",
+                  isHeader && "bg-black/[0.05] dark:bg-white/[0.08]",
+                  c < cols - 1 && "border-r border-black/10 dark:border-white/10",
+                  r < rows - 1 && "border-b border-black/10 dark:border-white/10",
+                )}
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  setEditingCell(i)
+                }}
+              >
+                {editing ? (
+                  <input
+                    ref={inputRef}
+                    defaultValue={cellAt(r, c)}
+                    onBlur={(e) => {
+                      e.stopPropagation()
+                      commitCell(i, e.target.value)
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation()
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        commitCell(i, (e.target as HTMLInputElement).value)
+                      }
+                      if (e.key === "Escape") {
+                        e.preventDefault()
+                        setEditingCell(null)
+                      }
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="w-full rounded-sm outline-none"
+                    style={{ ...bodyText, background: "var(--af-edit-bg)" }}
+                    spellCheck={false}
+                    aria-label={`Edit table cell row ${r + 1} column ${c + 1}`}
+                  />
+                ) : (
+                  <span className="w-full truncate leading-[1.35]" style={isHeader ? headerText : bodyText}>
+                    {cellAt(r, c)}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Structure strip — visible only while selected & not editing a cell */}
+        {selected && editingCell === null && (
+          <div
+            className="absolute bottom-1 right-1 z-10 flex items-center gap-0.5 rounded-md border border-border bg-popover/95 p-0.5 shadow-md backdrop-blur"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <TableCtrlBtn onClick={addRow} label="Add row">
+              <Plus className="h-3 w-3" />
+              <span className="sr-only">row</span>
+            </TableCtrlBtn>
+            <TableCtrlBtn onClick={removeRow} label="Remove row" disabled={rows <= 1}>
+              <Minus className="h-3 w-3" />
+              <span className="sr-only">row</span>
+            </TableCtrlBtn>
+            <span className="mx-0.5 h-3 w-px bg-border" aria-hidden />
+            <TableCtrlBtn onClick={addCol} label="Add column">
+              <Plus className="h-3 w-3" />
+              <span className="sr-only">column</span>
+            </TableCtrlBtn>
+            <TableCtrlBtn onClick={removeCol} label="Remove column" disabled={cols <= 1}>
+              <Minus className="h-3 w-3" />
+              <span className="sr-only">column</span>
+            </TableCtrlBtn>
+          </div>
+        )}
+      </div>
+      {/* Handles live OUTSIDE the body — inside they get clipped and the
+          connection drag never reaches them. */}
+      <Handles visible={!!selected && editingCell === null} />
+    </div>
+  )
+})
+
+/* ------------------------------------------------------------------ */
+/* Code snippet element                                                */
+/* ------------------------------------------------------------------ */
+
+const CODE_KEYWORDS = new Set([
+  "abstract","as","async","await","break","case","catch","class","const","continue","debugger","declare","default","delete","do","else","enum","export","extends","false","finally","for","from","function","get","if","implements","import","in","instanceof","interface","is","let","new","null","of","private","protected","public","readonly","return","satisfies","set","static","super","switch","this","throw","true","try","type","typeof","undefined","var","void","while","with","yield",
+  "def","elif","except","lambda","None","nonlocal","not","or","pass","raise","self","and",
+  "fn","impl","mut","pub","struct","trait","use","where","match","loop","crate","dyn",
+  "func","go","defer","chan","map","range","select","package",
+  "end","then","do","begin","nil",
+  "SELECT","FROM","WHERE","INSERT","INTO","VALUES","UPDATE","DELETE","JOIN","LEFT","RIGHT","INNER","OUTER","GROUP","ORDER","BY","HAVING","LIMIT","CREATE","TABLE","DROP","ALTER",
+])
+
+/**
+ * Lightweight line-based tokenizer for the code snippet element.
+ * Handles comments (// and #), strings, numbers, keywords and calls —
+ * plenty for diagram annotations, zero dependencies.
+ */
+function highlightCodeLine(line: string, lineIdx: number): ReactNode[] {
+  const out: ReactNode[] = []
+  const re = /(\/\/.*$|#.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)/g
+  let last = 0
+  let m: RegExpExecArray | null
+  let k = 0
+  const push = (key: string, cls: string | undefined, text: string) =>
+    out.push(
+      cls ? (
+        <span key={key} className={cls}>
+          {text}
+        </span>
+      ) : (
+        <span key={key}>{text}</span>
+      ),
+    )
+
+  while ((m = re.exec(line))) {
+    if (m.index > last) push(`${lineIdx}-${k++}`, undefined, line.slice(last, m.index))
+    const tok = m[0]
+    if (m[1]) push(`${lineIdx}-${k++}`, "italic text-muted-foreground/60", tok)
+    else if (m[2]) push(`${lineIdx}-${k++}`, "text-emerald-600 dark:text-emerald-400", tok)
+    else if (m[3]) push(`${lineIdx}-${k++}`, "text-amber-600 dark:text-amber-400", tok)
+    else if (CODE_KEYWORDS.has(tok)) push(`${lineIdx}-${k++}`, "text-fuchsia-600 dark:text-fuchsia-400", tok)
+    else if (line[m.index + tok.length] === "(") push(`${lineIdx}-${k++}`, "text-teal-600 dark:text-teal-400", tok)
+    else if (/^[A-Z]/.test(tok)) push(`${lineIdx}-${k++}`, "text-teal-700 dark:text-teal-300", tok)
+    else push(`${lineIdx}-${k++}`, undefined, tok)
+    last = m.index + tok.length
+  }
+  if (last < line.length) push(`${lineIdx}-${k++}`, undefined, line.slice(last))
+  return out
+}
+
+/**
+ * Editor-card style code snippet: title bar (mac dots + filename, editable
+ * via double-click) over a monospace, lightly syntax-highlighted body.
+ * Double-click the body to edit; Esc cancels, Ctrl/⌘+Enter or blur saves.
+ */
+export const CodeNode = memo(function CodeNode({
+  id,
+  data,
+  selected,
+}: NodeProps<Node<ShapeData>>) {
+  const [editing, setEditing] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
+  const rf = useReactFlow()
+
+  const fill = resolvedFill(data)
+  const borderColor = data.borderColor || "var(--af-node-border)"
+  const userFill = data.fill && data.fill !== "transparent" ? data.fill : undefined
+  const bodyBg = userFill ? withAlpha(userFill, data.fillOpacity) : "var(--af-frame-bg)"
+  const code = typeof data.code === "string" ? data.code : ""
+  const codeLang = data.codeLang || "code"
+  const codeFontSize = (data.fontSize ?? 9) + "px"
+  const baseText = { color: data.fontColor || "var(--af-node-text)" }
+  const lines = code.split("\n")
+
+  useEffect(() => {
+    if (editing) {
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:commit"))
+      requestAnimationFrame(() => {
+        bodyRef.current?.focus()
+        bodyRef.current?.setSelectionRange(bodyRef.current.value.length, bodyRef.current.value.length)
+      })
+    }
+  }, [editing])
+
+  useEffect(() => {
+    if (editingTitle) {
+      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:commit"))
+      requestAnimationFrame(() => titleRef.current?.focus())
+    }
+  }, [editingTitle])
+
+  const commit = useCallback(
+    (patch: Partial<ShapeData>) => {
+      rf.setNodes((nds: any[]) => nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n)))
+    },
+    [id, rf],
+  )
+
+  return (
+    <div className="group relative h-full w-full p-[3px]">
+      <NodeResizer
+        isVisible={selected && !editing && !editingTitle}
+        color="#22d3ee"
+        minWidth={220}
+        minHeight={140}
+        lineStyle={{ strokeWidth: 1 }}
+      />
+      <div
+        className="relative flex h-full w-full flex-col overflow-hidden rounded-[4px]"
+        style={{
+          transform: `rotate(${data.rotation ?? 0}deg)`,
+          transformOrigin: "center",
+          background: bodyBg,
+          borderColor,
+          borderStyle: data.borderStyle || "solid",
+          borderWidth: data.borderWidth ?? 1,
+          boxSizing: "border-box",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.10)",
+        }}
+      >
+        {/* Title bar — mac dots + filename + language badge */}
+        <div className="flex flex-none items-center gap-1.5 border-b border-black/10 bg-black/[0.03] px-1.5 py-1 dark:border-white/15 dark:bg-white/[0.06]">
+          <span className="flex flex-none items-center gap-1" aria-hidden>
+            <span className="h-1.5 w-1.5 rounded-full bg-red-400/80" />
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400/80" />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+          </span>
+          <div className="min-w-0 flex-1" onDoubleClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            setEditingTitle(true)
+          }}>
+            {editingTitle ? (
+              <input
+                ref={titleRef}
+                defaultValue={data.label || ""}
+                onBlur={(e) => {
+                  e.stopPropagation()
+                  commit({ label: e.target.value })
+                  setEditingTitle(false)
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation()
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    commit({ label: (e.target as HTMLInputElement).value })
+                    setEditingTitle(false)
+                  }
+                  if (e.key === "Escape") {
+                    e.preventDefault()
+                    setEditingTitle(false)
+                  }
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-full rounded-sm px-0.5 font-mono outline-none"
+                style={{ background: "var(--af-edit-bg)", ...baseText, fontSize: (data.fontSize ?? 9) + "px" }}
+                spellCheck={false}
+                aria-label="Edit snippet filename"
+              />
+            ) : (
+              <span
+                className="block w-full truncate font-mono leading-[1.3]"
+                style={{ ...baseText, fontSize: (data.fontSize ?? 9) + "px" }}
+              >
+                {data.label || "snippet"}
+              </span>
+            )}
+          </div>
+          <span className="flex-none text-[8px] font-medium uppercase tracking-wider text-muted-foreground/70">
+            {codeLang}
+          </span>
+        </div>
+
+        {/* Code body */}
+        {editing ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <textarea
+              ref={bodyRef}
+              defaultValue={code}
+              onBlur={(e) => {
+                e.stopPropagation()
+                commit({ code: e.target.value })
+                setEditing(false)
+              }}
+              onKeyDown={(e) => {
+                e.stopPropagation()
+                if (e.key === "Escape") {
+                  e.preventDefault()
+                  setEditing(false)
+                }
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  commit({ code: (e.target as HTMLTextAreaElement).value })
+                  setEditing(false)
+                }
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              className="min-h-0 w-full flex-1 resize-none bg-transparent p-1.5 font-mono leading-[1.5] outline-none"
+              style={{ ...baseText, fontSize: codeFontSize }}
+              spellCheck={false}
+              aria-label="Edit code snippet"
+            />
+            <div className="flex-none border-t border-black/10 px-1.5 py-0.5 text-[9px] text-muted-foreground dark:border-white/15">
+              Esc to cancel · Ctrl/⌘+Enter to save
+            </div>
+          </div>
+        ) : (
+          <div
+            className="min-h-0 flex-1 cursor-text overflow-hidden p-1.5"
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              setEditing(true)
+            }}
+          >
+            {code.trim() ? (
+              <pre className="h-full w-full overflow-hidden font-mono leading-[1.5]" style={{ fontSize: codeFontSize }}>
+                {lines.map((line, i) => (
+                  <div key={i} className="flex">
+                    <span
+                      className="w-5 flex-none select-none pr-1.5 text-right text-muted-foreground/50"
+                      aria-hidden
+                    >
+                      {i + 1}
+                    </span>
+                    <code className="whitespace-pre" style={baseText}>
+                      {highlightCodeLine(line, i)}
+                    </code>
+                  </div>
+                ))}
+              </pre>
+            ) : (
+              <span className="font-mono text-muted-foreground/60" style={{ fontSize: codeFontSize }}>
+                {"// double-click to edit code"}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      {/* Handles live OUTSIDE the overflow-hidden body — inside they get
+          clipped and the connection drag never reaches them. */}
+      <Handles visible={!!selected && !editing && !editingTitle} />
     </div>
   )
 })

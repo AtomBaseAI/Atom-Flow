@@ -27,6 +27,11 @@ type SplashScreenProps = {
 }
 
 export function SplashScreen({ leaving, onExited }: SplashScreenProps) {
+  // Exit choreography: the honeycomb backdrop dissolves FIRST (0 → 0.35s),
+  // and only then the title fades (0.4 → 0.8s) while the overlay itself
+  // clears behind it (0.4 → 0.85s). Fading everything at once made the
+  // pattern and text vanish simultaneously — the backdrop must go first so
+  // the title is the last thing on screen.
   return (
     <motion.div
       aria-hidden={leaving}
@@ -34,7 +39,11 @@ export function SplashScreen({ leaving, onExited }: SplashScreenProps) {
       style={{ background: "var(--af-board-bg)" }}
       initial={{ opacity: 1 }}
       animate={leaving ? { opacity: 0 } : { opacity: 1 }}
-      transition={{ duration: 0.65, ease: "easeOut" }}
+      transition={
+        leaving
+          ? { delay: 0.4, duration: 0.45, ease: "easeOut" }
+          : { duration: 0.3 }
+      }
       onAnimationComplete={() => {
         if (leaving) onExited()
       }}
@@ -47,10 +56,10 @@ export function SplashScreen({ leaving, onExited }: SplashScreenProps) {
       <motion.div
         className="absolute inset-0"
         initial={{ opacity: 0, scale: 1.08 }}
-        animate={leaving ? { opacity: 0, scale: 0.94 } : { opacity: 1, scale: 1 }}
+        animate={leaving ? { opacity: 0, scale: 0.96 } : { opacity: 1, scale: 1 }}
         transition={
           leaving
-            ? { duration: 0.65, ease: "easeIn" }
+            ? { duration: 0.35, ease: "easeIn" }
             : { duration: 1.8, ease: "easeOut" }
         }
       >
@@ -71,8 +80,18 @@ export function SplashScreen({ leaving, onExited }: SplashScreenProps) {
 
       <motion.div
         className="pointer-events-none relative flex select-none flex-col items-center"
-        animate={leaving ? { scale: 1.12, y: -14 } : { scale: 1, y: 0 }}
-        transition={{ duration: 0.65, ease: "easeOut" }}
+        animate={leaving ? { opacity: 0, scale: 1.12, y: -14 } : { opacity: 1, scale: 1, y: 0 }}
+        transition={
+          leaving
+            ? {
+                // Drift starts immediately; the actual fade waits until the
+                // hexagon backdrop has fully dissolved (0.35s).
+                scale: { duration: 0.65, ease: "easeOut" },
+                y: { duration: 0.65, ease: "easeOut" },
+                opacity: { delay: 0.4, duration: 0.4, ease: "easeOut" },
+              }
+            : { duration: 0.5 }
+        }
       >
         <HyperText
           as="h1"
