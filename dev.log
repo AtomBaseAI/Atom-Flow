@@ -251,3 +251,1624 @@ Import trace:
  GET / 200 in 27ms (compile: 3ms, render: 25ms)
  GET / 200 in 27ms (compile: 2ms, render: 25ms)
  GET / 200 in 28ms (compile: 2ms, render: 25ms)
+ GET / 200 in 31ms (compile: 6ms, render: 26ms)
+ GET / 200 in 28ms (compile: 2ms, render: 26ms)
+ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+✓ Compiled in 715ms
+✓ Compiled in 816ms
+✓ Compiled in 764ms
+ GET / 200 in 338ms (compile: 150ms, render: 188ms)
+✓ Compiled in 507ms
+ GET / 200 in 25ms (compile: 3ms, render: 22ms)
+✓ Compiled in 623ms
+✓ Compiled in 572ms
+✓ Compiled in 828ms
+✓ Compiled in 571ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 100ms (compile: 37ms, render: 63ms)
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 48ms (compile: 1832µs, render: 46ms)
+ GET / 200 in 28ms (compile: 1973µs, render: 26ms)
+ GET / 200 in 170ms (compile: 3ms, render: 167ms)
+✓ Compiled in 525ms
+ GET / 200 in 33ms (compile: 4ms, render: 29ms)
+ GET / 200 in 25ms (compile: 2ms, render: 23ms)
+ GET / 200 in 25ms (compile: 2ms, render: 22ms)
+ GET / 200 in 28ms (compile: 2ms, render: 26ms)
+ GET / 200 in 30ms (compile: 3ms, render: 27ms)
+ GET / 200 in 101ms (compile: 2ms, render: 99ms)
+ GET / 200 in 26ms (compile: 2ms, render: 24ms)
+ GET / 200 in 28ms (compile: 2ms, render: 26ms)
+ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+ GET / 200 in 29ms (compile: 4ms, render: 25ms)
+ GET / 200 in 25ms (compile: 2ms, render: 23ms)
+ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+ GET / 200 in 26ms (compile: 2ms, render: 24ms)
+✓ Compiled in 3.5s
+ GET / 200 in 3.2s (compile: 3.2s, render: 57ms)
+ GET / 200 in 2.7s (compile: 2.7s, render: 28ms)
+ GET / 200 in 3.2s (compile: 3.2s, render: 17ms)
+ GET / 200 in 16ms (compile: 4ms, render: 12ms)
+ GET / 200 in 27ms (compile: 1693µs, render: 26ms)
+ GET / 200 in 13ms (compile: 1761µs, render: 12ms)
+ GET / 200 in 16ms (compile: 2ms, render: 14ms)
+ GET / 200 in 26ms (compile: 1841µs, render: 24ms)
+ GET / 200 in 13ms (compile: 1518µs, render: 11ms)
+ GET / 200 in 15ms (compile: 1622µs, render: 13ms)
+ GET / 200 in 15ms (compile: 1644µs, render: 13ms)
+ GET / 200 in 14ms (compile: 4ms, render: 11ms)
+ GET / 200 in 17ms (compile: 1918µs, render: 15ms)
+ GET / 200 in 14ms (compile: 1941µs, render: 12ms)
+ GET / 200 in 13ms (compile: 1669µs, render: 11ms)
+ GET / 200 in 17ms (compile: 2ms, render: 15ms)
+ GET / 200 in 12ms (compile: 1911µs, render: 10ms)
+ GET / 200 in 12ms (compile: 1596µs, render: 10ms)
+ GET / 200 in 15ms (compile: 1623µs, render: 14ms)
+ GET / 200 in 12ms (compile: 1609µs, render: 10ms)
+ GET / 200 in 13ms (compile: 1819µs, render: 12ms)
+ GET / 200 in 76ms (compile: 3ms, render: 74ms)
+ GET / 200 in 35ms (compile: 4ms, render: 31ms)
+✓ Compiled in 752ms
+ GET / 200 in 659ms (compile: 563ms, render: 96ms)
+ GET / 200 in 133ms (compile: 58ms, render: 75ms)
+ GET / 200 in 55ms (compile: 2ms, render: 52ms)
+ GET / 200 in 150ms (compile: 109ms, render: 41ms)
+ GET / 200 in 163ms (compile: 137ms, render: 26ms)
+ GET / 200 in 107ms (compile: 90ms, render: 17ms)
+✓ Compiled in 147ms
+ GET / 200 in 130ms (compile: 84ms, render: 45ms)
+ GET / 200 in 90ms (compile: 60ms, render: 30ms)
+ GET / 200 in 129ms (compile: 114ms, render: 14ms)
+✓ Compiled in 191ms
+ GET / 200 in 189ms (compile: 139ms, render: 50ms)
+ GET / 200 in 158ms (compile: 132ms, render: 26ms)
+ GET / 200 in 187ms (compile: 172ms, render: 15ms)
+ GET / 200 in 16ms (compile: 3ms, render: 13ms)
+ GET / 200 in 20ms (compile: 2ms, render: 18ms)
+ GET / 200 in 36ms (compile: 2ms, render: 34ms)
+ GET / 200 in 15ms (compile: 1902µs, render: 13ms)
+ GET / 200 in 13ms (compile: 1696µs, render: 11ms)
+ GET / 200 in 17ms (compile: 3ms, render: 14ms)
+ GET / 200 in 45ms (compile: 3ms, render: 42ms)
+ GET / 200 in 45ms (compile: 16ms, render: 29ms)
+ GET / 200 in 19ms (compile: 2ms, render: 17ms)
+ GET / 200 in 28ms (compile: 1880µs, render: 26ms)
+ GET / 200 in 14ms (compile: 1879µs, render: 13ms)
+ GET / 200 in 13ms (compile: 1628µs, render: 11ms)
+ GET / 200 in 42ms (compile: 2ms, render: 40ms)
+ GET / 200 in 28ms (compile: 2ms, render: 25ms)
+ GET / 200 in 27ms (compile: 13ms, render: 14ms)
+ GET / 200 in 49ms (compile: 2ms, render: 46ms)
+ GET / 200 in 29ms (compile: 3ms, render: 27ms)
+ GET / 200 in 15ms (compile: 1809µs, render: 14ms)
+ GET / 200 in 46ms (compile: 3ms, render: 43ms)
+ GET / 200 in 45ms (compile: 25ms, render: 20ms)
+ GET / 200 in 47ms (compile: 14ms, render: 33ms)
+ GET / 200 in 40ms (compile: 2ms, render: 37ms)
+ GET / 200 in 26ms (compile: 2ms, render: 23ms)
+ GET / 200 in 25ms (compile: 12ms, render: 13ms)
+ GET / 200 in 40ms (compile: 2ms, render: 38ms)
+ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+ GET / 200 in 27ms (compile: 12ms, render: 14ms)
+ GET / 200 in 32ms (compile: 2ms, render: 29ms)
+ GET / 200 in 16ms (compile: 1958µs, render: 14ms)
+ GET / 200 in 15ms (compile: 1954µs, render: 13ms)
+ GET / 200 in 32ms (compile: 2ms, render: 30ms)
+ GET / 200 in 16ms (compile: 2ms, render: 14ms)
+ GET / 200 in 36ms (compile: 2ms, render: 34ms)
+ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+ GET / 200 in 15ms (compile: 1721µs, render: 13ms)
+ GET / 200 in 14ms (compile: 2ms, render: 12ms)
+ GET / 200 in 33ms (compile: 2ms, render: 31ms)
+ GET / 200 in 18ms (compile: 3ms, render: 15ms)
+ GET / 200 in 15ms (compile: 2ms, render: 13ms)
+ GET / 200 in 30ms (compile: 1967µs, render: 28ms)
+ GET / 200 in 16ms (compile: 1995µs, render: 14ms)
+ GET / 200 in 14ms (compile: 1852µs, render: 12ms)
+ GET / 200 in 43ms (compile: 3ms, render: 40ms)
+ GET / 200 in 15ms (compile: 1812µs, render: 13ms)
+ GET / 200 in 13ms (compile: 1676µs, render: 11ms)
+ GET / 200 in 28ms (compile: 2ms, render: 26ms)
+ GET / 200 in 14ms (compile: 2ms, render: 12ms)
+ GET / 200 in 12ms (compile: 1538µs, render: 11ms)
+ GET / 200 in 41ms (compile: 2ms, render: 39ms)
+ GET / 200 in 26ms (compile: 12ms, render: 13ms)
+ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+ GET / 200 in 51ms (compile: 4ms, render: 47ms)
+ GET / 200 in 51ms (compile: 15ms, render: 36ms)
+ GET / 200 in 50ms (compile: 25ms, render: 25ms)
+ GET / 200 in 15ms (compile: 2ms, render: 12ms)
+ GET / 200 in 26ms (compile: 1664µs, render: 25ms)
+ GET / 200 in 14ms (compile: 1553µs, render: 12ms)
+ GET / 200 in 18ms (compile: 2ms, render: 16ms)
+ GET / 200 in 28ms (compile: 2ms, render: 26ms)
+ GET / 200 in 14ms (compile: 1741µs, render: 13ms)
+ GET / 200 in 14ms (compile: 1788µs, render: 12ms)
+ GET / 200 in 26ms (compile: 1710µs, render: 24ms)
+ GET / 200 in 14ms (compile: 1579µs, render: 12ms)
+ GET / 200 in 15ms (compile: 3ms, render: 11ms)
+ GET / 200 in 25ms (compile: 1611µs, render: 23ms)
+ GET / 200 in 13ms (compile: 1660µs, render: 12ms)
+ GET / 200 in 13ms (compile: 1630µs, render: 11ms)
+ GET / 200 in 27ms (compile: 1685µs, render: 25ms)
+ GET / 200 in 15ms (compile: 1985µs, render: 13ms)
+ GET / 200 in 13ms (compile: 1645µs, render: 11ms)
+ GET / 200 in 24ms (compile: 1385µs, render: 22ms)
+ GET / 200 in 13ms (compile: 1461µs, render: 11ms)
+ GET / 200 in 12ms (compile: 1408µs, render: 10ms)
+ GET / 200 in 35ms (compile: 1595µs, render: 34ms)
+ GET / 200 in 24ms (compile: 1456µs, render: 22ms)
+ GET / 200 in 12ms (compile: 1590µs, render: 11ms)
+ GET / 200 in 30ms (compile: 1752µs, render: 28ms)
+ GET / 200 in 16ms (compile: 1809µs, render: 14ms)
+ GET / 200 in 12ms (compile: 1540µs, render: 10ms)
+ GET / 200 in 28ms (compile: 2ms, render: 25ms)
+ GET / 200 in 14ms (compile: 1656µs, render: 13ms)
+ GET / 200 in 28ms (compile: 2ms, render: 25ms)
+ GET / 200 in 14ms (compile: 1702µs, render: 13ms)
+ GET / 200 in 13ms (compile: 1849µs, render: 11ms)
+ GET /manifest.webmanifest 200 in 585ms (compile: 571ms, render: 14ms)
+ GET / 200 in 76ms (compile: 4ms, render: 72ms)
+ GET / 200 in 37ms (compile: 3ms, render: 33ms)
+ GET / 200 in 34ms (compile: 3ms, render: 31ms)
+ GET / 200 in 49ms (compile: 3ms, render: 46ms)
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+✓ Compiled in 717ms
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+⨯ ./components/board/help/user-guide-sheet.tsx:36:1
+Module not found: Can't resolve './guide-figures'
+[0m [90m 34 |[39m   type [33mGuideSection[39m[33m,[39m
+ [90m 35 |[39m } [36mfrom[39m [32m"./guide-content"[39m
+[31m[1m>[22m[39m[90m 36 |[39m [36mimport[39m { [33mGuideFigure[39m } [36mfrom[39m [32m"./guide-figures"[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 37 |[39m
+ [90m 38 |[39m type [33mProps[39m [33m=[39m {
+ [90m 39 |[39m   open[33m:[39m boolean[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./components/board/help/user-guide-sheet.tsx [Client Component Browser]
+    ./components/board/design-board.tsx [Client Component Browser]
+    ./app/page.tsx [Client Component Browser]
+    ./app/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+ GET / 500 in 44ms (compile: 25ms, render: 19ms)
+ GET /manifest.webmanifest 500 in 18ms (compile: 10ms, render: 8ms)
+✓ Compiled in 651ms
+ GET / 200 in 19ms (compile: 3ms, render: 16ms)
+ GET / 200 in 134ms (compile: 44ms, render: 90ms)
+ GET / 200 in 16ms (compile: 3ms, render: 14ms)
+ GET /manifest.webmanifest 200 in 13ms (compile: 1808µs, render: 11ms)
+✓ Compiled in 748ms
+✓ Compiled in 160ms
+✓ Compiled in 611ms
+ GET / 200 in 55ms (compile: 19ms, render: 37ms)
+ GET / 200 in 30ms (compile: 2ms, render: 28ms)
+ GET / 200 in 14ms (compile: 2ms, render: 12ms)
+ GET /manifest.webmanifest 200 in 6ms (compile: 1885µs, render: 4ms)
+ GET / 200 in 163ms (compile: 3ms, render: 160ms)
+ GET /manifest.webmanifest 200 in 51ms (compile: 44ms, render: 6ms)
+ GET /robots.txt 200 in 251ms (compile: 247ms, render: 4ms)
+ GET /sitemap.xml 200 in 230ms (compile: 225ms, render: 5ms)
+ GET /manifest.webmanifest 200 in 4ms (compile: 1788µs, render: 2ms)
+ GET /og.png 404 in 834ms (compile: 718ms, render: 116ms)
+ GET / 200 in 28ms (compile: 3ms, render: 26ms)
+ GET / 200 in 25ms (compile: 3ms, render: 23ms)
+ GET / 200 in 26ms (compile: 1813µs, render: 25ms)
+ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+ GET / 200 in 27ms (compile: 1550µs, render: 25ms)
+ GET / 200 in 42ms (compile: 5ms, render: 37ms)
+ GET / 200 in 32ms (compile: 2ms, render: 30ms)

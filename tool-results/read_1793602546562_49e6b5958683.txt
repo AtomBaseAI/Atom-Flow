@@ -1,0 +1,841 @@
+     1→"use client"
+     2→
+     3→import React from "react"
+     4→import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
+     5→import {
+     6→  MousePointer2,
+     7→  Square,
+     8→  Circle,
+     9→  Type,
+    10→  Hand,
+    11→  ZoomIn,
+    12→  ZoomOut,
+    13→  Scan,
+    14→  Undo2,
+    15→  Redo2,
+    16→  TagIcon,
+    17→  Plus,
+    18→  Minus,
+    19→  Loader2,
+    20→  AppWindow,
+    21→  Image as ImageIcon,
+    22→} from "lucide-react"
+    23→import {
+    24→  Dialog,
+    25→  DialogContent,
+    26→  DialogDescription,
+    27→  DialogFooter,
+    28→  DialogHeader,
+    29→  DialogTitle,
+    30→} from "@/components/ui/dialog"
+    31→import { AWS_GROUPS, AWS_ICON_NAMES, ICON_CATEGORIES, ICONS } from "@/lib/icons-manifest"
+    32→import { loadLucideRegistry, type LucideEntry, type LucideRegistry } from "@/lib/lucide-icon-registry"
+    33→import { DockIn } from "./dock-in"
+    34→import { cn } from "@/lib/utils"
+    35→
+    36→type Props = {
+    37→  active: "select" | "rect" | "ellipse" | "text" | "hand"
+    38→  onChangeTool: (t: Props["active"]) => void
+    39→  onQuickAdd?: (t: "rect" | "ellipse" | "text" | "line") => void
+    40→  onZoomIn?: () => void
+    41→  onZoomOut?: () => void
+    42→  onFitView?: () => void
+    43→  onOpenExport?: () => void // add export trigger
+    44→  onAddIcon?: (opts: { src: string; label: string; style: "icon" | "labeled" | "frame" }) => void
+    45→  onAddTag?: () => void // allow adding tag nodes
+    46→  /** Splash handover — when false every control stays hidden */
+    47→  booted?: boolean
+    48→  /** Offset into the global dock-in sequence so the rail follows the header controls */
+    49→  bootIndexBase?: number
+    50→}
+    51→
+    52→function ToolBtn({
+    53→  active,
+    54→  onClick,
+    55→  label,
+    56→  children,
+    57→}: {
+    58→  active?: boolean
+    59→  onClick?: () => void
+    60→  label: string
+    61→  children: React.ReactNode
+    62→}) {
+    63→  return (
+    64→    <Tooltip>
+    65→      <TooltipTrigger asChild>
+    66→        <button
+    67→          aria-label={label}
+    68→          onClick={onClick}
+    69→          className={cn(
+    70→            "flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card text-foreground",
+    71→            "hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500",
+    72→            active && "border-teal-500 text-teal-600 dark:text-white",
+    73→          )}
+    74→        >
+    75→          {children}
+    76→        </button>
+    77→      </TooltipTrigger>
+    78→      <TooltipContent side="right" align="center" sideOffset={6}>
+    79→        {label}
+    80→      </TooltipContent>
+    81→    </Tooltip>
+    82→  )
+    83→}
+    84→
+    85→function LucideTile({
+    86→  entry,
+    87→  selected,
+    88→  onSelect,
+    89→}: {
+    90→  entry: LucideEntry
+    91→  selected: boolean
+    92→  onSelect: () => void
+    93→}) {
+    94→  const IconComp = entry.comp
+    95→  return (
+    96→    <button
+    97→      onClick={onSelect}
+    98→      className={cn(
+    99→        "flex aspect-square items-center justify-center rounded border p-1.5 transition-colors",
+   100→        selected
+   101→          ? "border-teal-600 bg-teal-500/10 text-teal-700 dark:text-white ring-1 ring-teal-600"
+   102→          : "border-border bg-muted text-foreground hover:bg-accent",
+   103→      )}
+   104→      title={entry.name + (entry.experimental ? " (experimental)" : "")}
+   105→      aria-pressed={selected}
+   106→      aria-label={`Select ${entry.name} icon`}
+   107→    >
+   108→      <IconComp className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+   109→    </button>
+   110→  )
+   111→}
+   112→
+   113→type IconStyleId = "icon" | "labeled" | "frame"
+   114→
+   115→const ICON_STYLE_OPTIONS: {
+   116→  id: IconStyleId
+   117→  label: string
+   118→  hint: string
+   119→  Icon: React.ComponentType<{ className?: string }>
+   120→}[] = [
+   121→  { id: "icon", label: "Icon only", hint: "96 × 96", Icon: ImageIcon },
+   122→  { id: "labeled", label: "Icon + text", hint: "96 × 96", Icon: Type },
+   123→  { id: "frame", label: "Icon frame", hint: "160 × 120", Icon: AppWindow },
+   124→]
+   125→
+   126→/**
+   127→ * Static, true-to-scale preview of how the icon will land on the board:
+   128→ *  - icon    → bare 96×96 icon
+   129→ *  - labeled → 96×96 icon with bottom text strip (classic)
+   130→ *  - frame   → 160×120 app-window frame (title top-left, 2× icon top-right)
+   131→ */
+   132→function IconPreview({
+   133→  src,
+   134→  lucideComp,
+   135→  label,
+   136→  style,
+   137→}: {
+   138→  src: string
+   139→  lucideComp?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+   140→  label: string
+   141→  style: IconStyleId
+   142→}) {
+   143→  const imgSrc = src.startsWith("lucide:") ? "" : src
+   144→  const Glyph = lucideComp
+   145→  const borderColor = "var(--af-node-border)"
+   146→  const textColor = "var(--af-node-text)"
+   147→
+   148→  if (style === "frame") {
+   149→    // Mirrors IconFrameNode: 160×120 app window, 8px title top-left, 2× square icon top-right
+   150→    const titleSize = 8
+   151→    const frameIconSize = Math.max(16, titleSize * 2)
+   152→    return (
+   153→      <div
+   154→        className="overflow-hidden rounded-[4px] shadow-sm"
+   155→        style={{ width: 160, height: 120, background: "var(--af-frame-bg)", border: `1px solid ${borderColor}` }}
+   156→      >
+   157→        <div className="flex items-center justify-between gap-1 border-b border-black/10 px-1 py-0.5 dark:border-white/15">
+   158→          <span
+   159→            className="min-w-0 flex-1 truncate text-left font-semibold leading-[1.2]"
+   160→            style={{ color: textColor, fontSize: titleSize }}
+   161→          >
+   162→            {label}
+   163→          </span>
+   164→          <span className="flex-none" style={{ width: frameIconSize, height: frameIconSize }} aria-hidden>
+   165→            {Glyph ? (
+   166→              <Glyph className="h-full w-full" style={{ color: borderColor }} aria-hidden />
+   167→            ) : imgSrc ? (
+   168→              <img src={imgSrc} alt="" className="h-full w-full object-contain" draggable={false} />
+   169→            ) : null}
+   170→          </span>
+   171→        </div>
+   172→        <div />
+   173→      </div>
+   174→    )
+   175→  }
+   176→
+   177→  if (style === "icon") {
+   178→    return (
+   179→      <div
+   180→        className="flex items-center justify-center rounded-[2px]"
+   181→        style={{ width: 96, height: 96, border: `1px solid ${borderColor}` }}
+   182→      >
+   183→        {Glyph ? (
+   184→          <Glyph className="h-[80%] w-[80%]" style={{ color: borderColor }} aria-hidden />
+   185→        ) : (
+   186→          <img src={imgSrc || "/placeholder.svg"} alt="" className="h-[85%] w-[85%] object-contain" draggable={false} />
+   187→        )}
+   188→      </div>
+   189→    )
+   190→  }
+   191→
+   192→  // labeled — icon with bottom text strip (classic)
+   193→  return (
+   194→    <div
+   195→      className="flex flex-col overflow-hidden rounded-[2px]"
+   196→      style={{ width: 96, height: 96, border: `1px solid ${borderColor}` }}
+   197→    >
+   198→      <div className="flex min-h-0 flex-1 items-center justify-center p-1">
+   199→        {Glyph ? (
+   200→          <Glyph className="h-[85%] w-[85%]" style={{ color: borderColor }} aria-hidden />
+   201→        ) : (
+   202→          <img src={imgSrc || "/placeholder.svg"} alt="" className="h-[85%] w-[85%] object-contain" draggable={false} />
+   203→        )}
+   204→      </div>
+   205→      <div className="flex min-h-[24px] flex-none items-center justify-center border-t border-black/10 px-1 dark:border-white/15">
+   206→        <span className="w-full truncate text-center text-[8px] font-bold leading-tight" style={{ color: textColor }}>
+   207→          {label}
+   208→        </span>
+   209→      </div>
+   210→    </div>
+   211→  )
+   212→}
+   213→
+   214→export default function LeftToolbar({
+   215→  active,
+   216→  onChangeTool,
+   217→  onQuickAdd,
+   218→  onZoomIn,
+   219→  onZoomOut,
+   220→  onFitView,
+   221→  onOpenExport,
+   222→  onAddIcon,
+   223→  onAddTag,
+   224→  booted = true,
+   225→  bootIndexBase = 0,
+   226→}: Props) {
+   227→  const [iconOpen, setIconOpen] = React.useState(false)
+   228→  const [category, setCategory] = React.useState<(typeof ICON_CATEGORIES)[number]>("all")
+   229→  const [search, setSearch] = React.useState("")
+   230→  const [selected, setSelected] = React.useState<{ cat: string; name: string } | null>(null)
+   231→  const [bottomText, setBottomText] = React.useState("")
+   232→  // Icon style for the Add-Icon dialog: bare icon / icon + text / app-window frame
+   233→  const [iconStyle, setIconStyle] = React.useState<IconStyleId>("labeled")
+   234→
+   235→  // Lucide "system" group state
+   236→  const [systemSub, setSystemSub] = React.useState<string>("all")
+   237→  // AWS sub-category state (service groups inside the aws category)
+   238→  const [awsSub, setAwsSub] = React.useState<string>("all")
+   239→  const [lucideReg, setLucideReg] = React.useState<LucideRegistry | null>(null)
+   240→  const [regLoading, setRegLoading] = React.useState(false)
+   241→  const regRequestedRef = React.useRef(false)
+   242→
+   243→  const ensureRegistry = React.useCallback(() => {
+   244→    if (regRequestedRef.current) return
+   245→    regRequestedRef.current = true
+   246→    setRegLoading(true)
+   247→    loadLucideRegistry()
+   248→      .then((reg) => setLucideReg(reg))
+   249→      .catch(() => {})
+   250→      .finally(() => setRegLoading(false))
+   251→  }, [])
+   252→
+   253→  React.useEffect(() => {
+   254→    if (iconOpen && category === "system") ensureRegistry()
+   255→  }, [iconOpen, category, ensureRegistry])
+   256→
+   257→  const allItems = React.useMemo(() => {
+   258→    const entries = Object.entries(ICONS).flatMap(([cat, arr]) => arr.map((name) => ({ cat, name })))
+   259→    return entries
+   260→  }, [])
+   261→  const items = React.useMemo(() => {
+   262→    let list = category === "all" ? allItems : allItems.filter((i) => i.cat === category)
+   263→    if (search.trim()) {
+   264→      const q = search.toLowerCase()
+   265→      list = list.filter((i) => i.name.toLowerCase().includes(q))
+   266→    }
+   267→    return list
+   268→  }, [allItems, category, search])
+   269→
+   270→  const isSystem = category === "system"
+   271→  const isAws = category === "aws"
+   272→
+   273→  // AWS service groups, filtered by sub-category chip + search.
+   274→  // Search matches both the slug and the human display name ("s3" → Amazon S3).
+   275→  const awsGroups = React.useMemo(() => {
+   276→    const q = search.trim().toLowerCase()
+   277→    return AWS_GROUPS.map((g) => ({
+   278→      slug: g.slug,
+   279→      title: g.title,
+   280→      entries: q
+   281→        ? g.icons.filter(
+   282→            (n) =>
+   283→              n.toLowerCase().includes(q) ||
+   284→              (AWS_ICON_NAMES[n] ?? "").toLowerCase().includes(q),
+   285→          )
+   286→        : g.icons,
+   287→    })).filter((g) => (awsSub === "all" || g.slug === awsSub) && g.entries.length > 0)
+   288→  }, [awsSub, search])
+   289→  const awsTotal = React.useMemo(
+   290→    () => AWS_GROUPS.reduce((acc, g) => acc + g.icons.length, 0),
+   291→    [],
+   292→  )
+   293→
+   294→  // Pick an icon tile; prefill the label with its display name (only if empty)
+   295→  const pickIcon = (next: { cat: string; name: string }, display?: string) => {
+   296→    setSelected(next)
+   297→    setBottomText((t) => t || display || "")
+   298→  }
+   299→
+   300→  // Human display name of the current selection ("amazon-s3" → "Amazon S3")
+   301→  const selectedDisplay = selected
+   302→    ? selected.cat === "aws"
+   303→      ? AWS_ICON_NAMES[selected.name] ?? selected.name
+   304→      : selected.name.replace(/-/g, " ")
+   305→    : ""
+   306→
+   307→  const systemGroups = React.useMemo(() => {
+   308→    if (!lucideReg) return []
+   309→    const q = search.trim().toLowerCase()
+   310→    if (!q) {
+   311→      if (systemSub === "all") return lucideReg.groups
+   312→      return lucideReg.groups.filter((g) => g.slug === systemSub)
+   313→    }
+   314→    // Searching inside the system group spans every sub-group
+   315→    return lucideReg.groups
+   316→      .map((g) => ({
+   317→        ...g,
+   318→        entries: g.entries.filter(
+   319→          (e) =>
+   320→            e.name.includes(q) ||
+   321→            e.tags.some((t) => t.toLowerCase().includes(q)) ||
+   322→            e.aliases.some((a) => a.toLowerCase().includes(q)),
+   323→        ),
+   324→      }))
+   325→      .filter((g) => g.entries.length > 0)
+   326→  }, [lucideReg, systemSub, search])
+   327→
+   328→  const selectedLucide = selected?.cat === "system" ? (lucideReg?.byName.get(selected.name) ?? null) : null
+   329→  const selectedSrc = selected
+   330→    ? selected.cat === "system"
+   331→      ? `lucide:${selected.name}`
+   332→      : `/vectors/${selected.cat}/${selected.name}.svg`
+   333→    : ""
+   334→
+   335→  return (
+   336→    <TooltipProvider>
+   337→      {" "}
+   338→      {/* Wrap the entire component in TooltipProvider */}
+   339→      <div className="pointer-events-auto absolute bottom-20 left-4 top-14 z-20 flex flex-col">
+   340→        <div className="icon-picker-scroll my-auto flex max-h-full w-10 flex-col items-center gap-1 overflow-y-auto py-1">
+   341→          <DockIn index={bootIndexBase} booted={booted}>
+   342→            <ToolBtn onClick={() => setIconOpen(true)} label="Add Icon">
+   343→              <Plus className="h-4 w-4" />
+   344→            </ToolBtn>
+   345→          </DockIn>
+   346→
+   347→          {/* 1. Selection */}
+   348→          <DockIn index={bootIndexBase + 1} booted={booted}>
+   349→            <ToolBtn active={active === "select"} onClick={() => onChangeTool("select")} label="Select">
+   350→              <MousePointer2 className="h-4 w-4" />
+   351→            </ToolBtn>
+   352→          </DockIn>
+   353→
+   354→          {/* 2. Square */}
+   355→          <DockIn index={bootIndexBase + 2} booted={booted}>
+   356→            <ToolBtn
+   357→              active={active === "rect"}
+   358→              onClick={() => (onQuickAdd ? onQuickAdd("rect") : onChangeTool("rect"))}
+   359→              label="Rectangle"
+   360→            >
+   361→              <Square className="h-4 w-4" />
+   362→            </ToolBtn>
+   363→          </DockIn>
+   364→
+   365→          {/* 3. Ellipse */}
+   366→          <DockIn index={bootIndexBase + 3} booted={booted}>
+   367→            <ToolBtn
+   368→              active={active === "ellipse"}
+   369→              onClick={() => (onQuickAdd ? onQuickAdd("ellipse") : onChangeTool("ellipse"))}
+   370→              label="Ellipse"
+   371→            >
+   372→              <Circle className="h-4 w-4" />
+   373→            </ToolBtn>
+   374→          </DockIn>
+   375→
+   376→          {/* 4. Line */}
+   377→          <DockIn index={bootIndexBase + 4} booted={booted}>
+   378→            <ToolBtn onClick={() => (onQuickAdd ? onQuickAdd("line") : onChangeTool("select"))} label="Line">
+   379→              <Minus className="h-4 w-4" />
+   380→            </ToolBtn>
+   381→          </DockIn>
+   382→
+   383→          {/* spacer */}
+   384→          <div className="h-1" aria-hidden />
+   385→
+   386→          {/* Tag */}
+   387→          <DockIn index={bootIndexBase + 5} booted={booted}>
+   388→            <ToolBtn onClick={onAddTag} label="Tag">
+   389→              <TagIcon className="h-4 w-4" />
+   390→            </ToolBtn>
+   391→          </DockIn>
+   392→
+   393→          {/* 7. Text */}
+   394→          <DockIn index={bootIndexBase + 6} booted={booted}>
+   395→            <ToolBtn
+   396→              active={active === "text"}
+   397→              onClick={() => (onQuickAdd ? onQuickAdd("text") : onChangeTool("text"))}
+   398→              label="Text"
+   399→            >
+   400→              <Type className="h-4 w-4" />
+   401→            </ToolBtn>
+   402→          </DockIn>
+   403→
+   404→          {/* spacer */}
+   405→          <div className="h-1" aria-hidden />
+   406→
+   407→          {/* Hand (pan) */}
+   408→          <DockIn index={bootIndexBase + 7} booted={booted}>
+   409→            <ToolBtn active={active === "hand"} onClick={() => onChangeTool("hand")} label="Hand">
+   410→              <Hand className="h-4 w-4" />
+   411→            </ToolBtn>
+   412→          </DockIn>
+   413→
+   414→          {/* Zoom controls */}
+   415→          <DockIn index={bootIndexBase + 8} booted={booted}>
+   416→            <ToolBtn onClick={onZoomIn} label="Zoom in">
+   417→              <ZoomIn className="h-4 w-4" />
+   418→            </ToolBtn>
+   419→          </DockIn>
+   420→          <DockIn index={bootIndexBase + 9} booted={booted}>
+   421→            <ToolBtn onClick={onZoomOut} label="Zoom out">
+   422→              <ZoomOut className="h-4 w-4" />
+   423→            </ToolBtn>
+   424→          </DockIn>
+   425→          <DockIn index={bootIndexBase + 10} booted={booted}>
+   426→            <ToolBtn onClick={onFitView} label="Fit view">
+   427→              <Scan className="h-4 w-4" />
+   428→            </ToolBtn>
+   429→          </DockIn>
+   430→
+   431→          {/* Undo / Redo */}
+   432→          <DockIn index={bootIndexBase + 11} booted={booted}>
+   433→            <ToolBtn
+   434→              onClick={() => {
+   435→                if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:undo"))
+   436→              }}
+   437→              label="Undo"
+   438→            >
+   439→              <Undo2 className="h-4 w-4" />
+   440→            </ToolBtn>
+   441→          </DockIn>
+   442→          <DockIn index={bootIndexBase + 12} booted={booted}>
+   443→            <ToolBtn
+   444→              onClick={() => {
+   445→                if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("board:redo"))
+   446→              }}
+   447→              label="Redo"
+   448→            >
+   449→              <Redo2 className="h-4 w-4" />
+   450→            </ToolBtn>
+   451→          </DockIn>
+   452→        </div>
+   453→
+   454→        {/* Dialog replacement */}
+   455→        {iconOpen && (
+   456→          <Dialog open={iconOpen} onOpenChange={setIconOpen}>
+   457→            <DialogContent
+   458→              className={cn(
+   459→                "border-border bg-card text-foreground",
+   460→                // Centering, sizing and viewport-fit fixes
+   461→                "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+   462→                // Wide split layout: ~70% picker / ~30% preview (md: beats shadcn's sm:max-w-lg)
+   463→                // grid-cols-1 caps the implicit auto track (minmax(0,1fr)) so wide one-line
+   464→                // content (e.g. lucide sub-group chips) can't blow the layout past the dialog
+   465→                "max-h-[90vh] w-[96vw] overflow-x-hidden overflow-y-auto md:max-w-6xl grid-cols-1",
+   466→                "p-4 rounded-lg shadow-xl",
+   467→              )}
+   468→            >
+   469→              <DialogHeader>
+   470→                <DialogTitle className="text-foreground text-sm">Add Icon</DialogTitle>
+   471→                <DialogDescription className="sr-only">
+   472→                  Choose an icon, pick an icon style (icon only, icon with text, or icon frame), preview it live, then add it to the board
+   473→                </DialogDescription>
+   474→              </DialogHeader>
+   475→
+   476→              <div className="flex w-full min-w-0 flex-col gap-4 md:flex-row">
+   477→                {/* LEFT ~70% — icon picker (flex-grow ratio keeps 70/30 exact after the gap) */}
+   478→                <div className="min-w-0 space-y-3 md:flex-[7_1_0%]">
+   479→                {/* Search + category badges */}
+   480→                <div className="space-y-2">
+   481→                  <label className="block text-xs text-muted-foreground" htmlFor="icon-search">
+   482→                    Search icons
+   483→                  </label>
+   484→                  <input
+   485→                    id="icon-search"
+   486→                    value={search}
+   487→                    onChange={(e) => setSearch(e.target.value)}
+   488→                    className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
+   489→                    placeholder={isSystem ? "Search by name or tag (e.g., house, arrow, cloud)" : "Search by name (e.g., aws, angular, ec2)"}
+   490→                  />
+   491→                  <div className="flex flex-wrap items-center gap-2 pt-1">
+   492→                    {ICON_CATEGORIES.map((cat) => (
+   493→                      <button
+   494→                        key={cat}
+   495→                        onClick={() => {
+   496→                          setCategory(cat)
+   497→                          setSelected(null)
+   498→                          setAwsSub("all")
+   499→                        }}
+   500→                        className={cn(
+   501→                          "rounded-full px-3 py-1 text-xs border",
+   502→                          category === cat
+   503→                            ? "border-teal-600 bg-teal-600 text-white"
+   504→                            : "border-border bg-card text-foreground hover:bg-accent",
+   505→                        )}
+   506→                        aria-pressed={category === cat}
+   507→                      >
+   508→                        {cat}
+   509→                      </button>
+   510→                    ))}
+   511→                  </div>
+   512→
+   513→                  {/* System sub-groups (lucide categories) */}
+   514→                  {isSystem && lucideReg && (
+   515→                    <div className="max-h-20 overflow-y-auto rounded-md border border-border bg-background p-1.5">
+   516→                      <div className="flex flex-wrap items-center gap-1.5">
+   517→                        <button
+   518→                          onClick={() => setSystemSub("all")}
+   519→                          className={cn(
+   520→                            "rounded-full border px-2 py-0.5 text-[10px]",
+   521→                            systemSub === "all"
+   522→                              ? "border-teal-600 bg-teal-600 text-white"
+   523→                              : "border-border bg-card text-muted-foreground hover:bg-accent",
+   524→                          )}
+   525→                          aria-pressed={systemSub === "all"}
+   526→                        >
+   527→                          all ({lucideReg.total})
+   528→                        </button>
+   529→                        {lucideReg.groups.map((g) => (
+   530→                          <button
+   531→                            key={g.slug}
+   532→                            onClick={() => setSystemSub(g.slug)}
+   533→                            className={cn(
+   534→                              "rounded-full border px-2 py-0.5 text-[10px]",
+   535→                              systemSub === g.slug
+   536→                                ? "border-teal-600 bg-teal-600 text-white"
+   537→                                : "border-border bg-card text-muted-foreground hover:bg-accent",
+   538→                            )}
+   539→                            aria-pressed={systemSub === g.slug}
+   540→                          >
+   541→                            {g.title.toLowerCase()} ({g.entries.length})
+   542→                          </button>
+   543→                        ))}
+   544→                      </div>
+   545→                    </div>
+   546→                  )}
+   547→                  {/* AWS sub-categories (service groups) */}
+   548→                  {isAws && (
+   549→                    <div className="max-h-20 overflow-y-auto rounded-md border border-border bg-background p-1.5">
+   550→                      <div className="flex flex-wrap items-center gap-1.5">
+   551→                        <button
+   552→                          onClick={() => setAwsSub("all")}
+   553→                          className={cn(
+   554→                            "rounded-full border px-2 py-0.5 text-[10px]",
+   555→                            awsSub === "all"
+   556→                              ? "border-teal-600 bg-teal-600 text-white"
+   557→                              : "border-border bg-card text-muted-foreground hover:bg-accent",
+   558→                          )}
+   559→                          aria-pressed={awsSub === "all"}
+   560→                        >
+   561→                          all ({awsTotal})
+   562→                        </button>
+   563→                        {AWS_GROUPS.map((g) => (
+   564→                          <button
+   565→                            key={g.slug}
+   566→                            onClick={() => setAwsSub(g.slug)}
+   567→                            className={cn(
+   568→                              "rounded-full border px-2 py-0.5 text-[10px]",
+   569→                              awsSub === g.slug
+   570→                                ? "border-teal-600 bg-teal-600 text-white"
+   571→                                : "border-border bg-card text-muted-foreground hover:bg-accent",
+   572→                            )}
+   573→                            aria-pressed={awsSub === g.slug}
+   574→                          >
+   575→                            {g.title.toLowerCase()} ({g.icons.length})
+   576→                          </button>
+   577→                        ))}
+   578→                      </div>
+   579→                    </div>
+   580→                  )}
+   581→                </div>
+   582→                <div className="max-h-[420px] min-h-[240px] overflow-x-hidden overflow-y-auto rounded-md border border-border bg-background p-2 icon-picker-scroll">
+   583→                  {isSystem ? (
+   584→                    regLoading && !lucideReg ? (
+   585→                      <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+   586→                        <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+   587→                        Loading system icons…
+   588→                      </div>
+   589→                    ) : !lucideReg ? (
+   590→                      <div className="py-6 text-center text-xs text-muted-foreground">Could not load system icons</div>
+   591→                    ) : systemGroups.length === 0 ? (
+   592→                      <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
+   593→                    ) : (
+   594→                      <div className="space-y-4">
+   595→                        {systemGroups.map((g) => (
+   596→                          <section
+   597→                            key={g.slug}
+   598→                            data-group={g.slug}
+   599→                            style={{
+   600→                              contentVisibility: "auto",
+   601→                              containIntrinsicSize: `auto ${Math.ceil(g.entries.length / 10) * 60 + 34}px`,
+   602→                            } as React.CSSProperties}
+   603→                          >
+   604→                            <header className="flex items-center justify-between px-1 pb-1.5">
+   605→                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   606→                                {g.title}
+   607→                              </span>
+   608→                              <span className="text-[10px] text-muted-foreground/70">{g.entries.length}</span>
+   609→                            </header>
+   610→                            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+   611→                              {g.entries.map((e) => (
+   612→                                <LucideTile
+   613→                                  key={`${g.slug}-${e.name}`}
+   614→                                  entry={e}
+   615→                                  selected={selected?.cat === "system" && selected?.name === e.name}
+   616→                                  onSelect={() => pickIcon({ cat: "system", name: e.name }, e.name)}
+   617→                                />
+   618→                              ))}
+   619→                            </div>
+   620→                          </section>
+   621→                        ))}
+   622→                      </div>
+   623→                    )
+   624→                  ) : isAws ? (
+   625→                    awsGroups.length === 0 ? (
+   626→                      <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
+   627→                    ) : (
+   628→                      <div className="space-y-4">
+   629→                        {awsGroups.map((g) => (
+   630→                          <section
+   631→                            key={g.slug}
+   632→                            data-group={g.slug}
+   633→                            style={{
+   634→                              contentVisibility: "auto",
+   635→                              containIntrinsicSize: `auto ${Math.ceil(g.entries.length / 10) * 60 + 34}px`,
+   636→                            } as React.CSSProperties}
+   637→                          >
+   638→                            <header className="flex items-center justify-between px-1 pb-1.5">
+   639→                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+   640→                                {g.title}
+   641→                              </span>
+   642→                              <span className="text-[10px] text-muted-foreground/70">{g.entries.length}</span>
+   643→                            </header>
+   644→                            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+   645→                              {g.entries.map((name) => {
+   646→                                const isSel = selected?.cat === "aws" && selected?.name === name
+   647→                                const label = AWS_ICON_NAMES[name] ?? name
+   648→                                return (
+   649→                                  <button
+   650→                                    key={name}
+   651→                                    onClick={() => pickIcon({ cat: "aws", name }, label)}
+   652→                                    className={cn(
+   653→                                      "flex aspect-square items-center justify-center rounded border p-1",
+   654→                                      isSel ? "border-teal-600 bg-teal-500/10" : "border-border bg-muted hover:bg-accent",
+   655→                                    )}
+   656→                                    title={label}
+   657→                                    aria-pressed={isSel}
+   658→                                    aria-label={`Select ${label} icon`}
+   659→                                  >
+   660→                                    <img
+   661→                                      src={`/vectors/aws/${name}.svg`}
+   662→                                      alt={label}
+   663→                                      className="max-h-full max-w-full object-contain"
+   664→                                      draggable={false}
+   665→                                      loading="lazy"
+   666→                                      decoding="async"
+   667→                                    />
+   668→                                  </button>
+   669→                                )
+   670→                              })}
+   671→                            </div>
+   672→                          </section>
+   673→                        ))}
+   674→                      </div>
+   675→                    )
+   676→                  ) : items.length === 0 ? (
+   677→                    <div className="py-6 text-center text-xs text-muted-foreground">No icons found</div>
+   678→                  ) : (
+   679→                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+   680→                      {items.map((it) => {
+   681→                        const src = `/vectors/${it.cat}/${it.name}.svg`
+   682→                        const isSel = selected?.cat === it.cat && selected?.name === it.name
+   683→                        return (
+   684→                          <button
+   685→                            key={`${it.cat}-${it.name}`}
+   686→                            onClick={() => pickIcon({ cat: it.cat, name: it.name }, it.name.replace(/-/g, " "))}
+   687→                            className={cn(
+   688→                              "flex aspect-square items-center justify-center rounded border p-1",
+   689→                              isSel ? "border-teal-600 bg-teal-500/10" : "border-border bg-muted hover:bg-accent",
+   690→                            )}
+   691→                            title={it.name}
+   692→                            aria-pressed={isSel}
+   693→                          >
+   694→                            <img
+   695→                              src={src || "/placeholder.svg"}
+   696→                              alt={it.name}
+   697→                              className="max-h-full max-w-full object-contain"
+   698→                              draggable={false}
+   699→                              loading="lazy"
+   700→                              decoding="async"
+   701→                            />
+   702→                          </button>
+   703→                        )
+   704→                      })}
+   705→                    </div>
+   706→                  )}
+   707→                </div>
+   708→                </div>
+   709→
+   710→                {/* RIGHT ~30% — style selector + live preview */}
+   711→                <aside
+   712→                  className="flex min-w-0 flex-col gap-3 md:flex-[3_1_0%] md:border-l md:border-border md:pl-4"
+   713→                  aria-label="Icon style and preview"
+   714→                >
+   715→                  {/* Style selector */}
+   716→                  <div className="space-y-1.5">
+   717→                    <span className="block text-xs text-muted-foreground">Icon style</span>
+   718→                    <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Icon style">
+   719→                      {ICON_STYLE_OPTIONS.map((o) => {
+   720→                        const activeStyle = iconStyle === o.id
+   721→                        return (
+   722→                          <button
+   723→                            key={o.id}
+   724→                            role="radio"
+   725→                            aria-checked={activeStyle}
+   726→                            onClick={() => setIconStyle(o.id)}
+   727→                            title={o.hint}
+   728→                            className={cn(
+   729→                              "flex flex-col items-center gap-1 rounded-md border px-1 py-2 text-[10px] leading-tight transition-colors",
+   730→                              activeStyle
+   731→                                ? "border-teal-600 bg-teal-500/10 text-foreground"
+   732→                                : "border-border bg-card text-muted-foreground hover:bg-accent",
+   733→                            )}
+   734→                          >
+   735→                            <o.Icon className="h-4 w-4" aria-hidden />
+   736→                            {o.label}
+   737→                          </button>
+   738→                        )
+   739→                      })}
+   740→                    </div>
+   741→                  </div>
+   742→
+   743→                  {/* Live preview stage */}
+   744→                  <div className="relative flex min-h-[220px] flex-1 items-center justify-center overflow-hidden rounded-md border border-border bg-background">
+   745→                    <div
+   746→                      className="absolute inset-0 opacity-40"
+   747→                      style={{
+   748→                        backgroundImage: "radial-gradient(var(--af-bg-pattern) 1px, transparent 1px)",
+   749→                        backgroundSize: "12px 12px",
+   750→                      }}
+   751→                      aria-hidden
+   752→                    />
+   753→                    <div className="relative z-10 flex flex-col items-center gap-3">
+   754→                      {selected ? (
+   755→                        <IconPreview
+   756→                          src={selectedSrc}
+   757→                          lucideComp={selectedLucide?.comp}
+   758→                          label={bottomText.trim() || selectedDisplay}
+   759→                          style={iconStyle}
+   760→                        />
+   761→                      ) : (
+   762→                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+   763→                          <ImageIcon className="h-8 w-8 opacity-40" aria-hidden />
+   764→                          <span className="text-xs">Select an icon to preview</span>
+   765→                        </div>
+   766→                      )}
+   767→                      {selected && (
+   768→                        <div className="max-w-[200px] text-center">
+   769→                          <div className="truncate text-xs text-foreground" title={selectedDisplay}>
+   770→                            {selectedDisplay}
+   771→                          </div>
+   772→                          <div className="text-[10px] text-muted-foreground/70">
+   773→                            {(() => {
+   774→                              const opt = ICON_STYLE_OPTIONS.find((o) => o.id === iconStyle)
+   775→                              return opt ? `${opt.label} · ${opt.hint}` : ""
+   776→                            })()}
+   777→                          </div>
+   778→                        </div>
+   779→                      )}
+   780→                    </div>
+   781→                  </div>
+   782→
+   783→                  {/* Label input — hidden for bare icons */}
+   784→                  {iconStyle === "icon" ? (
+   785→                    <p className="text-[10px] text-muted-foreground">
+   786→                      Adds the bare icon at 96 × 96 — no label, no frame.
+   787→                    </p>
+   788→                  ) : (
+   789→                    <div className="space-y-1">
+   790→                      <label className="block text-xs text-muted-foreground" htmlFor="icon-text">
+   791→                        {iconStyle === "frame" ? "Frame title" : "Bottom text"}
+   792→                      </label>
+   793→                      <input
+   794→                        id="icon-text"
+   795→                        value={bottomText}
+   796→                        onChange={(e) => setBottomText(e.target.value)}
+   797→                        className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground outline-none focus:ring-2 focus:ring-teal-500"
+   798→                        placeholder="e.g., AWS Lambda"
+   799→                      />
+   800→                    </div>
+   801→                  )}
+   802→                </aside>
+   803→              </div>
+   804→
+   805→              <DialogFooter className="mt-2">
+   806→                <button
+   807→                  onClick={() => setIconOpen(false)}
+   808→                  className="rounded-md border border-border bg-card px-3 py-1.5 text-xs text-foreground hover:bg-accent"
+   809→                >
+   810→                  Cancel
+   811→                </button>
+   812→                <button
+   813→                  disabled={!selected}
+   814→                  onClick={() => {
+   815→                    if (!selected) return
+   816→                    onAddIcon?.({ src: selectedSrc, label: bottomText, style: iconStyle })
+   817→                    setIconOpen(false)
+   818→                    setBottomText("")
+   819→                    setSearch("")
+   820→                    setSelected(null)
+   821→                    setCategory("all")
+   822→                    setSystemSub("all")
+   823→                    setAwsSub("all")
+   824→                    setIconStyle("labeled")
+   825→                  }}
+   826→                  className={cn(
+   827→                    "rounded-md border px-3 py-1.5 text-xs",
+   828→                    selected ? "border-teal-600 bg-teal-600 text-white" : "border-border bg-card text-muted-foreground",
+   829→                  )}
+   830→                >
+   831→                  Add
+   832→                </button>
+   833→              </DialogFooter>
+   834→            </DialogContent>
+   835→          </Dialog>
+   836→        )}
+   837→      </div>
+   838→    </TooltipProvider>
+   839→  )
+   840→}
+   841→

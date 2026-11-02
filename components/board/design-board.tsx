@@ -46,7 +46,8 @@ import {
 import SmartEdge from "./edges/smart-edge"
 import SmartConnectionLine from "./edges/smart-connection-line"
 import BoardShortcuts from "./board-shortcuts"
-import { Download, Trash2, Hand, Upload, Image as ImageIcon, FileCode, Braces, Maximize2, Minimize2, Plus, MousePointer2, Scan, Lock, LockOpen, Square, Grid3x3, Grip } from "lucide-react"
+import { Download, Trash2, Hand, Upload, Image as ImageIcon, FileCode, Braces, Maximize2, Minimize2, Plus, MousePointer2, Scan, Lock, LockOpen, Square, Grid3x3, Grip, CircleHelp } from "lucide-react"
+import UserGuideSheet from "./help/user-guide-sheet"
 import { cn } from "@/lib/utils"
 import {
   AlertDialog,
@@ -500,6 +501,10 @@ function BoardInner() {
   const [exportOpen, setExportOpen] = useState(false)
   const [exportTitle, setExportTitle] = useState("diagram")
   const [exportType, setExportType] = useState<"png" | "svg" | "json">("png")
+
+  // Full-screen user guide, opened from the Help button next to Export
+  // (or by pressing F1 / "?" — the dialog listens for those itself)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState("")
@@ -1425,7 +1430,9 @@ function BoardInner() {
       {!locked && (
       <LeftToolbar
         booted={booted}
-        bootIndexBase={6}
+        // 7 — after the top-right Help button (6): the left rail docks in a
+        // single sequential wave together with the rest of the header controls.
+        bootIndexBase={7}
         active={tool as "select" | "rect" | "ellipse" | "text" | "hand"}
         onChangeTool={setTool}
         onQuickAdd={quickAdd}
@@ -1629,9 +1636,9 @@ function BoardInner() {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              {/* 21 — after the left rail's Redo (20): the lock is the very
+              {/* 22 — after the left rail's Redo (21): the lock is the very
                   last control to dock in, bottom-left corner. */}
-              <DockIn index={21} booted={booted}>
+              <DockIn index={22} booted={booted}>
                 <button
                   aria-label={locked ? "Unlock board" : "Lock board"}
                   aria-pressed={locked}
@@ -1718,6 +1725,27 @@ function BoardInner() {
           <Download className="h-4 w-4" />
           <span className="hidden sm:inline">Export</span>
         </button>
+        </DockIn>
+
+        <DockIn index={6} booted={booted}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                aria-label="Help and user guide"
+                aria-haspopup="dialog"
+                onClick={() => setHelpOpen(true)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-teal-500"
+                title="Help"
+              >
+                <CircleHelp className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end" sideOffset={6}>
+              User guide — press F1 anytime
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         </DockIn>
       </div>
       )}
@@ -1988,6 +2016,9 @@ function BoardInner() {
         onRotateSilent={(deg) => updateSelectedNodeSilent({ rotation: deg })}
         onRotateStart={commitHistory}
       />
+
+      {/* Full-screen user guide (left-to-right Sheet) — Help button, F1 or "?" */}
+      <UserGuideSheet open={helpOpen} onOpenChange={setHelpOpen} />
 
       {/* Animated circular menu — right-click / two-finger tap */}
       <RadialMenu
